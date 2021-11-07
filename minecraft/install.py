@@ -3,46 +3,92 @@
 import os
 import requests
 
+from util.date import Date
+
 class Installer:
+    dir = os.path.dirname(__file__)
+    serverRoot = os.path.join(dir, 'server')
+    changelog = os.path.join(serverRoot, 'changelog.txt')
+    versionManifest = 'https://launchermeta.mojang.com/mc/game/version_manifest.json'
+    
     # Determine if a server has been created already
     def serverExists(self):
-        if os.path.isdir('../server'):
-            dir = os.listdir('../server')
-            if len(dir) > 0:
-                print('Minecraft server has alread been installed!')
+        serverContents = os.listdir(self.serverRoot)
+        if len(serverContents) == 0:
+            # No server has been downloaded, yet
+            return False
+        else:
+            # The folder has contents, but it's not completely accurate to say that a sever exists
+            # To make positive confirmation that a server has been installed, read the changelog
+            # and see if it contains a line that indicates the server has been installed
+            changelog = open(self.changelog, 'r').read()
+            if '[INSTALL]' in changelog:
                 return True
-        print('Minecraft server has not been installed...')
-        return False
+            return False
         
     def currentVersion(self):
-        file = open('../server/version.txt')
-        version = file.readline()
-        print(version)
+        changelog = open(self.changelog, 'r')
+        lines = changelog.readlines()
+        for line in lines.reversed():
+            print(line)
         
     def latestVersion(self):
-        print('checking latest version...')
-        link = 'https://launchermeta.mojang.com/mc/game/version_manifest.json'
-        request = requests.get(link)
-        '
-        
-        '
+        request = requests.get(self.versionManifest)
         json = request.json()
-        print(json)
         latestVersion = json['latest']['release']
-        return latestVersion
         
-    def __init__(self):
-        print('starting installer...')
+        # Find latest version url by iterating through versions array defined in json
+        versions = json['versions']
+        for version in versions:
+            if version['id'] == latestVersion:
+                return version
+        
+    def log(self, message):
+        file = open(self.changelog, 'a')
+        file.write('[Server - {date}] {message}\n'.format(date=Date().timestamp(), message=message))
+        file.close()
+        
+    def installIfNeeded(self):
         if self.serverExists():
-            latest = self.latestVersion()
             current = self.currentVersion()
-            # Fetch latest version 
-            # Compare against current version
+            latest = self.latestVersion()
+            
             # If not on latest version, alert user
         else:
-            # Install latest version of Minecraft server with name given
-            print('installing latest version of Minecraft server...')
+            print('No server has been created! Installing now...')
+            # Get latest version and version url
             latest = self.latestVersion()
+            latestVersion = latest['id']
+            manifestUrl = latest['url']
+            
+            # Get download url by downloading and parsing version manifest
+            manifestRequest = requests.get(manifestUrl)
+            manifestJson = manifestRequest.json()
+            downloadUrl = manifestJson['downloads']['server']['url']
+            
+            # Create the directory for the version at ../server/{version}
+            versionDir = os.path.join(self.serverRoot, '{}'.format(latestVersion))
+            if os.path.isdir(versionDir) == False:
+                os.mkdir(versionDir)
+            
+            # Download latest version at ../server/{version}/server.jar
+            print('Downloading {} server.jar now!'.format(latestVersion))
+            location = os.path.join(versionDir, 'server.jar')
+            with requests.get(downloadUrl, stream=True) as request:
+                request.raise_for_status()
+                with open(location, 'wb') as file:
+                    for chunk in request.iter_content(chunk_size=8192):
+                        # If you have chunk encoded response uncomment if and set chunk_size parameter to None.
+                        # if chunk:
+                        file.write(chunk)
+                    return location
+            
+            # Update changelog with new version
+            self.log('{} [INSTALL]'.format(latestVersion))
+            
+
+            
+            
             
 
 
