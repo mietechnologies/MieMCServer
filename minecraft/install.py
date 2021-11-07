@@ -16,7 +16,7 @@ class Installer:
     def serverExists(self):
         serverContents = os.listdir(self.serverRoot)
         if len(serverContents) == 0:
-            # No server has been downloaded, yet
+            # No server has been downloaded yet
             return False
         else:
             # The folder has contents, but it's not completely accurate to say that a sever exists
@@ -26,7 +26,9 @@ class Installer:
             if '[INSTALL]' in changelog:
                 return True
             return False
-        
+    
+    # Fetches the current version by opening the changelog and checking the its lines in reverse order
+    # for a version number that has been installed
     def currentVersion(self):
         changelog = open(self.changelog, 'r')
         lines = list(reversed(changelog.readlines()))
@@ -36,7 +38,9 @@ class Installer:
                 if result:
                     version = result.group(0)
                     return version
-        
+    
+    # Obtains the latest server release version by downloading the official Minecraft version manifest
+    # and extracting the value from the JSON
     def latestVersion(self):
         request = requests.get(self.versionManifest)
         json = request.json()
@@ -47,7 +51,8 @@ class Installer:
         for version in versions:
             if version['id'] == latestVersion:
                 return version
-        
+    
+    # A helper function to log files to the changelog for the server
     def log(self, message):
         file = open(self.changelog, 'a')
         file.write('[MinePi - {date}] {message}\n'.format(date=Date().timestamp(), message=message))
@@ -92,7 +97,7 @@ class Installer:
                     return location
             
             # Update changelog with new version
-            self.log('{} [INSTALL]'.format(latestVersion))
+            self.log('[INSTALL] {}'.format(latestVersion))
             
 
             
