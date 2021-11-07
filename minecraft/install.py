@@ -1,6 +1,7 @@
 # Purpose: install the latest version of Minecraft server on call
 
 import os
+import re
 import requests
 
 from util.date import Date
@@ -28,9 +29,13 @@ class Installer:
         
     def currentVersion(self):
         changelog = open(self.changelog, 'r')
-        lines = changelog.readlines()
-        for line in lines.reversed():
-            print(line)
+        lines = list(reversed(changelog.readlines()))
+        for line in lines:
+            if '[INSTALL]' in line:
+                result = re.search('\d+\.\d+\.\d+', line)
+                if result:
+                    version = result.group(0)
+                    return version
         
     def latestVersion(self):
         request = requests.get(self.versionManifest)
@@ -45,15 +50,18 @@ class Installer:
         
     def log(self, message):
         file = open(self.changelog, 'a')
-        file.write('[Server - {date}] {message}\n'.format(date=Date().timestamp(), message=message))
+        file.write('[MinePi - {date}] {message}\n'.format(date=Date().timestamp(), message=message))
         file.close()
         
     def installIfNeeded(self):
         if self.serverExists():
             current = self.currentVersion()
             latest = self.latestVersion()
-            
             # If not on latest version, alert user
+            if current != latest['id']:
+                print('Version {} is now available for release! Consider upgrading at your convenience.'.format(latest['id']))
+            location = os.path.join(self.serverRoot, current)
+            return location
         else:
             print('No server has been created! Installing now...')
             # Get latest version and version url
@@ -67,7 +75,7 @@ class Installer:
             downloadUrl = manifestJson['downloads']['server']['url']
             
             # Create the directory for the version at ../server/{version}
-            versionDir = os.path.join(self.serverRoot, '{}'.format(latestVersion))
+            versionDir = os.path.join(self.serverRoot, latestVersion)
             if os.path.isdir(versionDir) == False:
                 os.mkdir(versionDir)
             

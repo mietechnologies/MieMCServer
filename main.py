@@ -21,6 +21,8 @@ from util.emailer import PiMailer
 from util.temp import PiTemp
     
 class Main:
+    serverLocation = os.path.dirname(__file__)
+    
     def backup(self):
         print('backing up server...')
         
@@ -39,9 +41,9 @@ class Main:
     def clean(self):
         print('cleaning current server...')
         
-    def install(self, name):
+    def install(self):
         installer = Installer()
-        installer.installIfNeeded()
+        self.serverLocation = installer.installIfNeeded()
         
     def update(self):
         print('updating server...')
@@ -54,4 +56,4 @@ class Main:
         # os.popen("vcgencmd measure_temp").readline()
         
 main = Main()
-main.install('NERDCraft 1.17')
+main.install()
