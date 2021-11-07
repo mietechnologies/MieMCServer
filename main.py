@@ -21,33 +21,27 @@ from util.emailer import PiMailer
 from util.temp import PiTemp
     
 class Main:
-    
-    
     def backup(self):
         print('backing up server...')
         
     def scheduleJobs(self):
-        print('starting cron jobs for server...')
         os.popen('cron/./crontab.sh')
         
     def start(self):
-        print('starting server...')
         self.scheduleJobs()
         
     def startMonitors(self):
         print('starting monitors...')
         
     def grantPermissions(self):
-        print('granting permissions...')
         os.popen('chmod +x cron/crontab.sh')
         
     def clean(self):
         print('cleaning current server...')
         
     def install(self, name):
-        print('installing server...')
         installer = Installer()
-        installer.serverExists()
+        installer.installIfNeeded()
         
     def update(self):
         print('updating server...')
