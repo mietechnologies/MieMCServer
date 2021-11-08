@@ -11,6 +11,7 @@
     # Create new server with a specific world name
     # Update server to the latest version if needed
 
+import shutil
 import os
 
 from crontab import CronTab
@@ -22,36 +23,30 @@ from util.emailer import PiMailer
 from util.temp import PiTemp
     
 class Main:
-    serverLocation = os.path.dirname(__file__)
+    root = os.path.dirname(__file__)
+    serverDir = os.path.dirname(__file__)
     
     def backup(self):
         print('backing up server...')
         
-    def scheduleJobs(self):
-        os.popen('cron/./crontab.sh')
+    def start(self, allottedRam):
+        # print('Updating jdk installation (your password may be required)...')
+        # os.popen('chmod +x jdk.sh')
+        # os.popen('./jdk.sh')
         
-    def start(self):
-        print('Updating jdk installation (your password may be required)...')
-        os.popen('chmod +x jdk.sh')
-        os.popen('./jdk.sh')
-        
-        # print('Starting server...')
-        # os.popen('cd {}'.format(self.serverLocation))
-        # os.popen('java -Xmx2500M -Xms2500M -jar server.jar nogui')
+        print('Starting server! If you a java exception, please ensure that you have the latest jdk installed...')
+        os.popen('cd {}'.format(self.serverDir))
+        os.popen('java -Xmx{}M -Xms{}M -jar server.jar nogui'.format(allottedRam, allottedRam))
         
     def startMonitors(self):
         print('starting monitors...')
-        self.scheduleJobs()
-        
-    def grantPermissions(self):
-        os.popen('chmod +x cron/crontab.sh')
         
     def clean(self):
-        print('cleaning current server...')
+        print('cleaning up server...')
         
     def install(self):
         installer = Installer()
-        self.serverLocation = installer.installIfNeeded()
+        self.serverDir = installer.installIfNeeded()
         
     def update(self):
         print('updating server...')
@@ -59,9 +54,8 @@ class Main:
     def __init__(self):
         self.install()
         self.backup()
-        self.grantPermissions()
         self.startMonitors()
-        self.start()
+        self.start(3 * 1024)
         # os.popen("vcgencmd measure_temp").readline()
         
 main = Main()

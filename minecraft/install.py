@@ -3,12 +3,14 @@
 import os
 import re
 import requests
+import shutil
 
 from util.date import Date
 from version import Versioner
 
 class Installer:
     dir = os.path.dirname(__file__)
+    cleanSciptsDir = os.path.join(dir, 'clean_scripts')
     changelog = os.path.join(dir, 'server/changelog.txt')
     
     # A helper function to log files to the changelog for the server
@@ -16,6 +18,20 @@ class Installer:
         file = open(self.changelog, 'a')
         file.write('[MinePi - {date}] {message}\n'.format(date=Date().timestamp(), message=message))
         file.close()
+        
+    def copyCleanScripts(self, destination):
+        # Create server-specific clean_scripts dir
+        destinationCleanDir = os.path.join(destination, 'clean_scripts')
+        os.mkdir(destinationCleanDir)
+        
+        # Copy files from clean_scripts dir to server clean_scripts dir and update permissions
+        scripts = os.listdir(self.cleanSciptsDir)
+        for script in scripts:
+            srcPath = os.path.join(self.cleanSciptsDir, script)
+            shutil.copy2(srcPath, destinationCleanDir)
+            
+            destPath = os.path.join(destinationCleanDir, script)
+            os.popen('chmod +x {}'.format(destPath))
     
     # If the server has already been installed, returns the location of the latest server.jar file.
     # Otherwise, downloads the latest stable release to the project's directory and returns the 
@@ -59,7 +75,8 @@ class Installer:
                         # if chunk:
                         file.write(chunk)
                         
-                    # Update changelog with new version and return
+                    # Copy clean scripats and update changelog with new version and return
+                    self.copyCleanScripts(versionDir)
                     self.log('[INSTALL] {}'.format(latestVersion))
                     return versionDir
             
