@@ -1,2 +1,4 @@
 # Do not include any server-specific files!
 minecraft/server/
+*.gz
+$.sha256

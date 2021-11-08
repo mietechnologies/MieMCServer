@@ -16,6 +16,7 @@ import os
 from crontab import CronTab
 
 from minecraft.install import Installer
+from minecraft.version import Versioner
 from util.date import Date
 from util.emailer import PiMailer
 from util.temp import PiTemp
@@ -30,10 +31,17 @@ class Main:
         os.popen('cron/./crontab.sh')
         
     def start(self):
-        self.scheduleJobs()
+        print('Updating jdk installation (your password may be required)...')
+        os.popen('chmod +x jdk.sh')
+        os.popen('./jdk.sh')
+        
+        # print('Starting server...')
+        # os.popen('cd {}'.format(self.serverLocation))
+        # os.popen('java -Xmx2500M -Xms2500M -jar server.jar nogui')
         
     def startMonitors(self):
         print('starting monitors...')
+        self.scheduleJobs()
         
     def grantPermissions(self):
         os.popen('chmod +x cron/crontab.sh')
@@ -49,6 +57,7 @@ class Main:
         print('updating server...')
         
     def __init__(self):
+        self.install()
         self.backup()
         self.grantPermissions()
         self.startMonitors()
@@ -56,4 +65,3 @@ class Main:
         # os.popen("vcgencmd measure_temp").readline()
         
 main = Main()
-main.install()

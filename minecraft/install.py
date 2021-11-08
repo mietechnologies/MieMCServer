@@ -16,17 +16,22 @@ class Installer:
         file = open(self.changelog, 'a')
         file.write('[MinePi - {date}] {message}\n'.format(date=Date().timestamp(), message=message))
         file.close()
-        
+    
+    # If the server has already been installed, returns the location of the latest server.jar file.
+    # Otherwise, downloads the latest stable release to the project's directory and returns the 
+    # location of the file.
     def installIfNeeded(self):
         versioner = Versioner()
-        
-        if versioner.serverExists():
+        exists = versioner.serverExists()
+        if exists:
+            print('Minecraft server already installed! Checking for new versions...')
             current = versioner.currentVersion()
             latest = versioner.latestVersion()
             # If not on latest version, alert user
             if current != latest['id']:
                 print('Version {} is now available for release! Consider upgrading at your convenience.'.format(latest['id']))
             location = versioner.fetchVersionDirectory(current)
+            return location
         else:
             print('No server has been created! Installing now...')
             # Get latest version and version url
@@ -41,7 +46,11 @@ class Installer:
             
             # Download latest version at ../server/{version}/server.jar
             print('Downloading {} server.jar now!'.format(latestVersion))
-            location = versioner.fetchVersionDirectory(latestVersion)
+            versionDir = versioner.fetchVersionDirectory(latestVersion)
+            location = os.path.join(versionDir, 'server.jar')
+            file = open(location, "r")
+            file.close()
+            
             with requests.get(downloadUrl, stream=True) as request:
                 request.raise_for_status()
                 with open(location, 'wb') as file:
@@ -49,10 +58,10 @@ class Installer:
                         # If you have chunk encoded response uncomment if and set chunk_size parameter to None.
                         # if chunk:
                         file.write(chunk)
-                    return location
-            
-            # Update changelog with new version
-            self.log('[INSTALL] {}'.format(latestVersion))
+                        
+                    # Update changelog with new version and return
+                    self.log('[INSTALL] {}'.format(latestVersion))
+                    return versionDir
             
 
             

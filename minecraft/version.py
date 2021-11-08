@@ -2,6 +2,7 @@
 # repetitive code used in the various other files in the MinePi project.
 
 import os
+import re
 import requests
 
 class Versioner:
@@ -30,7 +31,8 @@ class Versioner:
             changelog = open(self.changelog, 'r').read()
             if '[INSTALL]' in changelog:
                 return True
-            return False
+            else:
+                return False
     
     # Fetches the current version by opening the changelog and checking the its lines in reverse order
     # for a version number that has been installed
@@ -70,5 +72,5 @@ class Versioner:
             file = open(jar, "w")
             file.close()
             
-        return jar
+        return location
         
