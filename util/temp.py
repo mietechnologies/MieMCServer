@@ -20,11 +20,12 @@ class PiTemp:
         self.maximumTemp = max
 
     def measureTemp(self):
-        # generate random numbers for development (vcgencmd is a Pi-specific command)
-        # temp = os.popen("vcgencmd measure_temp").readline()
-        randomTemp = random.uniform(80.0,120.0)
-        temp = 'temp={}'.format(randomTemp)
-        string = (temp.replace("temp=",""))
+        # read the current temp directly from the Pi
+        temp = os.popen("vcgencmd measure_temp").readline()
+        # or generate random numbers for development
+        # randomTemp = random.uniform(80.0,120.0)
+        # temp = 'temp={}'.format(randomTemp)
+        string = temp.replace("temp=", "").replace("'C", "")
         return float(string)
         
     def log(self, message):
@@ -52,3 +53,4 @@ class PiTemp:
                     self.log("WARN: Temp is too high [{}]".format(currentTemp))
                     self.isOverheating = True
             time.sleep(1)
+            
