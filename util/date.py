@@ -1,5 +1,4 @@
 from datetime import datetime
-from dateutil import tz
 
 class Date:
     def format(self, date, formatString):

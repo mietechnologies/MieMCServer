@@ -45,6 +45,7 @@ class Versioner:
                 if result:
                     version = result.group(0)
                     return version
+        return None
     
     # Obtains the latest server release version by downloading the official Minecraft version manifest
     # and extracting the value from the JSON

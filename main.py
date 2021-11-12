@@ -18,6 +18,7 @@ from crontab import CronTab
 
 from minecraft.install import Installer
 from minecraft.version import Versioner
+from util.config import Config
 from util.date import Date
 from util.emailer import PiMailer
 from util.temp import PiTemp
@@ -25,6 +26,14 @@ from util.temp import PiTemp
 class Main:
     root = os.path.dirname(__file__)
     serverDir = os.path.dirname(__file__)
+    
+    # config
+    allottedRam = 1024
+    backupDay = 5
+    backupHour = 6
+    dailyHour = 8
+    weeklyDay = 5
+    weeklyHour = 7
     
     # system monitoring
     criticalTemp = False
@@ -42,7 +51,7 @@ class Main:
         # os.popen('chmod +x jdk.sh')
         # os.popen('./jdk.sh')
         
-        print('Starting server! If you a java exception, please ensure that you have the latest jdk installed...')
+        print('Starting server! If you encounter a java exception, please ensure that you have the latest jdk installed...')
         os.popen('cd {}'.format(self.serverDir))
         os.popen('java -Xmx{}M -Xms{}M -jar server.jar nogui'.format(allottedRam, allottedRam))
         
@@ -69,25 +78,40 @@ class Main:
             hour = Date().hour()
             minute = Date().minute()
             
-            if weekday == 0:
-                if hour == 6:
-                    if minute == 55:
-                        print('should be Monday at 2:55 AM; should send message to players. [{}]'.format(timestamp))
-                if hour == 7:
-                    print('should be Monday at 3 AM; should do weekly cleanup [{}]'.format(timestamp))
-            
-            if hour == 7:
-                if minute == 55:
-                    print('should be daily at 3:55 AM; should send message to players [{}]'.format(timestamp))
-            if hour == 8:
-                print('should be 4 AM on any given day; should do daily cleanup [{}]'.format(timestamp))
+            if weekday == self.backupDay:
+                if hour == self.backupHour - 1 && minute == 55:
+                    print('[{}] should send message to players (about to backup)')
+                if hour == self.backupHour:
+                    print('[{}] should do weekly backup')
+            if weekday == self.weeklyDay:
+                if hour == self.weeklyHour - 1 && minute == 55:
+                    print('[{}] should send message to players (about to run weekly clean)')
+                if hour == self.weeklyHour:
+                    print('[{}] should do weekly clean')
+            if hour == self.dailyHour - 1 && minute == 55:
+                print('[{}] should send message to players (about to run daily clean)')
+            if hour == self.dailyHour:
+                print('[{}] should run daily clean')
         
     def clean(self):
         print('cleaning up server...')
         
+    def config(self):
+        conf = Config()
+        current = conf.read()
+        if current == None:
+            conf.start()
+        else:
+            # parse current and assign values
+        
     def install(self):
-        installer = Installer()
-        self.serverDir = installer.installIfNeeded()
+        currentVersion = Versioner().currentVersion()
+        if currentVersion == None:
+            self.config()
+        else:
+            
+            installer = Installer()
+            self.serverDir = installer.installIfNeeded()
         
     def update(self):
         print('updating server...')
