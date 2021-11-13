@@ -2,3 +2,5 @@
 minecraft/server/
 *.gz
 $.sha256
+*.pyc
+*.txt

@@ -1,12 +1,20 @@
 from datetime import datetime
 
 class Date:
+    dateFormat = '%d/%m/%Y %H:%M:%S.%f'
+    
     def format(self, date, formatString):
         return date.strftime(formatString)
+        
+    def now(self):
+        return datetime.now()
     
     def timestamp(self):
-        now = datetime.now()
-        return self.format(now, '%d/%m/%Y %H:%M:%S.%f')
+        now = self.now()
+        return self.format(now, self.dateFormat)
+        
+    def timeFromDate(self, dateString):
+        return datetime.strptime(dateString, self.dateFormat)
         
     # helper functions to extract components of date (if no date is given, defaults to current date and time)
     def month(self, date = datetime.now()):
@@ -32,3 +40,6 @@ class Date:
         
     def milisecond(self, date = datetime.now()):
         return int(self.format(date, '%f'))
+        
+    def elapsedTimeBetweenDates(self, date, otherDate):
+        return abs(date - otherDate.total_seconds())

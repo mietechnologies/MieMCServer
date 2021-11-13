@@ -14,10 +14,9 @@
 import shutil
 import os
 
-from crontab import CronTab
-
 from minecraft.install import Installer
 from minecraft.version import Versioner
+from util import cron
 from util.config import Config
 from util.date import Date
 from util.emailer import PiMailer
@@ -35,8 +34,6 @@ class Main:
     weeklyDay = 5
     weeklyHour = 7
     
-    # system monitoring
-    criticalTemp = False
     logfile = 'logs.txt'
     
     # setup utilities
@@ -66,60 +63,56 @@ class Main:
             
         self.mailer.sendMail('michael.craun@gmail.com', subject, body, ['logs.txt'])
         
-    def startMonitors(self):
-        self.criticalTemp = self.tempMonitor.start()
+    def messageServer(self, message):
+        print('should message server with {}'.format(message))
         
-        while True:
-            if criticalTemp:
-                self.criticalEventOccured('temp')
-            
-            timestamp = Date().timestamp()
-            weekday = Date().weekday()
-            hour = Date().hour()
-            minute = Date().minute()
-            
-            if weekday == self.backupDay:
-                if hour == self.backupHour - 1 && minute == 55:
-                    print('[{}] should send message to players (about to backup)')
-                if hour == self.backupHour:
-                    print('[{}] should do weekly backup')
-            if weekday == self.weeklyDay:
-                if hour == self.weeklyHour - 1 && minute == 55:
-                    print('[{}] should send message to players (about to run weekly clean)')
-                if hour == self.weeklyHour:
-                    print('[{}] should do weekly clean')
-            if hour == self.dailyHour - 1 && minute == 55:
-                print('[{}] should send message to players (about to run daily clean)')
-            if hour == self.dailyHour:
-                print('[{}] should run daily clean')
+    def dailyClean(self):
+        print('should do daily clean...')
+        
+    def weeklyClean(self):
+        print('should do weekly clean...')
+        
+    def startMonitors(self):
+        self.tempMonitor.start()
+        cron.createRecurringJob('* * * * *', 'python cron_events.py', 'even_monitoring')
+        cron.createRecurringJon('* * * * *', 'python minecraft/dailyCleanMessage.py', 'daily_clean_message')
+        cron.createRecurringJon('* * * * *', 'python minecraft/dailyClean.py', 'daily_clean')
+        cron.createRecurringJon('* * * * *', 'python minecraft/weeklyBackupMessage.py', 'weekly_backup_message')
+        cron.createRecurringJon('* * * * *', 'python minecraft/clean.py', 'weekly_backup')
+        cron.createRecurringJon('* * * * *', 'python minecraft/weeklyCleanMessage.py', 'weekly_clean_message')
+        cron.createRecurringJon('* * * * *', 'python minecraft/weeklyClean.py', 'weekly_clean')
         
     def clean(self):
         print('cleaning up server...')
         
-    def config(self):
-        conf = Config()
-        current = conf.read()
-        if current == None:
-            conf.start()
-        else:
-            # parse current and assign values
+    def configure(self):
+        config = Config()
+        current = config.read()
+        if current == None: config.start()
+            
+        # parse current and assign config values
+        current = config.read()
+        for line in current:
+            print(line)
+        
+    def updateConfig(self):
+        print('should update config...')
         
     def install(self):
-        currentVersion = Versioner().currentVersion()
-        if currentVersion == None:
-            self.config()
-        else:
-            
-            installer = Installer()
-            self.serverDir = installer.installIfNeeded()
+        installer = Installer()
+        self.serverDir = installer.installIfNeeded()
         
     def update(self):
         print('updating server...')
         
-    def __init__(self):
-        self.install()
-        self.backup()
-        self.startMonitors()
-        self.start(3 * 1024)
-        
-main = Main()
+    def detectCriticalEvents(self):
+        if self.tempMonitor.criticalTemperatureReached():
+            self.criticalEventOccured('temp')
+
+
+
+
+
+
+
+

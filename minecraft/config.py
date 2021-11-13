@@ -73,8 +73,32 @@ class Config:
         config = open(self.file, 'a')
         config.write('ram={}'.format(ram))
         config.write('backup={}'.format(backupSchedule))
-        config.write('dailySched={}'.format(dailyCleanSchedule))
-        config.write('weeklySched={}'.format(weeklyCleanSchedule))
+        config.write('daily={}'.format(dailyCleanSchedule))
+        config.write('weekly={}'.format(weeklyCleanSchedule))
         config.close()
         print('Config completed! Continuing with initial setup...')
+
+    def read(self):
+        if os.path.exists(self.file):
+            config = open(self.file, 'r')
+            lines = config.readlines()
+            config.close()
+            output = {}
+            
+            for line in lines:
+                if 'ram' in line:
+                    output['ram'] = int(line.replace('ram=', ''))
+                if 'backup' in line:
+                    output['backup'] = line.replace('backup=', '')
+                if 'daily' in line:
+                    output['daily'] = line.replace('daily=', '')
+                if 'weekly' in line:
+                    output['weekly'] = line.replace('weekly=', '')
+            return output
+        return None
+
+
+
+
+
 

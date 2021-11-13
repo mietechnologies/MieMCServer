@@ -1,4 +1,0 @@
-@reboot ./test.sh
-* * * * * ./test.sh
-* 2 * * 0 /minecraft/./backup.sh
-* 3 * * * /minecraft/./clean.sh

@@ -1,7 +1,6 @@
 # Purpose: install the latest version of Minecraft server on call
 
 import os
-import re
 import requests
 import shutil
 
