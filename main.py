@@ -16,7 +16,11 @@ import os
 
 from minecraft.install import Installer
 from minecraft.version import Versioner
+<<<<<<< HEAD
 from util.cron import CronScheduler
+=======
+from util import cron
+>>>>>>> 5a53cc1fc1630d4d0db58025df56c13c201cf79d
 from util.config import Config
 from util.date import Date
 from util.emailer import PiMailer
@@ -65,6 +69,7 @@ class Main:
         
     def messageServer(self, message):
         print('should message server with {}'.format(message))
+<<<<<<< HEAD
         
     def dailyClean(self):
         print('should do daily clean...')
@@ -85,6 +90,24 @@ class Main:
         CronScheduler().createRecurringJob(backup, 'python cron/backup.py', 'weekly_backup')
         CronScheduler().createRecurringJob(dailyClean, 'python cron/dailyClean.py', 'daily_clean')
         CronScheduler().createRecurringJob(weeklyClean, 'python cron/weeklyClean.py', 'weekly_clean')
+=======
+        
+    def dailyClean(self):
+        print('should do daily clean...')
+        
+    def weeklyClean(self):
+        print('should do weekly clean...')
+        
+    def startMonitors(self):
+        self.tempMonitor.start()
+        cron.createRecurringJob('* * * * *', 'python cron_events.py', 'even_monitoring')
+        cron.createRecurringJon('* * * * *', 'python minecraft/dailyCleanMessage.py', 'daily_clean_message')
+        cron.createRecurringJon('* * * * *', 'python minecraft/dailyClean.py', 'daily_clean')
+        cron.createRecurringJon('* * * * *', 'python minecraft/weeklyBackupMessage.py', 'weekly_backup_message')
+        cron.createRecurringJon('* * * * *', 'python minecraft/clean.py', 'weekly_backup')
+        cron.createRecurringJon('* * * * *', 'python minecraft/weeklyCleanMessage.py', 'weekly_clean_message')
+        cron.createRecurringJon('* * * * *', 'python minecraft/weeklyClean.py', 'weekly_clean')
+>>>>>>> 5a53cc1fc1630d4d0db58025df56c13c201cf79d
         
     def clean(self):
         print('cleaning up server...')
@@ -92,6 +115,7 @@ class Main:
     def configure(self):
         config = Config()
         current = config.read()
+<<<<<<< HEAD
         if current == None: 
             print('No cofiguration found; either deleted or not cofigured! Starting configuration...')
             config.start()
@@ -104,6 +128,14 @@ class Main:
         self.dailyClean = current['dailyClean']
         self.weeklyDay = current['weeklyDay']
         self.weeklyHour = current['weeklyHour']
+=======
+        if current == None: config.start()
+            
+        # parse current and assign config values
+        current = config.read()
+        for line in current:
+            print(line)
+>>>>>>> 5a53cc1fc1630d4d0db58025df56c13c201cf79d
         
     def updateConfig(self):
         print('should update config...')
