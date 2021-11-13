@@ -1,12 +1,11 @@
 # Purpose: install the latest version of Minecraft server on call
 
 import os
-import re
 import requests
 import shutil
 
 from util.date import Date
-from version import Versioner
+from minecraft.version import Versioner
 
 class Installer:
     dir = os.path.dirname(__file__)
