@@ -13,6 +13,7 @@
 
 import shutil
 import os
+import zipfile
 
 from util.cron import CronScheduler
 from util.config import Config
@@ -21,8 +22,10 @@ from util.emailer import PiMailer
 from util.temp import PiTemp
     
 class Main:
-    root = os.path.dirname(__file__)
-    serverDir = os.path.dirname(__file__)
+    rootDir = os.path.dirname(__file__)
+    backupsDir = os.path.join(rootDir, 'minecraft/backups')
+    serverDir = os.path.join(rootDir, 'minecraft/server')
+    endDir = os.path.join(serverDir, 'world_the_end/DIM1/region')
     
     # config
     allottedRam = 1024
@@ -39,7 +42,18 @@ class Main:
     tempMonitor = PiTemp(70, 3, logfile)
     
     def backup(self):
-        print('backing up the server...')
+        if not os.path.isdir(self.backupsDir):
+            os.mkdir(self.backups)
+        zipFilename = '{}/world.zip'.format(self.backups)
+        zip = zipfile.ZipFile(zipFilename, 'w', zipfile.ZIP_DEFLATED)
+        for root, dir, files in os.walk(self.serverDir):
+            for file in files:
+                if '.jar' not in file:
+                    zip.write(
+                        os.path.join(root, file), 
+                        os.path.relpath(os.path.join(root, file), 
+                        os.path.join(path, '..')))
+        zip.close()
         
     def checkVersion(self):
         print('checking for version updates...')

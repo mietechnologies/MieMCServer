@@ -1,8 +1,10 @@
 # Do not include any server-specific files!
 __pycache__
 **/__pycache__
-minecraft/backups
-minecraft/server
+cache/
+logs/
+minecraft/backups/
+minecraft/server/
 *.tar.gz
 *.tgz
 *.gz
