@@ -14,13 +14,7 @@
 import shutil
 import os
 
-from minecraft.install import Installer
-from minecraft.version import Versioner
-<<<<<<< HEAD
 from util.cron import CronScheduler
-=======
-from util import cron
->>>>>>> 5a53cc1fc1630d4d0db58025df56c13c201cf79d
 from util.config import Config
 from util.date import Date
 from util.emailer import PiMailer
@@ -45,16 +39,10 @@ class Main:
     tempMonitor = PiTemp(70, 3, logfile)
     
     def backup(self):
-        print('backing up server...')
+        print('backing up the server...')
         
-    def start(self):
-        # print('Updating jdk installation (your password may be required)...')
-        # os.popen('chmod +x jdk.sh')
-        # os.popen('./jdk.sh')
-        
-        print('Starting server! If you encounter a java exception, please ensure that you have the latest jdk installed...')
-        os.popen('cd {}'.format(self.serverDir))
-        os.popen('java -Xmx{}M -Xms{}M -jar server.jar nogui'.format(self.allottedRam, self.allottedRam))
+    def checkVersion(self):
+        print('checking for version updates...')
         
     def criticalEventOccured(self, type):
         ubject = 'Oh, no! Your RasPi has encountered a critical event...'
@@ -67,85 +55,36 @@ class Main:
             
         self.mailer.sendMail('michael.craun@gmail.com', subject, body, ['logs.txt'])
         
-    def messageServer(self, message):
-        print('should message server with {}'.format(message))
-<<<<<<< HEAD
-        
-    def dailyClean(self):
-        print('should do daily clean...')
-        
-    def weeklyClean(self):
-        print('should do weekly clean...')
-        
     def startMonitors(self):
-        # start temperature monitro
+        # start temperature monitor
         self.tempMonitor.start()
         
-        # schedule main jobs
-        backup = '0 {} * * {}'.format(self.backupHour, self.backupDay)
-        dailyClean = '55 {} * * *'.format(self.dailyClean - 1)
-        weeklyClean = '55 {} * * {}'.format(self.weeklyHour - 1, self.weeklyDay)
-        
+        # schedule cron jobs
         CronScheduler().createRecurringJob('* * * * *', 'python cron/cron_events.py', 'event_monitoring')
-        CronScheduler().createRecurringJob(backup, 'python cron/backup.py', 'weekly_backup')
-        CronScheduler().createRecurringJob(dailyClean, 'python cron/dailyClean.py', 'daily_clean')
-        CronScheduler().createRecurringJob(weeklyClean, 'python cron/weeklyClean.py', 'weekly_clean')
-=======
+        CronScheduler().createRecurringJob('0 8 * * *', 'sudo reboot -p', 'daily reboot')
         
-    def dailyClean(self):
-        print('should do daily clean...')
-        
-    def weeklyClean(self):
-        print('should do weekly clean...')
-        
-    def startMonitors(self):
-        self.tempMonitor.start()
-        cron.createRecurringJob('* * * * *', 'python cron_events.py', 'even_monitoring')
-        cron.createRecurringJon('* * * * *', 'python minecraft/dailyCleanMessage.py', 'daily_clean_message')
-        cron.createRecurringJon('* * * * *', 'python minecraft/dailyClean.py', 'daily_clean')
-        cron.createRecurringJon('* * * * *', 'python minecraft/weeklyBackupMessage.py', 'weekly_backup_message')
-        cron.createRecurringJon('* * * * *', 'python minecraft/clean.py', 'weekly_backup')
-        cron.createRecurringJon('* * * * *', 'python minecraft/weeklyCleanMessage.py', 'weekly_clean_message')
-        cron.createRecurringJon('* * * * *', 'python minecraft/weeklyClean.py', 'weekly_clean')
->>>>>>> 5a53cc1fc1630d4d0db58025df56c13c201cf79d
-        
-    def clean(self):
-        print('cleaning up server...')
+    def trim(self):
+        print('trimming the end...')
         
     def configure(self):
         config = Config()
         current = config.read()
-<<<<<<< HEAD
         if current == None: 
-            print('No cofiguration found; either deleted or not cofigured! Starting configuration...')
+            print('No cofiguration found! Starting configuration...')
             config.start()
             
         # parse current and assign config values
         current = config.read()
         # self.allottedRam = current['allottedRam']
+        self.allottedRam = current['allottedRam']
         self.backupDay = current['backupDay']
         self.backupHour = current['backupHour']
         self.dailyClean = current['dailyClean']
         self.weeklyDay = current['weeklyDay']
         self.weeklyHour = current['weeklyHour']
-=======
-        if current == None: config.start()
-            
-        # parse current and assign config values
-        current = config.read()
-        for line in current:
-            print(line)
->>>>>>> 5a53cc1fc1630d4d0db58025df56c13c201cf79d
         
     def updateConfig(self):
         print('should update config...')
-        
-    def install(self):
-        installer = Installer()
-        self.serverDir = installer.installIfNeeded()
-        
-    def update(self):
-        print('updating server...')
         
     def detectCriticalEvents(self):
         if self.tempMonitor.criticalTemperatureReached():

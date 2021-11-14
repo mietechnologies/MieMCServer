@@ -2,22 +2,18 @@ import os
 import re
 import time
 
-<<<<<<< HEAD
 from .date import Date
 from .cron import CronScheduler
-=======
-from date import Date
-import cron
->>>>>>> 5a53cc1fc1630d4d0db58025df56c13c201cf79d
 
 # dev imports
 import random
 
 class PiTemp:
+    root = os.path.dirname(__file__)
     allowedCriticalEventCount = 3
     maximumTemp = 70.0
     logfile = "temp_log.txt"
-    config = 'config.txt'
+    config = os.path.join(root, 'pitemp-config.txt')
 
     def __init__(self, max = 70.0, count = 3, logfile = "temp_log.txt"):
         self.logfile = logfile
@@ -27,14 +23,9 @@ class PiTemp:
         # write config.txt for later use
         config = open(self.config, 'w')
         config = open(self.config, 'a')
-        config.write('logfile={}'.format(logfile))
-<<<<<<< HEAD
-        config.write('maximum={}'.format(max))
+        config.write('logfile={}\n'.format(logfile))
+        config.write('maximum={}\n'.format(max))
         config.write('minutes={}'.format(count))
-=======
-        config.write('maximum={}'.format(maximumTemp))
-        config.write('minutes={}'.format(allowedCriticalEventCount))
->>>>>>> 5a53cc1fc1630d4d0db58025df56c13c201cf79d
         config.close()
 
     def measureTemp(self):
@@ -50,11 +41,7 @@ class PiTemp:
         
     def log(self, message):
         file = open(self.logfile, "a")
-<<<<<<< HEAD
         file.write("[PiTemp - {date}] {message}\n".format(Date().timestamp(), message))
-=======
-        file.write("[PiTemp - {date}] {message}\n".format(date=Date().timestamp(), message=message))
->>>>>>> 5a53cc1fc1630d4d0db58025df56c13c201cf79d
         file.close()
         
     def logs(self):
@@ -109,7 +96,6 @@ class PiTemp:
         return False
         
     def start(self):
-<<<<<<< HEAD
         if os.path.isfile(self.config) == False:
             file = open(self.config, 'w')
             file.close()
@@ -117,13 +103,6 @@ class PiTemp:
             
     def stop(self):
         CronScheduler().removeJob('measure_temp')
-=======
-        # TODO: Convert this to using a cron job
-        cron.createRecurringJob(time('* * * * *'), 'python cron_temp.py', 'measure_temp')
-            
-    def stop(self):
-        cron.removeJob('measure_temp')
->>>>>>> 5a53cc1fc1630d4d0db58025df56c13c201cf79d
         
     def execute(self):
         # fetch saved values from config
