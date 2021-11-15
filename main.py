@@ -20,13 +20,13 @@ from util.config import Config
 from util.date import Date
 from util.emailer import PiMailer
 from util.temp import PiTemp
-    
+
 class Main:
     rootDir = os.path.dirname(__file__)
     backupsDir = os.path.join(rootDir, 'minecraft/backups')
     serverDir = os.path.join(rootDir, 'minecraft/server')
     endDir = os.path.join(serverDir, 'world_the_end/DIM1/region')
-    
+
     # config
     allottedRam = 1024
     backupDay = 5
@@ -34,13 +34,13 @@ class Main:
     dailyHour = 8
     weeklyDay = 5
     weeklyHour = 7
-    
+
     logfile = 'logs.txt'
-    
+
     # setup utilities
     mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'dymdu9-vowjIt-kejvah')
     tempMonitor = PiTemp(70, 3, logfile)
-    
+
     def backup(self):
         if not os.path.isdir(self.backupsDir):
             os.mkdir(self.backups)
@@ -50,43 +50,50 @@ class Main:
             for file in files:
                 if '.jar' not in file:
                     zip.write(
-                        os.path.join(root, file), 
-                        os.path.relpath(os.path.join(root, file), 
+                        os.path.join(root, file),
+                        os.path.relpath(os.path.join(root, file),
                         os.path.join(path, '..')))
         zip.close()
-        
+
     def checkVersion(self):
         print('checking for version updates...')
-        
+
+    def commands(self):
+        print('executing owner commands...')
+
     def criticalEventOccured(self, type):
         ubject = 'Oh, no! Your RasPi has encountered a critical event...'
         body = ''
-        
+
         if self.criticalTemp:
             body += 'Your RasPi has reached and maintained a critical temperature for too long!\n'
             body += 'Log files from your RasPi have been attached below for your convenience.\n'
             body += 'Please take some time to diagnose and fix the issue and then restart your RasPi. :)\n\n'
-            
+
         self.mailer.sendMail('michael.craun@gmail.com', subject, body, ['logs.txt'])
-        
+
+    def sendLogs(self):
+        print('sending logs to owner...')
+
     def startMonitors(self):
         # start temperature monitor
         self.tempMonitor.start()
-        
+
         # schedule cron jobs
-        CronScheduler().createRecurringJob('* * * * *', 'python cron/cron_events.py', 'event_monitoring')
-        CronScheduler().createRecurringJob('0 8 * * *', 'sudo reboot -p', 'daily reboot')
-        
+        CronScheduler().createRecurringJob('@reboot', 'start.py', 'server_start')
+        CronScheduler().createRecurringJob('* * * * *', 'criticalEvents.py', 'event_monitoring')
+        CronScheduler().createRecurringJob('0 8 * * *', 'reboot.py', 'daily reboot')
+
     def trim(self):
         print('trimming the end...')
-        
+
     def configure(self):
         config = Config()
         current = config.read()
-        if current == None: 
+        if current == None:
             print('No cofiguration found! Starting configuration...')
             config.start()
-            
+
         # parse current and assign config values
         current = config.read()
         # self.allottedRam = current['allottedRam']
@@ -96,18 +103,10 @@ class Main:
         self.dailyClean = current['dailyClean']
         self.weeklyDay = current['weeklyDay']
         self.weeklyHour = current['weeklyHour']
-        
+
     def updateConfig(self):
         print('should update config...')
-        
+
     def detectCriticalEvents(self):
         if self.tempMonitor.criticalTemperatureReached():
             self.criticalEventOccured('temp')
-
-
-
-
-
-
-
-
