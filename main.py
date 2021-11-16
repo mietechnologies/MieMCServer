@@ -28,12 +28,8 @@ class Main:
     endDir = os.path.join(serverDir, 'world_the_end/DIM1/region')
 
     # config
-    allottedRam = 1024
-    backupDay = 5
-    backupHour = 6
+    allottedRam = 2500
     dailyHour = 8
-    weeklyDay = 5
-    weeklyHour = 7
 
     logfile = 'logs.txt'
 
@@ -42,18 +38,21 @@ class Main:
     tempMonitor = PiTemp(70, 3, logfile)
 
     def backup(self):
+        print('Backing up the current world...')
         if not os.path.isdir(self.backupsDir):
             os.mkdir(self.backups)
-        zipFilename = '{}/world.zip'.format(self.backups)
+        zipFilename = '{}/world.zip'.format(self.backupsDir)
         zip = zipfile.ZipFile(zipFilename, 'w', zipfile.ZIP_DEFLATED)
-        for root, dir, files in os.walk(self.serverDir):
+        for root, dirs, files in os.walk(self.serverDir):
             for file in files:
-                if '.jar' not in file:
-                    zip.write(
-                        os.path.join(root, file),
-                        os.path.relpath(os.path.join(root, file),
-                        os.path.join(path, '..')))
+                zip.write(
+                    os.path.join(root, file), 
+                    os.path.relpath(os.path.join(root, file), 
+                    os.path.join(self.serverDir, '..')))
         zip.close()
+        print('Finished creating backup! Preparing to offload...')
+        
+        # TODO: Offload zip to third-party
 
     def checkVersion(self):
         print('checking for version updates...')
@@ -74,15 +73,83 @@ class Main:
 
     def sendLogs(self):
         print('sending logs to owner...')
+        
+    # WARN: Should only be called when first creating the MinePi server and/or when transferring the server to 
+    # another RasPi!
+    # Configures the MinePi for hosting a Minecraft server by completing the following tasks:
+    # - Installs any needed dependencies for running the project
+    # - Creates the appropriate directories and files:
+    #   - minecraft/backups
+    #   - minecraft/server
+    # - Asks user for configuration input
+    # - Grant permissions to use shell scripts
+    # - Installs current stable version of Minecraft server
+    # - Schedules self-maintenance cron jobs
+    def setup(self):
+        # Sanity check to make absolutely sure that we aren't overwriting anything already on the MinePi
+        if os.path.isdir(self.serverDir):
+            print('This MinePi has already been configured! Stopping process!')
+        else:
+            print('Installing needed dependencies! Your input may be required...')
+            os.popen('sudo apt-get install screen')
+            os.popen('sudo apt-get install python3-pip')
+            os.popen('sudo pip install python-crontab')
+            
+            cron = CronScheduler()
+            config = Config()
+                
+            # Otherwise, continue with configuration
+            print('Configuring this MinePi server. Please wait...')
+            
+            # Create appropriate directories and files
+            os.mkdir(self.serverDir)
+            os.mkdir(self.backupsDir)
+            file = open(self.logfile, 'w')
+            # TODO: Create other files here using `file = ...`
+            file.close()
+            
+            # Run user-needed configuration
+            print('WARN: System configuration has not been implemented! Continuing with defaults...')
+            print('System configuration defaults are:')
+            print('allottedRam={}'.format(self.allottedRam))
+            print('rebootSchedule={}'.format(self.dailyHour))
+            # config.start()
+            # current = config.read()
+            # self.allottedRam = current['allottedRam']
+            # self.backupHour = current['backupHour']
+            
+            # Grant permissions to use shell scripts
+            os.popen('sudo chmod +x /home/pi/minePi/cron/start-server.sh')
+            
+            # Install current stable version of Minecraft server
+            # print('Installing latest stable version of Minecraft server...')
+            print('WARN: Automatic installation of Minecraft Server has not been implemented!')
+            print('Please download and install a Paper Minecraft server at /home/pi/minePi/minecraft/server/paper.jar')
+            
+            # schedule cron jobs
+            print('Scheduling self-maintenance cron jobs...')
+            cron.createRecurringJob('@reboot', 'start.py', 'server_start')
+            cron.createRecurringJob('* * * * *', 'criticalEvents.py', 'event_monitoring')
+            cron.createRecurringJob('0 8 * * *', 'reboot.py', 'daily reboot')
+            
+            # Configuartion is complete; wait 30 seconds, then exit ssh and reboot
+            print('Configuration complete! Rebooting this MinePi...')
+            time.sleep(30)
+            os.popen('python cron/reboot.py')
+        
+    # Starting the server
+    def start(self):
+        print('Starting server...')
+        ram = '{}M'.format(self.allottedRam)
+        self.configure()
+        os.popen('sudo ./start-server.sh {}'.format(ram))
+        # os.popen('screen bash')
+        # os.popen('cd {}'.format(self.serverDir))
+        # os.popen('java -XmX{}M -Xms{}M -jar paper.jar nogui'.format(self.allottedRam, self.allottedRam))
 
     def startMonitors(self):
         # start temperature monitor
         self.tempMonitor.start()
-
-        # schedule cron jobs
-        CronScheduler().createRecurringJob('@reboot', 'start.py', 'server_start')
-        CronScheduler().createRecurringJob('* * * * *', 'criticalEvents.py', 'event_monitoring')
-        CronScheduler().createRecurringJob('0 8 * * *', 'reboot.py', 'daily reboot')
 
     def trim(self):
         print('trimming the end...')
@@ -96,13 +163,8 @@ class Main:
 
         # parse current and assign config values
         current = config.read()
-        # self.allottedRam = current['allottedRam']
         self.allottedRam = current['allottedRam']
-        self.backupDay = current['backupDay']
         self.backupHour = current['backupHour']
-        self.dailyClean = current['dailyClean']
-        self.weeklyDay = current['weeklyDay']
-        self.weeklyHour = current['weeklyHour']
 
     def updateConfig(self):
         print('should update config...')

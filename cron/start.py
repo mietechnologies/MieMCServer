@@ -4,10 +4,17 @@
 # - Execute list of user-entered commands
 # - Launch server
 
+import sys
+sys.path.append('..')
+
 from main import Main
 
-main = Main()
-main.backup()
-main.commands()
-main.sendLogs()
-main.start()
+if __name__ == '__main__':
+    main = Main()
+    main.trim()
+    # main.backup()
+    main.checkVersion()
+    main.commands()
+    main.sendLogs()
+    main.startMonitors()
+    main.start()
