@@ -12,7 +12,7 @@ from main import Main
 if __name__ == '__main__':
     main = Main()
     main.trim()
-    # main.backup()
+    main.backup()
     main.checkVersion()
     main.commands()
     main.sendLogs()
