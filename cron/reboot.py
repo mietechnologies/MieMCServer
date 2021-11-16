@@ -4,4 +4,4 @@
 import os
 import sys
 
-os.popen('sudo reboot -f')
+os.system('sudo reboot')
