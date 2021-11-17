@@ -1,3 +1,4 @@
+https://papermc.io/api/v2/projects/paper/versions/{version}/builds/{build}/downloads/{downloads.application.name}
 {
     "project_id": "paper",
     "project_name": "Paper",
@@ -5735,6 +5736,5 @@
                 "sha256": "04621d49fb127e929cd26d8642499e3f7fe39b0d34220f19b17c75acfd30fc5f"
             }
         }
-        https://papermc.io/api/v2/projects/paper/versions/{version}/builds/{build}/downloads/{downloads.name}
     }]
 }
