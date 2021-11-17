@@ -11,6 +11,12 @@ class Versioner:
     changelog = os.path.join(serverRoot, 'changelog.txt')
     versionManifest = 'https://launchermeta.mojang.com/mc/game/version_manifest.json'
     
+    currentBuild = None
+    currentVersion = None
+    latestBuild = None
+    newVersionUrl = None
+    paperManifest = 'https://papermc.io/api/v2/projects/paper/version_group/{}'
+    
     # Determine if a server has been created already
     def serverExists(self):
         if os.path.isdir(self.serverRoot) == False:
@@ -36,16 +42,16 @@ class Versioner:
     
     # Fetches the current version by opening the changelog and checking the its lines in reverse order
     # for a version number that has been installed
-    def currentVersion(self):
-        changelog = open(self.changelog, 'r')
-        lines = list(reversed(changelog.readlines()))
-        for line in lines:
-            if '[INSTALL]' in line:
-                result = re.search('\d+\.\d+\.\d+', line)
-                if result:
-                    version = result.group(0)
-                    return version
-        return None
+    # def currentVersion(self):
+    #     changelog = open(self.changelog, 'r')
+    #     lines = list(reversed(changelog.readlines()))
+    #     for line in lines:
+    #         if '[INSTALL]' in line:
+    #             result = re.search('\d+\.\d+\.\d+', line)
+    #             if result:
+    #                 version = result.group(0)
+    #                 return version
+    #     return None
     
     # Obtains the latest server release version by downloading the official Minecraft version manifest
     # and extracting the value from the JSON
@@ -77,6 +83,44 @@ class Versioner:
         
     def getCurrentVersion(self):
         print('Fetching current version, please wait...')
+        self.currentVersion = 1.17
+    
+    # Fetches the version and build code of the latest stable release of the Paper Minecraft server jar.
+    # WARN: self.getCurrentVersion should always be called before this method!
+    def getLatestVersion(self):
+        print('Fetching latest version, please wait...')
+        
+        # Sanity check; getCurrentVersion should always be called first, but just in case it isn't...
+        if self.currentVersion == None:
+            self.getCurrentVersion()
+            
+        print(self.currentVersion)
+        # Attempt to download the JSON from the version 1 greater than the current version
+        versionToCheck = self.currentVersion + 0.01
+        manifestRequest = requests.get(self.paperManifest.format(versionToCheck))
+        if manifestRequest.status_code >= 200:
+            if manifestRequest.status_code < 300:
+                self.latestVersion = versionToCheck
+            else:
+                self.latestVersion = self.currentVersion
+        else:
+            self.latestVersion = self.currentVersion
+        
+        # Download the JSON from the latest versions Paper downloads site
+        paperManifest = self.paperManifest.format(self.latestVersion)
+        self.paperManifest = '{}/builds'.format(paperManifest)
+        manifestRequest = requests.get(self.paperManifest)
+        manifest = manifestRequest.json()
+        
+        # Builds come back in earliest to latest, so we grab a reference to the last item in the list
+        # and capture the data we need from it
+        builds = manifest['builds']
+        latestBuild = builds[-1]
+        filename = latestBuild['downloads']['application']['name']
+        self.latestBuild = latestBuild['build']
+        self.newVersionUrl = 'https://papermc.io/api/v2/projects/paper/versions/{}/builds/{}/downloads/{}'.format(self.latestVersion, self.latestBuild, filename)
+        
+        return { 'version' : self.latestVersion, 'build' : self.latestBuild, 'download' : self.newVersionUrl }
 
 
 
@@ -86,3 +130,6 @@ class Versioner:
 
 
 
+versioner = Versioner()
+print(versioner.getCurrentVersion())
+print(versioner.getLatestVersion())
