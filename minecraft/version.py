@@ -74,6 +74,9 @@ class Versioner:
             file.close()
             
         return location
+        
+    def getCurrentVersion(self):
+        print('Fetching current version, please wait...')
 
 
 

@@ -2,7 +2,7 @@ import requests
 
 class Installer:
     currentBuild = None
-    vurrentVersion = None
+    currentVersion = None
     latestBuild = None
     latestVersion = None
     newVersionUrl = None
@@ -20,9 +20,12 @@ class Installer:
         # Grab a reference to the Minecraft build code
         self.latestVersion = buildsJson['version_group']
         
-        # Builds come back in earliest to latest, so we need to reorder from latest to earliest
+        # Builds come back in earliest to latest, so we grab a reference to the last item in the list
         builds = buildJson['builds']
         latestBuild = builds[-1]
+        filename = latestBuild['downloads']['application']['name']
+        self.latestBuild = latestBuild['build']
+        self.newVersionUrl = 'https://papermc.io/api/v2/projects/paper/versions/{version}/builds/{build}/downloads/{downloads.name}'
         
         
         
