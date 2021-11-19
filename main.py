@@ -15,6 +15,8 @@ import shutil
 import os
 import zipfile
 
+from minecraft.version import Versioner
+from util import logger
 from util.cron import CronScheduler
 from util.config import Config
 from util.date import Date
@@ -32,6 +34,7 @@ class Main:
     dailyHour = 8
 
     logfile = 'logs.txt'
+    logs = open(logfile, 'a')
 
     # setup utilities
     mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'dymdu9-vowjIt-kejvah')
@@ -39,7 +42,7 @@ class Main:
     versioner = Versioner()
 
     def backup(self):
-        print('Backing up the current world...')
+        logger.log('Backing up the current world...')
         if not os.path.isdir(self.backupsDir):
             os.mkdir(self.backups)
         zipFilename = '{}/world.zip'.format(self.backupsDir)
@@ -51,29 +54,42 @@ class Main:
                     os.path.relpath(os.path.join(root, file), 
                     os.path.join(self.serverDir, '..')))
         zip.close()
-        print('Finished creating backup! Preparing to offload...')
+        logger.log('Finished creating backup! Preparing to offload...')
         
         # TODO: Offload zip to third-party
 
     def checkVersion(self):
-        print('Checking for version updates! Please wait...')
+        logger.log('Checking for version updates! Please wait...')
         body = ''
         subject = 'A new version of the Paper Minecraft server is available!'
         currentVersion = self.versioner.getCurrentVersion()
         latestVersion = self.versioner.getLatestVersion()
-        if currentVersion['versionGroup'] < latestVersion['versionGroup']:
-             body += 'Minecraft Server {} is now available!\n'.format(latestVersion['versionGroup'])
-        if currentVersion['version'] != latestVersion['version']:
-            body += 'Minecraft Server {} is now available!\n'.format(latestVersion['version'])
-        if currentVersion['build'] < latestVersion['build']:
-            body += 'Paper has released update {}!\n'.format(latestVersion['build']))
+        if currentVersion != None:
+            if currentVersion['versionGroup'] < latestVersion['versionGroup']:
+                 body += 'Minecraft Server {} is now available!\n'.format(latestVersion['versionGroup'])
+            if currentVersion['version'] != latestVersion['version']:
+                body += 'Minecraft Server {} is now available!\n'.format(latestVersion['version'])
+            if currentVersion['build'] < latestVersion['build']:
+                body += 'Paper has released update {}!\n'.format(latestVersion['build'])
+        else:
+            logger.log('No Paper Minecraft server has been installed! Please install one.')
             
-        if subject != '':
-            print('A new version of the Minecraft server has been detected and an email has been sent to the owner!')
-            self.mailer.sendMail('michael.craun@gmail.com', subject, body)
+        if body != '':
+            newBody = """
+                Good Morning!
+                Just wanted to let you know that a new version of the Paper Miecraft server has been released:
+                {}
+                If you have a momemnt, please consider updating the server!
+                
+                Thanks a bunch,
+                MinePi
+                """.format(body)
+            logger.log('A new version of the Minecraft server has been detected and an email has been sent to the owner!')
+            # subject += '\n If you have a moment, please consider updating the server!'
+            self.mailer.sendMail('michael.craun@gmail.com', subject, newBody)
 
     def commands(self):
-        print('executing owner commands...')
+        logger.log('executing owner commands...')
 
     def criticalEventOccured(self, type):
         ubject = 'Oh, no! Your RasPi has encountered a critical event...'
@@ -87,7 +103,7 @@ class Main:
         self.mailer.sendMail('michael.craun@gmail.com', subject, body, ['logs.txt'])
 
     def sendLogs(self):
-        print('sending logs to owner...')
+        logger.log('sending logs to owner...')
         
     # WARN: Should only be called when first creating the MinePi server and/or when transferring the server to 
     # another RasPi!
@@ -104,9 +120,9 @@ class Main:
     def setup(self):
         # Sanity check to make absolutely sure that we aren't overwriting anything already on the MinePi
         if os.path.isdir(self.serverDir):
-            print('This MinePi has already been configured! Stopping process!')
+            logger.log('This MinePi has already been configured! Stopping process!')
         else:
-            print('Installing needed dependencies! Your input may be required...')
+            logger.log('Installing needed dependencies! Your input may be required...')
             os.popen('sudo apt-get install screen')
             os.popen('sudo apt-get install python3-pip')
             os.popen('sudo pip install python-crontab')
@@ -115,7 +131,7 @@ class Main:
             config = Config()
                 
             # Otherwise, continue with configuration
-            print('Configuring this MinePi server. Please wait...')
+            logger.log('Configuring this MinePi server. Please wait...')
             
             # Create appropriate directories and files
             os.mkdir(self.serverDir)
@@ -125,10 +141,10 @@ class Main:
             file.close()
             
             # Run user-needed configuration
-            print('WARN: System configuration has not been implemented! Continuing with defaults...')
-            print('System configuration defaults are:')
-            print('allottedRam={}'.format(self.allottedRam))
-            print('rebootSchedule={}'.format(self.dailyHour))
+            logger.log('WARN: System configuration has not been implemented! Continuing with defaults...')
+            logger.log('System configuration defaults are:')
+            logger.log('allottedRam={}'.format(self.allottedRam))
+            logger.log('rebootSchedule={}'.format(self.dailyHour))
             # config.start()
             # current = config.read()
             # self.allottedRam = current['allottedRam']
@@ -139,26 +155,26 @@ class Main:
             
             # Install current stable version of Minecraft server
             # print('Installing latest stable version of Minecraft server...')
-            print('WARN: Automatic installation of Minecraft Server has not been implemented!')
-            print('Please download and install a Paper Minecraft server at /home/pi/minePi/minecraft/server/paper.jar')
+            logger.log('WARN: Automatic installation of Minecraft Server has not been implemented!')
+            logger.log('Please download and install a Paper Minecraft server at /home/pi/minePi/minecraft/server/paper.jar')
             
             # schedule cron jobs
-            print('Scheduling self-maintenance cron jobs...')
+            logger.log('Scheduling self-maintenance cron jobs...')
             cron.createRecurringJob('@reboot', 'start.py', 'server_start')
             cron.createRecurringJob('* * * * *', 'criticalEvents.py', 'event_monitoring')
             cron.createRecurringJob('0 8 * * *', 'reboot.py', 'daily reboot')
             
             # Configuartion is complete; wait 30 seconds, then exit ssh and reboot
-            print('Configuration complete! Rebooting this MinePi...')
+            logger.log('Configuration complete! Rebooting this MinePi...')
             time.sleep(30)
             os.popen('python cron/reboot.py')
         
     # Starting the server
     def start(self):
-        print('Starting server...')
+        logger.log('Starting server...')
         ram = '{}M'.format(self.allottedRam)
         self.configure()
-        os.popen('sudo ./start-server.sh {}'.format(ram))
+        os.popen('sudo ./start-server.sh {} > /home/pi/minePi/bootlog.txt'.format(ram))
         # os.popen('screen bash')
         # os.popen('cd {}'.format(self.serverDir))
         # os.popen('java -XmX{}M -Xms{}M -jar paper.jar nogui'.format(self.allottedRam, self.allottedRam))
@@ -168,13 +184,13 @@ class Main:
         self.tempMonitor.start()
 
     def trim(self):
-        print('trimming the end...')
+        logger.log('trimming the end...')
 
     def configure(self):
         config = Config()
         current = config.read()
         if current == None:
-            print('No cofiguration found! Starting configuration...')
+            logger.log('No cofiguration found! Starting configuration...')
             config.start()
 
         # parse current and assign config values
@@ -183,7 +199,7 @@ class Main:
         self.backupHour = current['backupHour']
 
     def updateConfig(self):
-        print('should update config...')
+        logger.log('should update config...')
 
     def detectCriticalEvents(self):
         if self.tempMonitor.criticalTemperatureReached():

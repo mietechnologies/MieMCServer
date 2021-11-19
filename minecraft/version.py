@@ -90,8 +90,7 @@ class Versioner:
         
         # Sanity check; getCurrentVersion should always be called first, but just in case it isn't...
         if self.currentVersionGroup == None:
-            print('WARN: getCurrentVersion was not called first; attempting to fetch now...')
-            print('Please adjust your script to call getCurrentVersion first!')
+            print('WARN: No current version group found; did you use getCurrentVersion first?')
             self.getCurrentVersion()
             
         # If currentVersion is still None, there is no version currently installed. Should fetch the

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # On start, we want to:
 # - Backup current world
 # - Send logs to owner via email

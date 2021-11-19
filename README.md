@@ -1,19 +1,21 @@
-<!-- TODO: Add cost breakdown -->
-<!-- TODO: Add usage --> 
-<!-- TODO: Add license -->
-<!-- TODO: Add installation -->
-
-<!-- I think the idea of this project needs to change just slightly. I'm starting to think that the server should run 
-on Paper (which doesn't have a way to automatically download, AFAIK) so the project should be modified so that:
-- The Pi starts the server automatically whenever it starts up
-- The Pi starts the monitoring functionality automatically whenever it starts up
-- The Pi schedules cleanup and backup tasks using cron automatically whenever it stats up
-The project should NOT:
-- Configure the MinePi project automatically (values used will be hardcoded manually)
-- Install the latest version of the server if none exist (this will be done by the user manually)
-- Check for updates (this will be done by the user and updated manually)
--->
-
-<!-- Directories: below is a list of important directories and their purpose:
+<!-- 
+Directories: below is a list of important directories and their purpose:
 - /minePi/minecraft/backups                 -> Used to store backups of the server world
 - /minePi/minecraft/server                  -> Where the server files are stored (.jar, /world, etc.)
+-->
+
+# MinePi
+
+## Cost
+For convenience, the total cost of the MinePi project is broken down in the table below. The costs listed are in USD and are current as of 11/19/2021. 
+<!-- TODO: Add cost table -->
+
+## Installation
+
+## Usage
+
+## Development
+### Logging
+The MinePi project has been set up to log almost everything into a single log file that is sent to the owner upon each reboot. 
+
+## License
