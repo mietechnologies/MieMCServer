@@ -36,6 +36,7 @@ class Main:
     # setup utilities
     mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'dymdu9-vowjIt-kejvah')
     tempMonitor = PiTemp(70, 3, logfile)
+    versioner = Versioner()
 
     def backup(self):
         print('Backing up the current world...')
@@ -55,7 +56,21 @@ class Main:
         # TODO: Offload zip to third-party
 
     def checkVersion(self):
-        print('checking for version updates...')
+        print('Checking for version updates! Please wait...')
+        body = ''
+        subject = 'A new version of the Paper Minecraft server is available!'
+        currentVersion = self.versioner.getCurrentVersion()
+        latestVersion = self.versioner.getLatestVersion()
+        if currentVersion['versionGroup'] < latestVersion['versionGroup']:
+             body += 'Minecraft Server {} is now available!\n'.format(latestVersion['versionGroup'])
+        if currentVersion['version'] != latestVersion['version']:
+            body += 'Minecraft Server {} is now available!\n'.format(latestVersion['version'])
+        if currentVersion['build'] < latestVersion['build']:
+            body += 'Paper has released update {}!\n'.format(latestVersion['build']))
+            
+        if subject != '':
+            print('A new version of the Minecraft server has been detected and an email has been sent to the owner!')
+            self.mailer.sendMail('michael.craun@gmail.com', subject, body)
 
     def commands(self):
         print('executing owner commands...')
@@ -81,6 +96,7 @@ class Main:
     # - Creates the appropriate directories and files:
     #   - minecraft/backups
     #   - minecraft/server
+    #   - logfile.txt
     # - Asks user for configuration input
     # - Grant permissions to use shell scripts
     # - Installs current stable version of Minecraft server

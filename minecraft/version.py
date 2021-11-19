@@ -18,50 +18,31 @@ class Versioner:
     latestVersion = None
     latestVersionGroup = None
     newVersionUrl = None
-    manifestTemplate = 'https://papermc.io/api/v2/projects/paper/version_group/{}'
-    
+    versionManifestUrlTemplate = 'https://papermc.io/api/v2/projects/paper/version_group/{}'
+    manifestUrlTemplate = "https://papermc.io/api/v2/projects/paper/version_group/{}/builds"
+    downloadUrlTemplat = "https://papermc.io/api/v2/projects/paper/versions/{}/builds/{}/downloads/{}"
     
     dir = os.path.dirname(__file__)
     serverDir = os.path.join(dir, 'server')
     versionlog = os.path.join(serverDir, 'versionlog.txt')
-    
-    # Determine if a server has been created already
-    def serverExists(self):
-        if os.path.isdir(self.serverRoot) == False:
-            os.mkdir(self.serverRoot)
-            
-        if os.path.isfile(self.changelog) == False:
-            changelog = open(self.changelog, "w")
-            changelog.close()
-            
-        serverContents = os.listdir(self.serverRoot)
-        if len(serverContents) == 0:
-            # No server has been downloaded yet
-            return False
-        else:
-            # The folder has contents, but it's not completely accurate to say that a sever exists
-            # To make positive confirmation that a server has been installed, read the changelog
-            # and see if it contains a line that indicates the server has been installed
-            changelog = open(self.changelog, 'r').read()
-            if '[INSTALL]' in changelog:
-                return True
-            else:
-                return False
                 
+    # Extracts the data that we care about (if it exists) from any JSON return. 
     def extractDataFrom(self, json):
         output = {}
         # If JSON contains an error
         if 'error' in json.keys(): otput['error'] = json['error']
         
-        # If JSON is a version packet
-        if 'version_group' in json.keys(): output['versionGroup'] = json['version_group']
+        # If JSON is a version packet. Note that this assumes that version and version_group are in order
+        # from oldest to newest. If this changes in the future, this method WILL break.
+        if 'version_group' in json.keys(): output['versionGroup'] = float(json['version_group'])
         if 'versions' in json.keys(): output['version'] = json['versions'][-1]
         
-        # If JSON is a build collection packet
+        # If JSON is a build collection packet. Note that this assumes that build is in order from oldest
+        # to newest. If this changes in the furute, this method WILL break.
         if 'builds' in json.keys():
             latestBuild = json['builds'][-1]
             if 'version' in latestBuild.keys(): output['version'] = latestBuild['version']
-            if 'build' in latestBuild.keys(): output['build'] = latestBuild['build']
+            if 'build' in latestBuild.keys(): output['build'] = int(latestBuild['build'])
             if 'downloads' in latestBuild.keys():
                 downloads = latestBuild['downloads']
                 if 'application' in downloads.keys():
@@ -70,25 +51,10 @@ class Versioner:
                         output['filename'] = application['name']
                         
         return output
-                
-    # Creates and retuns a directory for a given version
-    def fetchVersionDirectory(self, name):
-        # Check for and create version folder if needed
-        location = os.path.join(self.serverRoot, name)
-        if os.path.isdir(location) == False:
-            os.mkdir(location)
         
-        # Check for and create server.jar if needed
-        jar = os.path.join(location, 'server.jar')
-        if os.path.isfile(jar) == False:
-            file = open(jar, "w")
-            file.close()
-            
-        return location
-        
+    # Reads the current version from the versionlog, if it exists. Otherwise, assumes no server has been
+    # installed yet and returns None.
     def getCurrentVersion(self):
-        print('Fetching current version, please wait...')
-        
         # If the version log exists, we can assume that the Paper server has already been installed, 
         # so we need to parse the lines contained within and pull out the latest version group, 
         # version, and build.
@@ -124,54 +90,55 @@ class Versioner:
         
         # Sanity check; getCurrentVersion should always be called first, but just in case it isn't...
         if self.currentVersionGroup == None:
+            print('WARN: getCurrentVersion was not called first; attempting to fetch now...')
+            print('Please adjust your script to call getCurrentVersion first!')
             self.getCurrentVersion()
             
-        # If currentVersion is still None, there is no version currently installed. Should just fetch
-        # the latest 1.17.1 version by default.
+        # If currentVersion is still None, there is no version currently installed. Should fetch the
+        # latest iteration of the default version (1.17)
         if self.currentVersionGroup == None:
-            self.latestVersionGroup = 1.17
-            versionsRequest = requests.get(self.manifestTemplate.format(self.latestVersionGroup))
-            manifests = self.extractDataFrom(versionsRequest.json())
-            
-            # TODO: Implement
-            return {  }
+            print('ERR: There is no currently installed Minecraft Server!')
+            self.currentVersionGroup = 1.17
             
         # Attempt to download the JSON from the version group 0.01 greater than the current version group
         # If this fails, there is no greater version group, so data for the current version group should 
         # be fetched. Otherwise, there is a new version, so an update message should be displayed.
         # WARN: At some point in the future, the Minecraft Server version numbers may drastically change 
-        # and this code has no way to detect that. In the future, we should add a check against the last 
-        # install date and if it has been more than some arbitrary amount of time since the server was 
-        # updated, we should display a message to alert the user so they can update manually.
+        # and this code has no way to detect that. Ideas to help this situation in the future:
+        # - Add a check against the last install date and if it has been more than some arbitrary amount 
+        #   of time since the server was updated, we should display a message to alert the user so they 
+        #   can update manually.
         versionToCheck = self.currentVersionGroup + 0.01
-        manifestRequest = requests.get(self.manifestTemplate.format(versionToCheck))
-        statusCode = manifestRequest.status_code
+        newVersionRequest = requests.get(self.versionManifestUrlTemplate.format(versionToCheck))
+        statusCode = newVersionRequest.status_code
         if statusCode >= 200 and statusCode < 300: self.latestVersionGroup = versionToCheck
         else: self.latestVersionGroup = self.currentVersionGroup
         
-        # TODO: This is wrong...
-        # Download the JSON from the latest versions Paper downloads site
-        paperManifest = self.manifestTemplate.format(self.latestVersion)
-        self.manifestTemplate = '{}/builds'.format(paperManifest)
-        manifestRequest = requests.get(self.manifestTemplate)
-        manifest = manifestRequest.json()
-    
-        # TODO: This is wrong...    
-        # Builds come back in earliest to latest, so we grab a reference to the last item in the list
-        # and capture the data we need from it
-        builds = manifest['builds']
-        latestBuild = builds[-1]
-        filename = latestBuild['downloads']['application']['name']
-        self.latestVersion = latestBuild['version']
-        self.latestBuild = latestBuild['build']
-        self.newVersionUrl = 'https://papermc.io/api/v2/projects/paper/versions/{}/builds/{}/downloads/{}'.format(self.latestVersion, self.latestBuild, filename)
+        # Download the JSON from the Paper downloads site
+        manifestRequest = requests.get(self.manifestUrlTemplate.format(self.latestVersionGroup))
+        manifest = self.extractDataFrom(manifestRequest.json())
+        return manifest
         
-        # TODO: This is wrong...
-        return { 
-            'version' : self.latestVersion, 
-            'build' : self.latestBuild, 
-            'download' : self.newVersionUrl 
-        }
+    # Determine if a server has been created already
+    def serverExists(self):
+        if os.path.isdir(self.serverRoot) == False:
+            os.mkdir(self.serverRoot)
+            
+        if os.path.isfile(self.changelog) == False:
+            changelog = open(self.changelog, "w")
+            changelog.close()
+            
+        serverContents = os.listdir(self.serverRoot)
+        if len(serverContents) == 0:
+            # No server has been downloaded and/or created yet
+            return False
+        else:
+            # The folder has contents, but it's not completely accurate to say that a sever exists
+            # To make positive confirmation that a server has been installed, read the changelog
+            # and see if it contains a line that indicates the server has been installed
+            changelog = open(self.changelog, 'r').read()
+            if '[INSTALL]' in changelog: return True
+            else: return False
 
 
 
@@ -180,7 +147,3 @@ class Versioner:
 
 
 
-
-versioner = Versioner()
-print(versioner.getCurrentVersion())
-print(versioner.getLatestVersion())
