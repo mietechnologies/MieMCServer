@@ -1,0 +1,18 @@
+https: //papermc.io/api/v2/projects/paper/version_group/1.16
+    {
+        "project_id": "paper",
+        "project_name": "Paper",
+        "version_group": "1.16",
+        "versions": ["1.16.1", "1.16.2", "1.16.3", "1.16.4", "1.16.5"]
+    }
+https: //papermc.io/api/v2/projects/paper/version_group/1.18
+    {
+        "error": "no such version group"
+    }
+https: //papermc.io/api/v2/projects/paper/version_group/1.17
+    {
+        "project_id": "paper",
+        "project_name": "Paper",
+        "version_group": "1.17",
+        "versions": ["1.17", "1.17.1"]
+    }

@@ -1,14 +1,25 @@
 # Do not include any server-specific files!
-__pycache__
-**/__pycache__
 cache/
 logs/
 minecraft/backups/
 minecraft/server/
+
+# Do not include any automatically generated Python files
+__pycache__
+**/__pycache__
+*.pyc
+
+# Do not include any archives or archive SHA's
 *.tar.gz
 *.tgz
 *.gz
 $.sha256
-*.pyc
+
+# Do not include any logs
 *.txt
+
+# Do not include any Mac-specific files
 *.DS_Store
+
+# Include ALL files in the example directory
+!example/*
