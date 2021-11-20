@@ -1,6 +1,6 @@
 import os
 
-from logger import log
+from util.logger import log
 
 class Config:
     root = os.path.dirname(__file__)

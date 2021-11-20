@@ -91,8 +91,6 @@ class Versioner:
     # Fetches the version and build code of the latest stable release of the Paper Minecraft server jar.
     # WARN: self.getCurrentVersion should always be called before this method!
     def getLatestVersion(self):
-        logger.log('Fetching latest version, please wait...')
-        
         # Sanity check; getCurrentVersion should always be called first, but just in case it isn't...
         if self.currentVersionGroup == None:
             logger.log('WARN: No current version group found; did you use getCurrentVersion first?')
