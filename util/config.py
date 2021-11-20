@@ -1,5 +1,7 @@
 import os
 
+from logger import log
+
 class Config:
     root = os.path.dirname(__file__)
     file = os.path.join(root, 'config.txt')
@@ -14,28 +16,28 @@ class Config:
                 return int(response)
         if response in accepted:
             return response
-        print('Invalid input [{}]'.format(response))
+        log('Invalid input [{}]'.format(response))
         return self.confirmInput(input(), accepted, isInt)
     
     def allottedRam(self):
         # TODO: Fetch maximum RAM from system
-        print('WARNING: MinePi does NOT know how much RAM your Pi has available!')
-        print('WARNING: Your server should never consume more than 75% of your total RAM!')
-        print('How much RAM would you like to dedicate to your server?')
+        log('WARNING: MinePi does NOT know how much RAM your Pi has available!')
+        log('WARNING: Your server should never consume more than 75% of your total RAM!')
+        log('How much RAM would you like to dedicate to your server?')
         allotted = self.confirmInput(input(), [], True)
         return allotted
         
     def backupSchedule(self):
-        print('What day of the week would you like to backup your server? {}'.format(self.weekdays))
+        log('What day of the week would you like to backup your server? {}'.format(self.weekdays))
         day = self.confirmInput(input(), self.weekdays)
         
-        print('What hour of the day would you like to backup your server? (UTC; 0 is not accepted)')
+        log('What hour of the day would you like to backup your server? (UTC; 0 is not accepted)')
         hour = self.confirmInput(input(), self.hours, True)
         
         return { 'day' : day, 'hour' : hour }
         
     def dailyCleanSchedule(self):
-        print('What hour of the day would you like to run daily clean up of your server? (UTC; 0 is not accpeted)')
+        log('What hour of the day would you like to run daily clean up of your server? (UTC; 0 is not accpeted)')
         hour = self.confirmInput(input(), self.hours, True)
         return hour
         
@@ -50,16 +52,18 @@ class Config:
         return None
         
     def weeklyCleanSchedule(self):
-        print('What day of the week would you like to run weekly clean up of your server? {}'.format(self.weekdays))
+        message = 'What day of the week would you like to run weekly clean up of your server? {}'.format(self.weekdays)
+        log(message)
         day = self.confirmInput(input(), self.weekdays)
         
-        print('What hour of the day would you like to run weekly clean up of your server? (UTC; 0 is not accepted)')
+        message = 'What hour of the day would you like to run weekly clean up of your server? (UTC; 0 is not accepted)'
+        log(message)
         hour = self.confirmInput(input(), self.hours, True)
         
         return { 'day' : day, 'hour' : hour }
     
     def start(self):
-        print('Starting config...')
+        log('Starting config...')
         # Should ask user for input on the following:
         # - allotted RAM
         # - backup schedule

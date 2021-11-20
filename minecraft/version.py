@@ -1,9 +1,14 @@
 # Purpose: This class should act as a global "versioner" for the MinePi project to limit
 # repetitive code used in the various other files in the MinePi project.
 
+import sys
+sys.path.append('..')
+
 import os
 import re
 import requests
+
+from util import logger
 
 class Versioner:
     dir = os.path.dirname(__file__)
@@ -86,17 +91,17 @@ class Versioner:
     # Fetches the version and build code of the latest stable release of the Paper Minecraft server jar.
     # WARN: self.getCurrentVersion should always be called before this method!
     def getLatestVersion(self):
-        print('Fetching latest version, please wait...')
+        logger.log('Fetching latest version, please wait...')
         
         # Sanity check; getCurrentVersion should always be called first, but just in case it isn't...
         if self.currentVersionGroup == None:
-            print('WARN: No current version group found; did you use getCurrentVersion first?')
+            logger.log('WARN: No current version group found; did you use getCurrentVersion first?')
             self.getCurrentVersion()
             
         # If currentVersion is still None, there is no version currently installed. Should fetch the
         # latest iteration of the default version (1.17)
         if self.currentVersionGroup == None:
-            print('ERR: There is no currently installed Minecraft Server!')
+            logger.log('ERR: There is no currently installed Minecraft Server!')
             self.currentVersionGroup = 1.17
             
         # Attempt to download the JSON from the version group 0.01 greater than the current version group
