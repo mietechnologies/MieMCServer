@@ -102,7 +102,24 @@ class Main:
         self.mailer.sendMail('michael.craun@gmail.com', subject, body, ['logs.txt'])
 
     def sendLogs(self):
-        logger.log('sending logs to owner...')
+        root = os.path.dirname(__file__)
+        logs = os.path.join(root, 'logs.txt')
+        bootlog = os.path.join(root, 'bootlog.txt')
+        files = []
+
+        if os.path.isfile(logs): files.append(logs)
+        if os.path.isfile(bootlog): files.append(bootlog)
+
+        subject = 'Daily Report [{}]'.format(Date().timestamp())
+        body = '''
+        Hey there!
+        Just sending you your daily report! You can find logs attached below:
+
+        Thanks a bunch,
+        MinePi
+        
+        '''
+        self.mailer.sendMail('michael.craun@gmail.com', subject, body, files)
         
     # WARN: Should only be called when first creating the MinePi server and/or when transferring the server to 
     # another RasPi!
