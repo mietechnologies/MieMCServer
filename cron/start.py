@@ -17,6 +17,5 @@ if __name__ == '__main__':
     main.backup()
     main.checkVersion()
     main.commands()
-    main.sendLogs()
     main.startMonitors()
     main.start()
