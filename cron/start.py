@@ -16,6 +16,6 @@ if __name__ == '__main__':
     main.trim()
     main.backup()
     main.checkVersion()
-    main.commands()
     main.startMonitors()
     main.start()
+    main.commands()
