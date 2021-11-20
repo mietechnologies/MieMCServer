@@ -1,6 +1,4 @@
-from util import logger
+from main import Main
 
-logger.start('this is a test start')
-
-for index in range(40):
-    logger.log('this is a test [{}]'.format(index))
+main = Main()
+main.checkVersion()

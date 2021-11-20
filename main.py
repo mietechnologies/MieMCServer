@@ -15,6 +15,7 @@ import shutil
 import os
 import zipfile
 
+from minecraft.install import Installer
 from minecraft.version import Versioner
 from util import logger
 from util.cron import CronScheduler
@@ -37,6 +38,7 @@ class Main:
     logs = open(logfile, 'a')
 
     # setup utilities
+    installer = Installer()
     mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'dymdu9-vowjIt-kejvah')
     tempMonitor = PiTemp(70, 3, logfile)
     versioner = Versioner()
@@ -62,31 +64,28 @@ class Main:
         logger.log('Checking for version updates! Please wait...')
         body = ''
         subject = 'A new version of the Paper Minecraft server is available!'
-        currentVersion = self.versioner.getCurrentVersion()
-        latestVersion = self.versioner.getLatestVersion()
-        if currentVersion != None:
-            if currentVersion['versionGroup'] < latestVersion['versionGroup']:
-                 body += 'Minecraft Server {} is now available!\n'.format(latestVersion['versionGroup'])
-            if currentVersion['version'] != latestVersion['version']:
-                body += 'Minecraft Server {} is now available!\n'.format(latestVersion['version'])
-            if currentVersion['build'] < latestVersion['build']:
-                body += 'Paper has released update {}!\n'.format(latestVersion['build'])
-        else:
-            logger.log('No Paper Minecraft server has been installed! Please install one.')
-            
-        if body != '':
-            newBody = """
-                Good Morning!
-                Just wanted to let you know that a new version of the Paper Miecraft server has been released:
-                {}
+        current = self.versioner.getCurrentVersion()
+        latest = self.versioner.getLatestVersion()
+        if current == None:
+            logger.log('No server currently installed! Installing now...')
+            self.installer.install()
+        elif current['build'] < latest['build']:
+            logger.log('Outdated build detected! Installing latest build for {} now...'.format(latest['version']))
+            self.installer.install()
+        else: 
+            build = latest['build']
+            version = latest['version']
+            subject = 'Minecraft server {}:{} available now!'.format(version, build)
+            body = """
+                Hello there!
+                Just wanted to let you know that a new version of the Paper Miecraft server [{}:{}] has been released!
                 If you have a momemnt, please consider updating the server!
                 
                 Thanks a bunch,
                 MinePi
-                """.format(body)
+            """.format(version, build)
             logger.log('A new version of the Minecraft server has been detected and an email has been sent to the owner!')
-            # subject += '\n If you have a moment, please consider updating the server!'
-            self.mailer.sendMail('michael.craun@gmail.com', subject, newBody)
+            self.mailer.sendMail('michael.craun@gmail.com', subject, body)
 
     def commands(self):
         logger.log('executing owner commands...')
@@ -129,6 +128,7 @@ class Main:
             
             cron = CronScheduler()
             config = Config()
+            installer = Installer()
                 
             # Otherwise, continue with configuration
             logger.log('Configuring this MinePi server. Please wait...')
@@ -154,17 +154,16 @@ class Main:
             os.popen('sudo chmod +x /home/pi/minePi/cron/start-server.sh')
             
             # Install current stable version of Minecraft server
-            # print('Installing latest stable version of Minecraft server...')
-            logger.log('WARN: Automatic installation of Minecraft Server has not been implemented!')
-            logger.log('Please download and install a Paper Minecraft server at /home/pi/minePi/minecraft/server/paper.jar')
+            logger.log('Initializing server jar...')
+            self.installer.install()
             
-            # schedule cron jobs
+            # Schedule cron jobs
             logger.log('Scheduling self-maintenance cron jobs...')
             cron.createRecurringJob('@reboot', 'start.py', 'server_start')
             cron.createRecurringJob('* * * * *', 'criticalEvents.py', 'event_monitoring')
             cron.createRecurringJob('0 8 * * *', 'reboot.py', 'daily reboot')
             
-            # Configuartion is complete; wait 30 seconds, then exit ssh and reboot
+            # Configuartion is complete; wait 30 seconds, then reboot
             logger.log('Configuration complete! Rebooting this MinePi...')
             time.sleep(30)
             os.popen('python cron/reboot.py')
@@ -204,3 +203,8 @@ class Main:
     def detectCriticalEvents(self):
         if self.tempMonitor.criticalTemperatureReached():
             self.criticalEventOccured('temp')
+
+
+
+
+
