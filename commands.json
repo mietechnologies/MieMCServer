@@ -1,0 +1,5 @@
+{
+	"commands": [
+		"datapack enable file/custom_crafting"
+	]
+}

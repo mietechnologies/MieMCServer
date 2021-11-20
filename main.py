@@ -11,8 +11,9 @@
     # Create new server with a specific world name
     # Update server to the latest version if needed
 
-import shutil
+import json
 import os
+import shutil
 import zipfile
 
 from minecraft.install import Installer
@@ -34,8 +35,9 @@ class Main:
     allottedRam = 2500
     dailyHour = 8
 
+    bootlog = 'bootlog.txt'
+    commandfile = 'commands.json'
     logfile = 'logs.txt'
-    logs = open(logfile, 'a')
 
     # setup utilities
     installer = Installer()
@@ -88,7 +90,20 @@ class Main:
             self.mailer.sendMail('michael.craun@gmail.com', subject, body)
 
     def commands(self):
-        logger.log('executing owner commands...')
+        # Execute any server commands given by the owner
+        local = open(self.commandfile, 'r').read()
+        jsonCommands = json.loads(local)
+        commands = jsonCommands['commands']
+        if commands != None and commands != []:
+            logger.log('Executing owner commands...')
+            for command in commands:
+                logger.log('COMMAND: {}'.format(command))
+                os.popen(command)
+
+        # Prepare file for next run
+        local = open(self.commandfile, 'w')
+        local.write(json.dumps({ "commands" : [  ] }))
+        local.close()
 
     def criticalEventOccured(self, type):
         ubject = 'Oh, no! Your RasPi has encountered a critical event...'
@@ -102,14 +117,6 @@ class Main:
         self.mailer.sendMail('michael.craun@gmail.com', subject, body, ['logs.txt'])
 
     def sendLogs(self):
-        root = os.path.dirname(__file__)
-        logs = os.path.join(root, 'logs.txt')
-        bootlog = os.path.join(root, 'bootlog.txt')
-        files = []
-
-        if os.path.isfile(logs): files.append(logs)
-        if os.path.isfile(bootlog): files.append(bootlog)
-
         subject = 'Daily Report [{}]'.format(Date().timestamp())
         body = '''
         Hey there!
@@ -119,7 +126,7 @@ class Main:
         MinePi
         
         '''
-        self.mailer.sendMail('michael.craun@gmail.com', subject, body, files)
+        self.mailer.sendMail('michael.craun@gmail.com', subject, body, [self.bootlog, self.logfile])
         
     # WARN: Should only be called when first creating the MinePi server and/or when transferring the server to 
     # another RasPi!
@@ -153,6 +160,8 @@ class Main:
             # Create appropriate directories and files
             os.mkdir(self.serverDir)
             os.mkdir(self.backupsDir)
+            file = open(self.bootlog, 'w')
+            file = open(self.commandfile, 'w')
             file = open(self.logfile, 'w')
             # TODO: Create other files here using `file = ...`
             file.close()
