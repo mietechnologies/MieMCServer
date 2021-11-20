@@ -1,7 +1,7 @@
 from datetime import datetime
 
 class Date:
-    dateFormat = '%d/%m/%Y %H:%M:%S.%f'
+    dateFormat = '%m/%d/%Y %H:%M:%S.%f'
     
     def format(self, date, formatString):
         return date.strftime(formatString)
