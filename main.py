@@ -126,7 +126,12 @@ class Main:
         MinePi
         
         '''
-        self.mailer.sendMail('michael.craun@gmail.com', subject, body, [self.bootlog, self.logfile])
+
+        # Files sent to the sendMail method cannot be string references, so we will create os path references
+        # for these files before sending them
+        bootlog = os.path.join(self.rootDir, self.bootlog)
+        logfile = os.path.join(self.rootDir, self.logfile)
+        self.mailer.sendMail('michael.craun@gmail.com', subject, body, [bootlog, logfile])
         
     # WARN: Should only be called when first creating the MinePi server and/or when transferring the server to 
     # another RasPi!
