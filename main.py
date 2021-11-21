@@ -14,6 +14,7 @@
 import json
 import os
 import shutil
+import sys
 import zipfile
 
 from minecraft.install import Installer
@@ -91,7 +92,8 @@ class Main:
 
     def commands(self):
         # Execute any server commands given by the owner
-        local = open(self.commandfile, 'r').read()
+        file = os.path.join(self.rootDir, self.commandfile)
+        local = open(file, 'r').read()
         jsonCommands = json.loads(local)
         commands = jsonCommands['commands']
         if commands != None and commands != []:
@@ -101,7 +103,7 @@ class Main:
                 os.popen(command)
 
         # Prepare file for next run
-        local = open(self.commandfile, 'w')
+        local = open(file, 'w')
         local.write(json.dumps({ "commands" : [  ] }))
         local.close()
 
