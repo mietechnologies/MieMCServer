@@ -12,6 +12,7 @@ import sys
 sys.path.append('..')
 
 from minecraft.version import Versioner
+from util.emailer import PiMailer
 from util.logger import log
 
 class Installer:
@@ -37,20 +38,39 @@ class Installer:
         # Otherwise, if latest does not match current, user should be alerted
         if shouldInstallLatest: 
             self.installLatest(latest)
-        elif current != latest:
-            build = latest['build']
-            version = latest['version']
-            message = 'Version {}:{} has been released! Please consider updating!'.format(version, build)
-            log(message)
+        else:
+            # Has a new version of the Paper Minecraft server been released?
+            currentVersion = current['version']
+            latestVersion = latest['version']
 
-        log('Version {}:{} has been installed...'.format(latest['version'], latest['build']))
+            # If so, log it and send an email to the user
+            if currentVersion != latestVersion:
+                build = latest['build']
+                message = 'Version {}:{} has been released! Please consider updating!'.format(latestVersion, build)
+                log(message)
 
-    def installLatest(self, version):
+                mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'dymdu9-vowjIt-kejvah')
+                subject = 'Version {}:{} has been released!'.format(latestVersion, build)
+                body = '''
+                Hey there! 
+
+                Great news! Version {}:{} has been released! I won't install major or minor updates for you so you don't lose any data, but you should consider updating when you get a chance.
+
+                Don't worry about remembering, though; I'll send you an email every time I reboot. :)
+
+                Thanks a bunch,
+                MinePi
+                '''.format(latestVersion, build)
+                mailer.sendMail('michael.craun@gmail.com', subject, body)
+
+        log('Latest version [{}:{}] has been installed...'.format(latest['version'], latest['build']))
+
+    def installLatest(self, latest):
         # Construct download url and download
         log('Downloading latest build of server jar...')
-        build = version['build']
-        file = version['filename']
-        version = version['version']
+        build = latest['build']
+        file = latest['filename']
+        version = latest['version']
         url = self.downloadUrlTemplate.format(version, build, file)
         source = self.downloadFrom(url)
         
@@ -59,6 +79,10 @@ class Installer:
         if os.path.isdir(self.serverDir) == False:
             os.mkdir(self.serverDir)
         os.replace(source, self.serverJar)
+
+        # Update the version log with the new server jar info
+        print(latest)
+        self.versioner.updateInstalledVersion(latest)
 
     def downloadFrom(self, url):
         with requests.get(url, stream=True) as request:
