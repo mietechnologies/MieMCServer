@@ -49,7 +49,7 @@ class Installer:
                 message = 'Version {}:{} has been released! Please consider updating!'.format(latestVersion, build)
                 log(message)
 
-                mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'dymdu9-vowjIt-kejvah')
+                mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'nywfAh-2hobha-zonquh')
                 subject = 'Version {}:{} has been released!'.format(latestVersion, build)
                 body = '''
                 Hey there! 

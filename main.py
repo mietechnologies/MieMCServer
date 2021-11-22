@@ -42,7 +42,7 @@ class Main:
 
     # setup utilities
     installer = Installer()
-    mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'dymdu9-vowjIt-kejvah')
+    mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'nywfAh-2hobha-zonquh')
     tempMonitor = PiTemp(70, 3, logfile)
     versioner = Versioner()
 
