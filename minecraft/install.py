@@ -12,6 +12,7 @@ import sys
 sys.path.append('..')
 
 from minecraft.version import Versioner
+from util.emailer import PiMailer
 from util.logger import log
 
 class Installer:
@@ -38,12 +39,29 @@ class Installer:
         if shouldInstallLatest: 
             self.installLatest(latest)
         else:
+            # Has a new version of the Paper Minecraft server been released?
             currentVersion = current['version']
             latestVersion = latest['version']
+
+            # If so, log it and send an email to the user
             if currentVersion != latestVersion:
                 build = latest['build']
                 message = 'Version {}:{} has been released! Please consider updating!'.format(latestVersion, build)
                 log(message)
+
+                mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'dymdu9-vowjIt-kejvah')
+                subject = 'Version {}:{} has been released!'.format(latestVersion, build)
+                body = '''
+                Hey there! 
+
+                Great news! Version {}:{} has been released! I won't install major or minor updates for you so you don't lose any data, but you should consider updating when you get a chance.
+
+                Don't worry about remembering, though; I'll send you an email every time I reboot. :)
+
+                Thanks a bunch,
+                MinePi
+                '''.format(latestVersion, build)
+                mailer.sendMail('michael.craun@gmail.com', subject, body)
 
         log('Latest version [{}:{}] has been installed...'.format(latest['version'], latest['build']))
 
