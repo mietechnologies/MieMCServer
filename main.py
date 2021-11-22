@@ -134,6 +134,11 @@ class Main:
         bootlog = os.path.join(self.rootDir, self.bootlog)
         logfile = os.path.join(self.rootDir, self.logfile)
         self.mailer.sendMail('michael.craun@gmail.com', subject, body, [bootlog, logfile])
+
+        # Prepare log files for fresh run by overwriting them with new files
+        file = open(self.bootlog, 'w')
+        file = open(self.logfile, 'w')
+        file.close()
         
     # WARN: Should only be called when first creating the MinePi server and/or when transferring the server to 
     # another RasPi!
