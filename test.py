@@ -1,5 +1,5 @@
-from util import logger
+from minecraft.install import Installer
 
-if __name__ == "__main__":
-	# logger.handleUncaughtException(RuntimeError("Test"))
-    raise RuntimeError("Test unhandled")
+installer = Installer()
+installer.install()
+

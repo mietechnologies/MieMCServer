@@ -37,20 +37,22 @@ class Installer:
         # Otherwise, if latest does not match current, user should be alerted
         if shouldInstallLatest: 
             self.installLatest(latest)
-        elif current != latest:
-            build = latest['build']
-            version = latest['version']
-            message = 'Version {}:{} has been released! Please consider updating!'.format(version, build)
-            log(message)
+        else:
+            currentVersion = current['version']
+            latestVersion = latest['version']
+            if currentVersion != latestVersion:
+                build = latest['build']
+                message = 'Version {}:{} has been released! Please consider updating!'.format(latestVersion, build)
+                log(message)
 
-        log('Version {}:{} has been installed...'.format(latest['version'], latest['build']))
+        log('Latest version [{}:{}] has been installed...'.format(latest['version'], latest['build']))
 
-    def installLatest(self, version):
+    def installLatest(self, latest):
         # Construct download url and download
         log('Downloading latest build of server jar...')
-        build = version['build']
-        file = version['filename']
-        version = version['version']
+        build = latest['build']
+        file = latest['filename']
+        version = latest['version']
         url = self.downloadUrlTemplate.format(version, build, file)
         source = self.downloadFrom(url)
         
@@ -59,6 +61,10 @@ class Installer:
         if os.path.isdir(self.serverDir) == False:
             os.mkdir(self.serverDir)
         os.replace(source, self.serverJar)
+
+        # Update the version log with the new server jar info
+        print(latest)
+        self.versioner.updateInstalledVersion(latest)
 
     def downloadFrom(self, url):
         with requests.get(url, stream=True) as request:

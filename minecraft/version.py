@@ -9,6 +9,7 @@ import re
 import requests
 
 from util import logger
+from util.date import Date
 
 class Versioner:
     dir = os.path.dirname(__file__)
@@ -141,6 +142,26 @@ class Versioner:
             changelog = open(self.changelog, 'r').read()
             if '[INSTALL]' in changelog: return True
             else: return False
+
+    # Simply updates the version log with a new version. 
+    # WARN: Should only be called from the installer when a new version is installed!
+    def updateInstalledVersion(self, version):
+        # Update current version properties with new version properties
+        # This doesn't currently have any effect, but could in the future, so I'm doing it now
+        newBuild = version['build']
+        newGroup = version['versionGroup']
+        newVersion = version['version']
+        self.currentBuild = newBuild
+        self.currentVersion = newVersion
+        self.currentVersionGroup = newVersion
+
+        # Register the install in the versionlog file
+        # Like: [INSTALL - 11/17/2021 06:54:37] 1.17:1.17.1:383
+        timestamp = Date().timestamp()
+        message = '[INSTALL - {}] {}:{}:{}\n'.format(timestamp, newGroup, newVersion, newBuild)
+        versionlog = open(self.versionlog, 'a')
+        versionlog.write(message)
+        versionlog.close()
 
 
 
