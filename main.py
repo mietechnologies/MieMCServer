@@ -107,6 +107,22 @@ class Main:
         local.write(json.dumps({ "commands" : [  ] }))
         local.close()
 
+    def configure(self):
+        config = Config()
+        current = config.read()
+        if current == None:
+            logger.log('No cofiguration found! Starting configuration...')
+            config.start()
+
+        # parse current and assign config values
+        current = config.read()
+        self.allottedRam = current['allottedRam']
+        self.backupHour = current['backupHour']
+
+    def detectCriticalEvents(self):
+        if self.tempMonitor.criticalTemperatureReached():
+            self.criticalEventOccured('temp')
+
     def criticalEventOccured(self, type):
         ubject = 'Oh, no! Your RasPi has encountered a critical event...'
         body = ''
@@ -183,10 +199,10 @@ class Main:
             logger.log('System configuration defaults are:')
             logger.log('allottedRam={}'.format(self.allottedRam))
             logger.log('rebootSchedule={}'.format(self.dailyHour))
-            # config.start()
-            # current = config.read()
-            # self.allottedRam = current['allottedRam']
-            # self.backupHour = current['backupHour']
+            config.start()
+            current = config.read()
+            self.allottedRam = current['allottedRam']
+            self.backupHour = current['backupHour']
             
             # Grant permissions to use shell scripts
             os.popen('sudo chmod +x /home/pi/minePi/cron/start-server.sh')
@@ -208,13 +224,10 @@ class Main:
         
     # Starting the server
     def start(self):
-        logger.log('Starting server...')
-        ram = '{}M'.format(self.allottedRam)
+        # logger.log('Starting server...')
         self.configure()
-        os.popen('sudo ./start-server.sh {} > /home/pi/minePi/bootlog.txt'.format(ram))
-        # os.popen('screen bash')
-        # os.popen('cd {}'.format(self.serverDir))
-        # os.popen('java -XmX{}M -Xms{}M -jar paper.jar nogui'.format(self.allottedRam, self.allottedRam))
+        ram = '{}M'.format(self.allottedRam)
+        os.system('sudo /home/pi/minePi/cron/./start-server.sh {} > /home/pi/minePi/bootlog.txt'.format(ram))
 
     def startMonitors(self):
         # start temperature monitor
@@ -223,24 +236,8 @@ class Main:
     def trim(self):
         logger.log('trimming the end...')
 
-    def configure(self):
-        config = Config()
-        current = config.read()
-        if current == None:
-            logger.log('No cofiguration found! Starting configuration...')
-            config.start()
-
-        # parse current and assign config values
-        current = config.read()
-        self.allottedRam = current['allottedRam']
-        self.backupHour = current['backupHour']
-
     def updateConfig(self):
         logger.log('should update config...')
-
-    def detectCriticalEvents(self):
-        if self.tempMonitor.criticalTemperatureReached():
-            self.criticalEventOccured('temp')
 
 
 

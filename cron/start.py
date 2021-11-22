@@ -6,16 +6,20 @@
 # - Execute list of user-entered commands
 # - Launch server
 
+import os
 import sys
-sys.path.append('..')
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
 
 from main import Main
+from util import logger
 
 if __name__ == '__main__':
-    main = Main()
-    main.trim()
-    main.backup()
-    main.checkVersion()
-    main.startMonitors()
-    main.start()
-    main.commands()
+	main = Main()
+	main.trim()
+	main.backup()
+	main.checkVersion()
+	main.startMonitors()
+	main.start()
+	main.commands()
