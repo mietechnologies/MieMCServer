@@ -28,8 +28,8 @@ class PiMailer:
         for attachment in attachments:
             with open (attachment, "rb") as file:
                 part = MIMEApplication(file.read(), Name=basename(attachment))
-            part['Content-Disposition'] = 'attachment; filename="%s"' % basename(attachment)
-            message.attach(part)
+                part['Content-Disposition'] = 'attachment; filename="%s"' % basename(attachment)
+                message.attach(part)
         
         # connect to server
         session = smtplib.SMTP(self.server, self.port)

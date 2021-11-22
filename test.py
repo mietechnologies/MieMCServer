@@ -1,5 +1,4 @@
-from minecraft.install import Installer
+from main import Main
 
-installer = Installer()
-installer.install()
-
+main = Main()
+main.sendLogs()
