@@ -1,46 +1,39 @@
-import smtplib
-from os.path import basename
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import formatdate
+from .configuration import Email
+from os.path import basename
+import smtplib
 
-class PiMailer:
-    server = ''
-    port = 0
-    username = ''
-    password = ''
-    
-    def __init__(self, server, port, username, password):
-        self.server = server
-        self.port = port
-        self.username = username
-        self.password = password
-    
-    def sendMail(self, recipient, subject, content, attachments = []):
-        message = MIMEMultipart()
-        message['From'] = self.username
-        message['To'] = recipient
-        message['Subject'] = subject
-        message.attach(MIMEText(content))
-        
-        # attach files
-        for attachment in attachments:
-            with open (attachment, "rb") as file:
-                part = MIMEApplication(file.read(), Name=basename(attachment))
-                part['Content-Disposition'] = 'attachment; filename="%s"' % basename(attachment)
-                message.attach(part)
-        
-        # connect to server
-        session = smtplib.SMTP(self.server, self.port)
-        session.ehlo()
-        session.starttls()
-        session.ehlo()
-        
-        # login
-        session.login(self.username, self.password)
-        
-        # send email and exit
-        session.sendmail(self.username, recipient, message.as_string())
-        session.quit()
-        
+
+class Emailer:
+
+    attachments = []
+
+    def __init__(self, subject, body):
+        self.subject = subject
+        self.body = body
+
+    def attach(self, file):
+        self.attachments.append(file)
+
+    def send(self):
+        msg = MIMEMultipart()
+        msg["From"] = Email.address
+        msg["To"] = ", ".join(Email.recipients)
+        msg["Subject"] = self.subject
+        msg.attach(MIMEText(self.body, "plain"))
+
+        for attachment in self.attachments:
+            with open(attachment, "rb") as file:
+                aFile = MIMEApplication(file.read(), _subtype="txt")
+                aFile.add_header("Content-Disposition", "attachment",
+                    filename=basename(file))
+                msg.attach(file)
+
+        server = smtplib.SMTP(Email.server, Email.port)
+        server.starttls()
+        server.login(Email.address, Email.password)
+        server.sendmail(Email.address, self.recipients, msg.as_string())
+
+        server.quit()

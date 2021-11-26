@@ -1,0 +1,16 @@
+Email:
+  address: fuck@gmail.com
+  password: fuck
+  port: 587
+  recipients:
+  - brett@gmail.com
+  - michael@gmail.com
+  - you@gmail.com
+  server: smtp.gmail.com
+Minecraft:
+  allocated_ram: 1000000000
+  allow_major_update: true
+  major: 1
+  minor: 17
+  patch: 1
+  version_group: '1.17'

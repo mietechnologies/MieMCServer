@@ -1,245 +1,161 @@
-# On start:
-    # Create a backup of the Minecraft server that overwrites any existing backup of the same version
-    # Start the Minecraft server
-    # Start safety monitoring
-    # Grant permissions to run shell scripts
-# Weekly
-    # Create a backup of the Minecraft server that overwrites any existing backup of the same version
-# Daily
-    # Run any clean up scripts needed
-# On Command
-    # Create new server with a specific world name
-    # Update server to the latest version if needed
+# ****************************** Developer Notes ******************************
+# Goal: This script will run and maintain a Minecraft Server, utilizing crontab
+# jobs to handle maintenance, and allowing for custom commands to be run from
+# the terminal. 
+# 1. Setup the basic argument system
+#    - No Args: This will be the initial call. It will start everything,
+#      from the ground up. It will generate the config file, setup all the
+#      needed cron jobs, and start the Minecraft server.
+#    - '-mcv', '--mc-version': This will return the currently used Minecraft
+#      Server Version.
+#    - '-v', '--version': This will return the version of this software.
+#    - '-c', '--command': This will accept a string (which will need rapped in
+#      quotations) that will run a command on the server (as long as its running)
+#    - '-u', '--update': Checks for a Minecraft Server update, and updates if
+#      newer version exists.
+#    - '-bu', '--backup': This will backup the Minecraft Server
+# *****************************************************************************
 
-import json
-import os
-import shutil
-import sys
-import zipfile
-
-from minecraft.install import Installer
+import argparse, sys, os
+from util.configuration import File, Minecraft
+from util.emailer import Emailer
 from minecraft.version import Versioner
-from util import logger
-from util.cron import CronScheduler
-from util.config import Config
-from util.date import Date
-from util.emailer import PiMailer
-from util.temp import PiTemp
+from util.syslog import log, clear_log
+import zipfile
+from time import sleep # TODO: Remove me once we're ready to go to production
 
-class Main:
-    rootDir = os.path.dirname(__file__)
-    backupsDir = os.path.join(rootDir, 'minecraft/backups')
-    serverDir = os.path.join(rootDir, 'minecraft/server')
-    endDir = os.path.join(serverDir, 'world_the_end/DIM1/region')
+VERSION = "0.0.1"
 
-    # config
-    allottedRam = 2500
-    dailyHour = 8
+def parse(args):
+    mc_version = args.minecraft_version
+    version = args.version
+    command = args.command
+    update = args.update
+    backup = args.path
+    method = args.generate_config
 
-    bootlog = 'bootlog.txt'
-    commandfile = 'commands.json'
-    logfile = 'logs.txt'
+    running_log = []
 
-    # setup utilities
-    installer = Installer()
-    mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'nywfAh-2hobha-zonquh')
-    tempMonitor = PiTemp(70, 3, logfile)
-    versioner = Versioner()
-
-    def backup(self):
-        logger.log('Backing up the current world...')
-        if not os.path.isdir(self.backupsDir):
-            os.mkdir(self.backups)
-        zipFilename = '{}/world.zip'.format(self.backupsDir)
-        zip = zipfile.ZipFile(zipFilename, 'w', zipfile.ZIP_DEFLATED)
-        for root, dirs, files in os.walk(self.serverDir):
-            for file in files:
-                zip.write(
-                    os.path.join(root, file), 
-                    os.path.relpath(os.path.join(root, file), 
-                    os.path.join(self.serverDir, '..')))
-        zip.close()
-        logger.log('Finished creating backup! Preparing to offload...')
-        
-        # TODO: Offload zip to third-party
-
-    def checkVersion(self):
-        logger.log('Checking for version updates! Please wait...')
-        body = ''
-        subject = 'A new version of the Paper Minecraft server is available!'
-        current = self.versioner.getCurrentVersion()
-        latest = self.versioner.getLatestVersion()
-        if current == None:
-            logger.log('No server currently installed! Installing now...')
-            self.installer.install()
-        elif current['build'] < latest['build']:
-            logger.log('Outdated build detected! Installing latest build for {} now...'.format(latest['version']))
-            self.installer.install()
-        else: 
-            build = latest['build']
-            version = latest['version']
-            subject = 'Minecraft server {}:{} available now!'.format(version, build)
-            body = """
-                Hello there!
-                Just wanted to let you know that a new version of the Paper Miecraft server [{}:{}] has been released!
-                If you have a momemnt, please consider updating the server!
-                
-                Thanks a bunch,
-                MinePi
-            """.format(version, build)
-            logger.log('A new version of the Minecraft server has been detected and an email has been sent to the owner!')
-            self.mailer.sendMail('michael.craun@gmail.com', subject, body)
-
-    def commands(self):
-        # Execute any server commands given by the owner
-        file = os.path.join(self.rootDir, self.commandfile)
-        local = open(file, 'r').read()
-        jsonCommands = json.loads(local)
-        commands = jsonCommands['commands']
-        if commands != None and commands != []:
-            logger.log('Executing owner commands...')
-            for command in commands:
-                logger.log('COMMAND: {}'.format(command))
-                os.popen(command)
-
-        # Prepare file for next run
-        local = open(file, 'w')
-        local.write(json.dumps({ "commands" : [  ] }))
-        local.close()
-
-    def configure(self):
-        config = Config()
-        current = config.read()
-        if current == None:
-            logger.log('No cofiguration found! Starting configuration...')
-            config.start()
-
-        # parse current and assign config values
-        current = config.read()
-        self.allottedRam = current['allottedRam']
-        self.backupHour = current['backupHour']
-
-    def detectCriticalEvents(self):
-        if self.tempMonitor.criticalTemperatureReached():
-            self.criticalEventOccured('temp')
-
-    def criticalEventOccured(self, type):
-        ubject = 'Oh, no! Your RasPi has encountered a critical event...'
-        body = ''
-
-        if self.criticalTemp:
-            body += 'Your RasPi has reached and maintained a critical temperature for too long!\n'
-            body += 'Log files from your RasPi have been attached below for your convenience.\n'
-            body += 'Please take some time to diagnose and fix the issue and then restart your RasPi. :)\n\n'
-
-        self.mailer.sendMail('michael.craun@gmail.com', subject, body, ['logs.txt'])
-
-    def sendLogs(self):
-        subject = 'Daily Report [{}]'.format(Date().timestamp())
-        body = '''
-        Hey there!
-        Just sending you your daily report! You can find logs attached below:
-
-        Thanks a bunch,
-        MinePi
-        
-        '''
-
-        # Files sent to the sendMail method cannot be string references, so we will create os path references
-        # for these files before sending them
-        bootlog = os.path.join(self.rootDir, self.bootlog)
-        logfile = os.path.join(self.rootDir, self.logfile)
-        self.mailer.sendMail('michael.craun@gmail.com', subject, body, [bootlog, logfile])
-
-        # Prepare log files for fresh run by overwriting them with new files
-        file = open(self.bootlog, 'w')
-        file = open(self.logfile, 'w')
-        file.close()
-        
-    # WARN: Should only be called when first creating the MinePi server and/or when transferring the server to 
-    # another RasPi!
-    # Configures the MinePi for hosting a Minecraft server by completing the following tasks:
-    # - Installs any needed dependencies for running the project
-    # - Creates the appropriate directories and files:
-    #   - minecraft/backups
-    #   - minecraft/server
-    #   - logfile.txt
-    # - Asks user for configuration input
-    # - Grant permissions to use shell scripts
-    # - Installs current stable version of Minecraft server
-    # - Schedules self-maintenance cron jobs
-    def setup(self):
-        # Sanity check to make absolutely sure that we aren't overwriting anything already on the MinePi
-        if os.path.isdir(self.serverDir):
-            logger.log('This MinePi has already been configured! Stopping process!')
+    if mc_version is not False:
+        running_log.append('-mcv')
+        if Minecraft.build is not None:
+            log("Minecraft Server: {}".format(Minecraft.version_str()))
         else:
-            logger.log('Installing needed dependencies! Your input may be required...')
-            os.popen('sudo apt-get install screen')
-            os.popen('sudo apt-get install python3-pip')
-            os.popen('sudo pip install python-crontab')
-            
-            cron = CronScheduler()
-            config = Config()
-            installer = Installer()
-                
-            # Otherwise, continue with configuration
-            logger.log('Configuring this MinePi server. Please wait...')
-            
-            # Create appropriate directories and files
-            os.mkdir(self.serverDir)
-            os.mkdir(self.backupsDir)
-            file = open(self.bootlog, 'w')
-            file = open(self.commandfile, 'w')
-            file = open(self.logfile, 'w')
-            # TODO: Create other files here using `file = ...`
-            file.close()
-            
-            # Run user-needed configuration
-            logger.log('WARN: System configuration has not been implemented! Continuing with defaults...')
-            logger.log('System configuration defaults are:')
-            logger.log('allottedRam={}'.format(self.allottedRam))
-            logger.log('rebootSchedule={}'.format(self.dailyHour))
-            config.start()
-            current = config.read()
-            self.allottedRam = current['allottedRam']
-            self.backupHour = current['backupHour']
-            
-            # Grant permissions to use shell scripts
-            os.popen('sudo chmod +x /home/pi/minePi/cron/start-server.sh')
-            
-            # Install current stable version of Minecraft server
-            logger.log('Initializing server jar...')
-            self.installer.install()
-            
-            # Schedule cron jobs
-            logger.log('Scheduling self-maintenance cron jobs...')
-            cron.createRecurringJob('@reboot', 'start.py', 'server_start')
-            cron.createRecurringJob('* * * * *', 'criticalEvents.py', 'event_monitoring')
-            cron.createRecurringJob('0 8 * * *', 'reboot.py', 'daily reboot')
-            
-            # Configuartion is complete; wait 30 seconds, then reboot
-            logger.log('Configuration complete! Rebooting this MinePi...')
-            time.sleep(30)
-            os.popen('python cron/reboot.py')
+            log("Minecraft Server has not been installed yet.")
+    
+    if version is not False:
+        running_log.append('-v')
+        log("minePi Version v{}".format(VERSION))
+
+    if command is not None:
+        running_log.append('-c {}'.format(command))
+        log("Command Passed: {}".format(command))
+
+    if update is not None:
+        running_log.append('-u')
         
-    # Starting the server
-    def start(self):
-        # logger.log('Starting server...')
-        self.configure()
-        ram = '{}M'.format(self.allottedRam)
-        os.system('sudo /home/pi/minePi/cron/./start-server.sh {} > /home/pi/minePi/bootlog.txt'.format(ram))
+        if update == "":
 
-    def startMonitors(self):
-        # start temperature monitor
-        self.tempMonitor.start()
+        log("Update in progress...")
+        sleep(5)
+        log("Update complete!")
 
-    def trim(self):
-        logger.log('trimming the end...')
+    if backup is not None:
+        # Check to see if the input is 'Default', if it is use the config
+        # location. If not, use the passed in path
+        if backup is "Default":
+            path = "/usr/brett/minecraft/backup"
+        else:
+            path = backup
+        running_log.append('-bu {}'.format(path))
+        log("Backing up to: {}".format(path))
+        sleep(2)
+        log("Backup complete!")
 
-    def updateConfig(self):
-        logger.log('should update config...')
+    if method is not None:
+        running_log.append('-gc {}'.format(method))
+        generateConfig(method)
+
+    if not running_log:
+        run()
+
+def run():
+    log("Checking config.yml...")
+    if File.exists:
+        log("Found config.yml")
+        # Trim End
+        # Backup
+        # CheckVersion
+        # Update, if appropriate
+        # Start Server
+        # Run post-start commands
+    else:
+        log("Did not find config.yml")
+        generateConfig("auto")
+        # Run Cron setup
+        # Download latest Minecraft Server
+        # Start Server
+
+def generateConfig(method):
+    validInput = False
+    user_response = None
+    while (not validInput):
+        user_response = input("This will override your current config.yml," \
+            " are you sure you want to do that? [y/N] ")
+        if user_response.lower() in ["y", "n", "yes", "no", ""]:
+            validInput = True
+        else:
+            print("I'm sorry, I didn't understand your answer.")
+
+    if user_response.lower() in ["y", "yes"]:
+        if method.lower() == "auto":
+            log("Automatically generating a default config.yml")
+            File.generate()
+            log("Config.yml generated!")
+        elif method.lower() == "manual":
+            log("Generating user-interactive config.yml", silently=True)
+            File.build()
+        else:
+            print("'{}' is not a valid input. Please consult the help ['-h'] " \
+                " menu to learn more. ".format(method))
+    else:
+        log("Generate config cancelled.")
 
 
+def main():
 
+    parser = argparse.ArgumentParser(description="This program is your " \
+        "one-stop shop for running and maintaining a Minecraft Server.")
 
+    parser.add_argument('-mcv', '--minecraft-version', help="The version of " \
+        "your Minecraft Server.", dest="minecraft_version",
+        action="store_true", required=False)
 
+    parser.add_argument('-v', '--version', help="The version of this software.",
+        dest="version", action="store_true", required=False)
+
+    parser.add_argument('-c', '--command', help="This will run a command on " \
+        "the Minecraft Server", dest="command", type=str, required=False)
+
+    parser.add_argument('-u', '--update', help="Checks to see if there is a " \
+        "newer version of Minecraft Server. If there is, it will install the " \
+        "latest version.", dest="update", nargs="?", const="", required=False)
+
+    parser.add_argument('-bu', '--backup', help="Backup your Minecraft Server", 
+        dest="path", nargs="?", const="Default", type=str, required=False)
+
+    parser.add_argument('-gc', '--generate-config', help="This will generate " \
+        "the configuration for this program. It will take one of two inputs: " \
+        "'auto' or 'manual'. By picking 'auto' we will handle creating a " \
+        "config file for you with some default inputs. If you select 'manual'" \
+        " we will ask you a series of questions to build you your config. You" \
+        " may manually edit or re-generate your config at any time.", 
+        dest="generate_config", nargs="?" ,const="auto", type=str,
+        required=False)
+
+    parser.set_defaults(func=parse)
+    args = parser.parse_args()
+    args.func(args)
+
+if __name__ == "__main__":
+    main()

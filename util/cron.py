@@ -1,9 +1,9 @@
-
-
 from crontab import CronTab
 
 class CronScheduler:
     cron = CronTab(user='pi')
+    # TODO: Add some functionality to convert a more human readable "date/time"
+    #       input into an usable crantab time
 
     def createRecurringJob(self, time, file, comment):
         for job in self.cron:

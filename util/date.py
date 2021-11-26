@@ -1,45 +1,19 @@
 from datetime import datetime
 
 class Date:
-    dateFormat = '%m/%d/%Y %H:%M:%S.%f'
+
+    @staticmethod
+    def timestamp():
+        date_format = '%m/%d/%Y %H:%M:%S.%f'
+        now = datetime.now()
+        return now.strftime(date_format)
+
+    @staticmethod
+    def timeFromDate(dateString):
+        date_format = '%m/%d/%Y %H:%M:%S.%f'
+        return datetime.strptime(dateString, date_format)
+
+    @staticmethod
+    def elapstedTime(firstDate, secondDate):
+        return abs(firstDate - secondDate.total_seconds())
     
-    def format(self, date, formatString):
-        return date.strftime(formatString)
-        
-    def now(self):
-        return datetime.now()
-    
-    def timestamp(self):
-        now = self.now()
-        return self.format(now, self.dateFormat)
-        
-    def timeFromDate(self, dateString):
-        return datetime.strptime(dateString, self.dateFormat)
-        
-    # helper functions to extract components of date (if no date is given, defaults to current date and time)
-    def month(self, date = datetime.now()):
-        return int(self.format(date, '%m'))
-        
-    def day(self, date = datetime.now()):
-        return int(self.format(date, '%d'))
-        
-    def weekday(self, date = datetime.now()):
-        return date.weekday()
-        
-    def year(self, date = datetime.now()):
-        return int(self.format(date, '%Y'))
-        
-    def hour(self, date = datetime.now()):
-        return int(self.format(date, '%H'))
-        
-    def minute(self, date = datetime.now()):
-        return int(self.format(date, '%M'))
-        
-    def second(self, date = datetime.now()):
-        return int(self.format(date, '%S'))
-        
-    def milisecond(self, date = datetime.now()):
-        return int(self.format(date, '%f'))
-        
-    def elapsedTimeBetweenDates(self, date, otherDate):
-        return abs(date - otherDate.total_seconds())

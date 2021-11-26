@@ -1,172 +1,219 @@
-# Purpose: This class should act as a global "versioner" for the MinePi project to limit
-# repetitive code used in the various other files in the MinePi project.
-
-import sys
-sys.path.append('..')
-
-import os
-import re
-import requests
-
-from util import logger
+import sys, os, requests
+sys.path.append("..")
+from util.configuration import Minecraft
+from util.syslog import log
 from util.date import Date
+from enum import Enum
+
+class UpdateType(Enum):
+    NONE = 0
+    MAJOR = 1
+    MINOR = 2
+    BUILD = 3
+
+    def __str__(self) -> str:
+        if self is UpdateType.NONE:
+            return "None"
+        elif self is UpdateType.MAJOR:
+            return "Major"
+        elif self is UpdateType.MINOR:
+            return "Minor"
+        elif self is UpdateType.BUILD:
+            return "Build"
+
 
 class Versioner:
+    VERSION_MANIFEST_URL = "https://papermc.io/api/v2/projects/paper/{}"
+    BUILDS_MANIFEST_URL = "https://papermc.io/api/v2/projects/paper/version_group/{}/builds"
+
     dir = os.path.dirname(__file__)
-    serverRoot = os.path.join(dir, 'server')
-    changelog = os.path.join(serverRoot, 'changelog.txt')
-    versionManifest = 'https://launchermeta.mojang.com/mc/game/version_manifest.json'
-    
-    currentBuild = None
-    currentVersion = None
-    currentVersionGroup = None
-    latestBuild = None
-    latestVersion = None
-    latestVersionGroup = None
-    newVersionUrl = None
-    versionManifestUrlTemplate = 'https://papermc.io/api/v2/projects/paper/version_group/{}'
-    manifestUrlTemplate = "https://papermc.io/api/v2/projects/paper/version_group/{}/builds"
-    downloadUrlTemplat = "https://papermc.io/api/v2/projects/paper/versions/{}/builds/{}/downloads/{}"
-    
-    dir = os.path.dirname(__file__)
-    serverDir = os.path.join(dir, 'server')
-    versionlog = os.path.join(serverDir, 'versionlog.txt')
-                
-    # Extracts the data that we care about (if it exists) from any JSON return. 
-    def extractDataFrom(self, json):
-        output = {}
-        # If JSON contains an error
-        if 'error' in json.keys(): otput['error'] = json['error']
-        
-        # If JSON is a version packet. Note that this assumes that version and version_group are in order
-        # from oldest to newest. If this changes in the future, this method WILL break.
-        if 'version_group' in json.keys(): output['versionGroup'] = float(json['version_group'])
-        if 'versions' in json.keys(): output['version'] = json['versions'][-1]
-        
-        # If JSON is a build collection packet. Note that this assumes that build is in order from oldest
-        # to newest. If this changes in the furute, this method WILL break.
-        if 'builds' in json.keys():
-            latestBuild = json['builds'][-1]
-            if 'version' in latestBuild.keys(): output['version'] = latestBuild['version']
-            if 'build' in latestBuild.keys(): output['build'] = int(latestBuild['build'])
-            if 'downloads' in latestBuild.keys():
-                downloads = latestBuild['downloads']
-                if 'application' in downloads.keys():
-                    application = downloads['application']
-                    if 'name' in application.keys():
-                        output['filename'] = application['name']
-                        
-        return output
-        
-    # Reads the current version from the versionlog, if it exists. Otherwise, assumes no server has been
-    # installed yet and returns None.
-    def getCurrentVersion(self):
-        # If the version log exists, we can assume that the Paper server has already been installed, 
-        # so we need to parse the lines contained within and pull out the latest version group, 
-        # version, and build.
-        if os.path.isfile(self.versionlog):
-            # Read file's lines, pull out last (latest) and use regex to extract installation data from line
-            # Like: [INSTALL - 11/17/2021 06:54:37] 1.17:1.17.1:386
-            versionlog = open(self.versionlog, 'r').readlines()
-            latestLog = versionlog[-1]
-            
-            pattern = '\d+.\d+:\d+.\d+.\d+:\d+'
-            installData = re.search(pattern, latestLog)
-            if installData: 
-                data = installData.group(0)
-                installation = '{}'.format(data).split(':')
-                # Sanity check; if any more or any less, this line is not a valid installation log
-                if len(installation) == 3:
-                    self.currentBuild = int(installation[2])
-                    self.currentVersion = installation[1]
-                    self.currentVersionGroup = float(installation[0])
-            return { 
-                'build' : self.currentBuild, 
-                'version' : self.currentVersion, 
-                'versionGroup' : self.currentVersionGroup 
-            }
+    server_root = os.path.join(dir, 'server')
+    changelog = os.path.join(server_root, 'changelog.txt')
+    version_log = os.path.join(server_root, 'versionlog.txt')
+
+    @staticmethod
+    def versionString(version):
+        '''Converts a version dictionary into a string.'''
+        version_str = ""
+        if version["patch"] is None:
+            version_str = ".".join(version["major"], version["minor"])
+            version_str = ":".join(version_str, version["build"])
         else:
-            # No version has been installed yet...
+            version_str = ".".join(version["major"], version["minor"], version["patch"])
+            version_str = ":".join(version_str, version["build"])
+        return version_str
+
+    @classmethod
+    def __checkForErrors(cls, json):
+        '''Check JSON returned from the Paper API for errors'''
+        if 'error' in json.keys():
+            return {"error" : json["error"]}
+        else:
             return None
-    
-    # Fetches the version and build code of the latest stable release of the Paper Minecraft server jar.
-    # WARN: self.getCurrentVersion should always be called before this method!
-    def getLatestVersion(self):
-        # Sanity check; getCurrentVersion should always be called first, but just in case it isn't...
-        if self.currentVersionGroup == None:
-            logger.log('WARN: No current version group found; did you use getCurrentVersion first?')
-            self.getCurrentVersion()
-            
-        # If currentVersion is still None, there is no version currently installed. Should fetch the
-        # latest iteration of the default version (1.17)
-        if self.currentVersionGroup == None:
-            logger.log('ERR: There is no currently installed Minecraft Server!')
-            self.currentVersionGroup = 1.17
-            
-        # Attempt to download the JSON from the version group 0.01 greater than the current version group
-        # If this fails, there is no greater version group, so data for the current version group should 
-        # be fetched. Otherwise, there is a new version, so an update message should be displayed.
-        # WARN: At some point in the future, the Minecraft Server version numbers may drastically change 
-        # and this code has no way to detect that. Ideas to help this situation in the future:
-        # - Add a check against the last install date and if it has been more than some arbitrary amount 
-        #   of time since the server was updated, we should display a message to alert the user so they 
-        #   can update manually.
-        versionToCheck = self.currentVersionGroup + 0.01
-        newVersionRequest = requests.get(self.versionManifestUrlTemplate.format(versionToCheck))
-        statusCode = newVersionRequest.status_code
-        if statusCode >= 200 and statusCode < 300: self.latestVersionGroup = versionToCheck
-        else: self.latestVersionGroup = self.currentVersionGroup
-        
-        # Download the JSON from the Paper downloads site
-        manifestRequest = requests.get(self.manifestUrlTemplate.format(self.latestVersionGroup))
-        manifest = self.extractDataFrom(manifestRequest.json())
-        return manifest
-        
-    # Determine if a server has been created already
-    def serverExists(self):
-        if os.path.isdir(self.serverRoot) == False:
-            os.mkdir(self.serverRoot)
-            
-        if os.path.isfile(self.changelog) == False:
-            changelog = open(self.changelog, "w")
-            changelog.close()
-            
-        serverContents = os.listdir(self.serverRoot)
-        if len(serverContents) == 0:
-            # No server has been downloaded and/or created yet
+
+    @classmethod
+    def __extractAbsoluteVersion(cls, json):
+        '''Check for the latest version and group when no version group is
+        passed to the Paper API'''
+        error_check = cls.__checkForErrors(json)
+        if error_check is not None:
+            return error_check
+        else:
+            latest_version_group = json["version_groups"][-1]
+            latest_version = json["versions"][-1]
+            return {
+                "version_group" : latest_version_group,
+                "version" : latest_version
+            }
+
+    @classmethod
+    def __extractVersionGroup(cls, json):
+        '''Gets the latest version and group from the returned JSON from the
+        Paper API'''
+        error_check = cls.__checkForErrors(json)
+        if error_check is not None:
+            return error_check
+        else:
+            version_group = json["version_group"]
+            latest_version = json["versions"][-1]
+            return {
+                "version_group" : version_group,
+                "version" : latest_version
+            }
+
+    @classmethod
+    def __extractLatestBuild(cls, json):
+        '''Check for the latest build from the returned JSON from the Paper
+        API'''
+        error_check = cls.__checkForErrors(json)
+        if error_check is not None:
+            return error_check
+        else:
+            latest_build = json["builds"][-1]
+            downloads = latest_build["downloads"]
+            application = downloads["application"]
+
+            version = latest_build["version"]
+            build = int(latest_build["build"])
+            filename = application["name"]
+            return {
+                "version" : version,
+                "build" : build,
+                "filename" : filename
+            }
+
+    @classmethod
+    def getCurrentVersion(cls):
+        '''Checks to see if a version has been set in the configuration. If it 
+        has it will return the version information, otherwise it will return
+        None'''
+
+        if Minecraft.minor is None:
+            return None
+        else:
+            return {
+                "major" : Minecraft.major,
+                "minor" : Minecraft.minor,
+                "patch" : Minecraft.patch,
+                "build" : Minecraft.build,
+                "version_group" : Minecraft.version_group
+            }
+
+    @classmethod
+    def __getLatestVersion(cls):
+        '''Hits the Paper API to receive what the latest build is. If the user
+        has specified whether they want to update minor builds will determine 
+        how far this function will look'''
+
+        if Minecraft.version_group is None or Minecraft.allow_major_update:
+            version_request = requests.get(cls.VERSION_MANIFEST_URL.format(""))
+            data = cls.__extractAbsoluteVersion(version_request.json())
+            build_data = cls.__getLatestBuild(data["version_group"])
+            return cls.__version(data, build_data)
+        else:
+            version_request = requests.get(cls.VERSION_MANIFEST_URL
+                .format("version_group/" + Minecraft.version_group))
+            data = cls.__extractVersionGroup(version_request.json())
+            build_data = cls.__getLatestBuild(data["version_group"])
+            return cls.__version(data, build_data)
+
+    @classmethod
+    def __getLatestBuild(cls, version_group):
+        '''Gets the latest build number for a given version group'''
+        build_request = requests.get(cls.BUILDS_MANIFEST_URL
+            .format(version_group))
+        build_data = cls.__extractLatestBuild(build_request.json())
+        return build_data
+
+    @classmethod
+    def __version(cls, version_dict, build_dict):
+        '''Combines a build and version group dictionaries into a single 
+        dictionary'''
+        version_split = version_dict["version"].split(".")
+        major = version_split[0]
+        minor = version_split[1]
+        patch = None
+        if len(version_split) > 2:
+            patch = version_split[2]
+        return {
+            "major" : major,
+            "minor" : minor,
+            "patch" : patch,
+            "build" : build_dict["build"],
+            "version_group" : version_dict["version_group"]
+        }
+
+    @classmethod
+    def hasUpdate(cls):
+        '''Determines the type of update there is for the currently installed
+        server. If there is an update, this function will return the type and
+        the new version. If no update is found, it will return the NONE type
+        and a NoneType object.'''
+        current_version = cls.getCurrentVersion()
+        latest_version = cls.__getLatestVersion()
+
+        log("Checking for an update...")
+        # Version Group
+        if current_version["version_group"] is None:
+            return (UpdateType.MAJOR, latest_version)
+        # Major
+        major_check = current_version["major"] is not None
+        if major_check and int(current_version["major"]) < int(latest_version["major"]):
+            return (UpdateType.MAJOR, latest_version)
+        # Minor
+        minor_check = current_version["minor"] is not None
+        if minor_check and int(current_version["minor"]) < int(latest_version["minor"]):
+            return (UpdateType.MAJOR, latest_version)
+        # Patch
+        patch_check = current_version["patch"] is None
+        if patch_check or int(current_version["patch"]) < int(latest_version["patch"]):
+            return (UpdateType.MINOR, latest_version)
+        # Build
+        build_check = current_version["build"] is None
+        if build_check or int(current_version["build"]) < int(latest_version["build"]):
+            return (UpdateType.BUILD, latest_version)
+
+        log("No update found.")
+        return (UpdateType.NONE, None)
+
+    @classmethod
+    def serverExists(cls):
+        '''Checks if there is a server directory. If there is, a server has been
+        isntalled. If not, then no server has been installed'''
+        if os.path.exists(cls.server_root) == False:
             return False
         else:
-            # The folder has contents, but it's not completely accurate to say that a sever exists
-            # To make positive confirmation that a server has been installed, read the changelog
-            # and see if it contains a line that indicates the server has been installed
-            changelog = open(self.changelog, 'r').read()
-            if '[INSTALL]' in changelog: return True
-            else: return False
+            return True
 
-    # Simply updates the version log with a new version. 
-    # WARN: Should only be called from the installer when a new version is installed!
-    def updateInstalledVersion(self, version):
-        # Update current version properties with new version properties
-        # This doesn't currently have any effect, but could in the future, so I'm doing it now
-        newBuild = version['build']
-        newGroup = version['versionGroup']
-        newVersion = version['version']
-        self.currentBuild = newBuild
-        self.currentVersion = newVersion
-        self.currentVersionGroup = newVersion
-
-        # Register the install in the versionlog file
-        # Like: [INSTALL - 11/17/2021 06:54:37] 1.17:1.17.1:383
-        timestamp = Date().timestamp()
-        message = '[INSTALL - {}] {}:{}:{}\n'.format(timestamp, newGroup, newVersion, newBuild)
-        versionlog = open(self.versionlog, 'a')
-        versionlog.write(message)
-        versionlog.close()
-
-
-
-
-
-
-
-
+    @classmethod
+    def updateInstalledVersion(cls, version):
+        """Update all appropriate files of a new server install
+        
+        Keyword arguments:
+            version -- A dictionary containing the keys: major, minor, patch, build, and version_group.
+        """
+        install_date = Date.timestamp()
+        update_dict = version
+        update_dict["install_date"] = install_date
+        Minecraft.update(update_dict)
+        

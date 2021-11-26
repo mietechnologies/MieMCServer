@@ -1,107 +1,84 @@
-# Purpose: This class is responsible for downloading and installing any update needed and/or requested
-# This includes the initial installation as well as any automatic updates required. It will:
-# 1. Consult with the Versioner to confirm if it needs to download any update
-# 2. Download any needed update to a temp directory
-#    NOTE: the Installer should not install major or minor updates automatically; only build updates)
-# 3. Rename and move the downloaded jar file to the server directory
-# 4. Update versionlogs with newest version
-
-import os
-import requests
-import sys
-sys.path.append('..')
-
-from minecraft.version import Versioner
-from util.emailer import PiMailer
-from util.logger import log
+import os, sys, requests
+from re import sub
+from .version import UpdateType, Versioner
+sys.path.append("..")
+from util.configuration import Email, Minecraft
+from util.emailer import Emailer
+from util.syslog import log
+from util.date import Date
 
 class Installer:
-    # Like: https://papermc.io/api/v2/projects/paper/versions/1.17.1/builds/386/downloads/paper-1.17.1-386.jar
-    downloadUrlTemplate = 'https://papermc.io/api/v2/projects/paper/versions/{}/builds/{}/downloads/{}'
-    minecraftDir = os.path.dirname(__file__)
-    serverDir = os.path.join(minecraftDir, 'server')
-    serverJar = os.path.join(serverDir, 'paper.jar')
-    tempJar = os.path.join(minecraftDir, 'paper.jar')
-    
-    # Initialize utilities
-    versioner = Versioner()
-    
-    def install(self):
-        current = self.versioner.getCurrentVersion()
-        latest = self.versioner.getLatestVersion()
-        shouldInstallLatest = False
-        
-        # Should install latest server build if not currently installed or if current build is outdated
-        if current == None: shouldInstallLatest = True
-        elif current['build'] < latest['build']: shouldInstallLatest = True
+    DOWNLOAD_URL = "https://papermc.io/api/v2/projects/paper/versions/{}/" \
+        "builds/{}/downloads/{}"
 
-        # Otherwise, if latest does not match current, user should be alerted
-        if shouldInstallLatest: 
-            self.installLatest(latest)
+    dir = os.path.dirname(__file__)
+    server_dir = os.path.join(dir, 'server')
+    server_jar = os.path.join(server_dir, 'paper.jar')
+    temp_jar = os.path.join(dir, 'paper.jar')
+
+    def __shouldInstall(self, override):
+        type, version = Versioner.hasUpdate()
+        if type is UpdateType.MAJOR and not Minecraft.allow_major_update:
+            self.__adminUpdateAlert(version)
+
+        if type is not UpdateType.NONE and override:
+            return (True, version)
+
+        if type is UpdateType.BUILD or type is UpdateType.MINOR:
+            return (True, version)
+        elif type is UpdateType.MAJOR and not Versioner.serverExists():
+            return (True, version)
+        elif type is UpdateType.MAJOR and Minecraft.allow_major_update:
+            return (True, version)
         else:
-            # Has a new version of the Paper Minecraft server been released?
-            currentVersion = current['version']
-            latestVersion = latest['version']
+            return (False, None)
 
-            # If so, log it and send an email to the user
-            if currentVersion != latestVersion:
-                build = latest['build']
-                message = 'Version {}:{} has been released! Please consider updating!'.format(latestVersion, build)
-                log(message)
-
-                mailer = PiMailer('smtp.gmail.com', 587, 'ras.pi.craun@gmail.com', 'nywfAh-2hobha-zonquh')
-                subject = 'Version {}:{} has been released!'.format(latestVersion, build)
-                body = '''
-                Hey there! 
-
-                Great news! Version {}:{} has been released! I won't install major or minor updates for you so you don't lose any data, but you should consider updating when you get a chance.
-
-                Don't worry about remembering, though; I'll send you an email every time I reboot. :)
-
-                Thanks a bunch,
-                MinePi
-                '''.format(latestVersion, build)
-                mailer.sendMail('michael.craun@gmail.com', subject, body)
-
-        log('Latest version [{}:{}] has been installed...'.format(latest['version'], latest['build']))
-
-    def installLatest(self, latest):
-        # Construct download url and download
-        log('Downloading latest build of server jar...')
-        build = latest['build']
-        file = latest['filename']
-        version = latest['version']
-        url = self.downloadUrlTemplate.format(version, build, file)
-        source = self.downloadFrom(url)
+    def __adminUpdateAlert(self, version):
+        version_str = Versioner.versionString(version)
         
-        # Move downloaded jar to server directory
-        log('Moving new jar to server directory...')
-        if os.path.isdir(self.serverDir) == False:
-            os.mkdir(self.serverDir)
-        os.replace(source, self.serverJar)
+        subject = "Minecraft Server has an update!"
+        body = "Hello there,\n\nIt would seem as if your server has an " \
+            "update waiting to be downloaded and installed. Due to your " \
+            "settings, I can't do this update automatically.\n\nThe " \
+            "new version of Minecraft Server is {}\n\nIf you would like " \
+            "to do this manually you can run the command: 'python3 " \
+            "main.py -u'\nThen follow the prompt and it will install the " \
+            "latest version.\n\nThanks,\nMinePi".format(version_str)
+        email = Emailer(subject, body)
+        email.send()
 
-        # Update the version log with the new server jar info
-        print(latest)
-        self.versioner.updateInstalledVersion(latest)
+    def install(self, override_settings = False):
+        should_install, version = self.__shouldInstall(override_settings)
+        if should_install:
+            version_str = Versioner.versionString(version)
+            log("Downloading {}...".format(version_str))
+            download = self.__download(version)
 
-    def downloadFrom(self, url):
+            log("Installing new server...")
+            if os.path.isdir(self.server_dir) == False:
+                os.mkdir(self.server_dir)
+            os.replace(download, self.server_jar)
+
+
+    def __download(self, version):
+        version_str = ""
+        if version["patch"] is None:
+            version_str = ".".join(version["major"], version["minor"])
+        else:
+            version_str = ".".join(version["major"], version["minor"],
+                version["patch"])
+
+        filename = "paper-{}-{}.jar".format(version_str, version["build"])
+        url = self.DOWNLOAD_URL.format(version_str, version["build"], filename)
         with requests.get(url, stream=True) as request:
             request.raise_for_status()
-            with open(self.tempJar, 'wb') as file:
+            with open(self.temp_jar, 'wb') as file:
                 for chunk in request.iter_content(chunk_size=8192):
                     if chunk:
                         file.write(chunk)
                     else:
-                        log('ERR: Unable to download file!')
+                        log("Error: Unable to download file!")
                         return None
 
-        log('Download complete!')
-        return self.tempJar
-
-
-
-        
-
-
-
-
+        log("Download Complete!")
+        return self.temp_jar
