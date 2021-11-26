@@ -6,7 +6,7 @@ sys.excepthook = lambda type, value, tb: handleUncaughtException(type, value, tb
 
 __util_dir = os.path.dirname(__file__)
 __root_dir = os.path.join(__util_dir, "..")
-__log_file = os.path.join(__root_dir, "logs.txt")
+__log_file = os.path.join(__root_dir, "logs/log.txt")
 
 def handleUncaughtException(type, exception, tb):
     error = repr(exception)
@@ -25,7 +25,7 @@ def handleUncaughtException(type, exception, tb):
 
     email_log(subject, body)
 
-def log(message, silently = False):
+def log(message, silently=False, display_date=False):
     '''A method to log events within the program. Calling this method will log 
     the current time and the given message. It can also print the log message 
     to the console for the user to view'''
@@ -33,7 +33,10 @@ def log(message, silently = False):
         timestamp = Date.timestamp()
         printMessage = "[{}] {}".format(timestamp, message)
         if not silently:
-            print(printMessage)
+            if display_date:
+                print(printMessage)
+            else:
+                print(message)
         logs.write(printMessage + "\n")
 
 def clear_log():

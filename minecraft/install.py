@@ -12,7 +12,7 @@ class Installer:
         "builds/{}/downloads/{}"
 
     dir = os.path.dirname(__file__)
-    server_dir = os.path.join(dir, 'server')
+    server_dir = os.path.join(dir, '../server')
     server_jar = os.path.join(server_dir, 'paper.jar')
     temp_jar = os.path.join(dir, 'paper.jar')
 
