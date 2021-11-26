@@ -18,6 +18,7 @@
 
 import argparse, sys, os
 from util.configuration import File, Minecraft
+from util.inputextended import bool_input
 from util.emailer import Emailer
 from minecraft.version import Versioner
 from util.syslog import log, clear_log
@@ -53,12 +54,7 @@ def parse(args):
 
     if update is not None:
         running_log.append('-u')
-        
-        if update == "":
-
-        log("Update in progress...")
-        sleep(5)
-        log("Update complete!")
+        updateServer(update)
 
     if backup is not None:
         # Check to see if the input is 'Default', if it is use the config
@@ -97,17 +93,10 @@ def run():
         # Start Server
 
 def generateConfig(method):
-    validInput = False
-    user_response = None
-    while (not validInput):
-        user_response = input("This will override your current config.yml," \
-            " are you sure you want to do that? [y/N] ")
-        if user_response.lower() in ["y", "n", "yes", "no", ""]:
-            validInput = True
-        else:
-            print("I'm sorry, I didn't understand your answer.")
+    user_response = bool_input("This will override your current config.yml," \
+            " are you sure you want to do that?", default=False)
 
-    if user_response.lower() in ["y", "yes"]:
+    if user_response:
         if method.lower() == "auto":
             log("Automatically generating a default config.yml")
             File.generate()
@@ -121,6 +110,11 @@ def generateConfig(method):
     else:
         log("Generate config cancelled.")
 
+def updateServer(override):
+    user_response = override
+    if override == "":
+        user_response = bool_input("Fuck?", default=True)
+        print(user_response)
 
 def main():
 
