@@ -1,6 +1,4 @@
-from sys import version
-import yaml
-import os
+import yaml, os
 
 class File:
     __util_dir = os.path.dirname(__file__)
@@ -79,15 +77,15 @@ class File:
 
 class Minecraft:
     SECTION_NAME = "Minecraft"
-    _data = File.data.get("Minecraft", {})
-    allocated_ram = int(_data.get("allocated_ram", 0))
-    major = _data.get("major", None)
-    minor = _data.get("minor", None)
-    patch = _data.get("patch", None)
-    build = _data.get("build", None)
-    install_date = _data.get("install_date", None)
-    version_group = _data.get("version_group", None)
-    allow_major_update = _data.get("allow_major_update", False)
+    __data = File.data.get("Minecraft", {})
+    __version = File.data.get("version", {})
+    allocated_ram = int(__data.get("allocated_ram", 0))
+    major = __version.get("major", None)
+    minor = __version.get("minor", None)
+    patch = __version.get("patch", None)
+    build = __version.get("build", None)
+    install_date = __version.get("install_date", None)
+    version_group = __version.get("version_group", None)
 
     @classmethod
     def version_str(cls):
@@ -95,20 +93,55 @@ class Minecraft:
 
     @classmethod
     def update(cls):
-        cls._data["allocated_ram"] = cls.allocated_ram
-        cls._data["major"] = cls.major
-        cls._data["minor"] = cls.minor
-        cls._data["patch"] = cls.patch
-        cls._data["build"] = cls.build
-        cls._data["install_date"] = cls.install_date
-        cls._data["version_group"] = cls.version_group
-        cls._data["allow_major_update"] = cls.allow_major_update
-        File.update(cls.SECTION_NAME, cls._data)
+        cls.__data["allocated_ram"] = cls.allocated_ram
+        cls.__data["major"] = cls.major
+        cls.__data["minor"] = cls.minor
+        cls.__data["patch"] = cls.patch
+        cls.__data["build"] = cls.build
+        cls.__data["install_date"] = cls.install_date
+        cls.__data["version_group"] = cls.version_group
+        File.update(cls.SECTION_NAME, cls.__data)
+
 
 class Email:
-    _data = File.data.get("Email", {})
-    address = _data.get("address", None)
-    password = _data.get("password", None)
-    server = _data.get("server", None)
-    port = _data.get("port", None)
-    recipients = _data.get("recipients", None)
+    SECTION_NAME = "Email"
+    __data = File.data.get("Email", {})
+    address = __data.get("address", None)
+    password = __data.get("password", None)
+    server = __data.get("server", None)
+    port = __data.get("port", None)
+    recipients = __data.get("recipients", None)
+
+    @classmethod
+    def update(cls):
+        cls.__data["address"] = cls.address
+        cls.__data["password"] = cls.password
+        cls.__data["server"] = cls.server
+        cls.__data["port"] = cls.port
+        cls.__data["recipients"] = cls.recipients
+        File.update(cls.SECTION_NAME, cls.__data)
+
+
+class Maintenance:
+    SECTION_NAME = "Maintenance"
+    __data = File.data.get("Maintenance")
+    __backup = __data.get("backup", {})
+    __update = __data.get("update", {})
+    complete_shutdown = __data.get("complete_shutdown", "")
+    schedule = __data.get("schedule", "")
+    backup_schedule = __backup.get("schedule", None)
+    backup_path = __backup.get("path", None)
+    update_schedule = __update.get("schedule", None)
+    update_allow_major_update = __update.get("allow_major_update", False)
+
+    @classmethod
+    def update(cls):
+        cls.__backup["schedule"] = cls.backup_schedule
+        cls.__backup["path"] = cls.backup_path
+        cls.__update["schedule"] = cls.update_schedule
+        cls.__update["allow_major_update"] = cls.update_allow_major_update
+        cls.__data["complete_shutdown"] = cls.complete_shutdown
+        cls.__data["schedule"] = cls.schedule
+        cls.__data["backup"] = cls.__backup
+        cls.__data["update"] = cls.__update
+        File.update(cls.SECTION_NAME, cls.__data)
