@@ -18,7 +18,7 @@
 
 import argparse, sys, os
 from util.configuration import File, Minecraft
-from util.inputextended import bool_input
+from util.mielib.custominput import bool_input
 from util.emailer import Emailer
 from minecraft.version import Versioner
 from util.syslog import log, clear_log
