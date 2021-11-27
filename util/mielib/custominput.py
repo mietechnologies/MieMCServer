@@ -1,8 +1,16 @@
+from .responseoption import ResponseOption, option, optionList
+
 
 def bool_input(output, default=None, abrv=True):
-    # Create output with parameters
-    # Loop until valid input is given
-    # Return the user's response in bool form
+    '''A function to get a user's response to a question that has a yes or no
+    (True or False) answer.
+    
+    Keyword arguments:
+        default -- This is the default response if the user does not input
+    anything. This parameter can be either True, False, or None. If set to None,
+    the function will not accept an empty answer. It will require one of the
+    given responses. (Defaults to None)
+        abrv -- Uses the abbreviated response. (Defaults to True)'''
     true_answers = ["y", "yes"]
     false_answers = ["n", "no"]
     used_index = 0 if abrv else 1
@@ -36,6 +44,19 @@ def bool_input(output, default=None, abrv=True):
 
         print("I'm sorry, I didn't understand that input.")
 
+def choice_input(output, options, default=None, abrv=True):
+    ''''''
+    option_list = optionList(options, default, abrv)
+    message = "{} {} ".format(output, option_list)
+    valid_input = False
 
+    while (not valid_input):
+        user_input = input(message)
+        possible_option = option(options, user_input)
 
-    
+        if user_input is "" and default.response is not None:
+            return default.response
+        elif possible_option is None:
+            print("I'm sorry, I didn't understand that input.")
+        else:
+            return possible_option.response
