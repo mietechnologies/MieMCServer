@@ -1,65 +1,25 @@
-Minecraft:
-  allocated_ram: 4096
-  version:
-    major: 1
-    minor: 17
-    patch: 1
-    build: 384
-    version_group: "1.17"
 Email:
-  address: 'fuck@you.com'
-  password: "wouldn't you like to know"
-  server: "smtp.gmail.com"
+  address: <your.email@gmail.com>
+  password: <your password>
   port: 587
-  recipients:
-    - someone@gmail.com
+  recipients: []
+  server: smtp.gmail.com
 Maintenance:
-  complete_shutdown: ""
-  schedule: ""
   backup:
-    schedule: ""
-    path: ""
+    number: 1
+    path: ~/MC_Backups
+    schedule: ''
+  complete_shutdown: ''
+  schedule: ''
   update:
-    schedule: ""
     allow_major_update: false
-
-# Cron Jobs
-# System Restart -  Weekly
-# DIV | Warning: A system restart is good practice to clear out any residual problems
-# might still be in RAM. Also, in order to run the commands file a server
-# restart is required. | DIV
-# How frequently would you like your system to restart? [daily/WEEKLY/monthly]
-# - Weekly - What day of the week would you like to restart? [m/t/w/r/f/s/u] 
-# - Monthly - What day of the month would you like to restart? [1-28/eom]
-# - ALL - What time would you like the system to restart? [##:## a/p]
-
-# Server Backup - Daily
-# DIV | Warning: It is good practice to backup your server so if anything any-
-# thing were to happen, you would be able to revert back to your previous back-
-# up. | DIV
-# How frequently would you like your server to be backed up? [DAILY/weekly/monthly]
-# - Weekly - What day of the week would you like your server to be backed up? [m/t/w/r/f/s/u]
-# - Monthly - What day of the month would you like your server to be backed up? [1-28/eom]
-# - ALL - What time would you like your server to be backed up? [##:## a/p]
-# - ALL - Where would you like your backup to be stored? [/home/<user>/minePi/server/backup]
-
-# Update Check - Weekly
-# DIV | Warning: It is wise to check for updates on a regular basis so any bugs
-# the developers might find and fix will be applied to your server. We can
-# understand your concern for larger updates, so we will ask your permission
-# on if you want us to do bigger updates automatically. If not, we will email
-# you and alert you of any major updates | DIV
-# How frequently would you like to check for updates? [daily/WEEKLY/monthly]
-# - Weekly - What day of the week would you like to check for updates? [m/t/w/r/f/s/u]
-# - Monthly - What day of the month would you like to check for updates? [1-28/eom]
-# - ALL - What time would you like to check for updates? [##:## a/p]
-# - ALL - Would you like me to update to major releases? [y/N]
-
-# Maintenance Schedule - Daily
-# DIV | Warning: I have been preprogrammed with some useful maintenance scripts
-# to help keep your server up and running smoothly. It is always good to run
-# these scripts so your players experience as little server lag as possible | DIV
-# How frequently would you like these scripts to run? [DAILY/weekly/monthly]
-# - Weekly - What day of the week would you like the scripts to run? [m/t/w/r/f/s/u]
-# - Monthly - What day of the month would you like the scripts to run? [1-28/eom]
-# - ALL - What time would you like the scripts to run? [##:## a/p]
+    schedule: ''
+Minecraft:
+  allocated_ram: 1024
+  version:
+    build: null
+    install_date: ''
+    major: null
+    minor: null
+    patch: null
+    version_group: null
