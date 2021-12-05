@@ -16,4 +16,3 @@ class Date:
     @staticmethod
     def elapstedTime(firstDate, secondDate):
         return abs(firstDate - secondDate.total_seconds())
-    

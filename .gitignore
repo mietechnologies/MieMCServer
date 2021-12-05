@@ -1,8 +1,7 @@
 # Do not include any server-specific files
 cache/
 logs/
-minecraft/backups/
-minecraft/server/
+server/
 *.yml
 
 # Do not include any automatically generated Python files
@@ -23,6 +22,7 @@ $.sha256
 *.DS_Store
 
 # Do not include helper scripts
-collect-libraries
-install-libraries
+collect-libraries.sh
+install-libraries.sh
+delete-server.sh
 test.py
