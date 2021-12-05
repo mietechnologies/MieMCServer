@@ -2,7 +2,7 @@ import os, sys, requests
 from re import sub
 from .version import UpdateType, Versioner
 sys.path.append("..")
-from util.configuration import Email, Minecraft
+from util.configuration import Email, Minecraft, Maintenance
 from util.emailer import Emailer
 from util.syslog import log
 from util.date import Date
@@ -16,24 +16,27 @@ class Installer:
     server_jar = os.path.join(server_dir, 'paper.jar')
     temp_jar = os.path.join(dir, 'paper.jar')
 
-    def __shouldInstall(self, override):
+    @classmethod
+    def __shouldInstall(cls, override):
         type, version = Versioner.hasUpdate()
-        if type is UpdateType.MAJOR and not Minecraft.allow_major_update:
-            self.__adminUpdateAlert(version)
 
         if type is not UpdateType.NONE and override:
             return (True, version)
+
+        if type is UpdateType.MAJOR and not Maintenance.update_allow_major_update:
+            cls.__adminUpdateAlert(version)
 
         if type is UpdateType.BUILD or type is UpdateType.MINOR:
             return (True, version)
         elif type is UpdateType.MAJOR and not Versioner.serverExists():
             return (True, version)
-        elif type is UpdateType.MAJOR and Minecraft.allow_major_update:
+        elif type is UpdateType.MAJOR and Maintenance.update_allow_major_update:
             return (True, version)
         else:
             return (False, None)
 
-    def __adminUpdateAlert(self, version):
+    @classmethod
+    def __adminUpdateAlert(cls, version):
         version_str = Versioner.versionString(version)
         
         subject = "Minecraft Server has an update!"
@@ -47,32 +50,36 @@ class Installer:
         email = Emailer(subject, body)
         email.send()
 
-    def install(self, override_settings = False):
-        should_install, version = self.__shouldInstall(override_settings)
+    @classmethod
+    def install(cls, override_settings = False):
+        should_install, version = cls.__shouldInstall(override_settings)
         if should_install:
             version_str = Versioner.versionString(version)
             log("Downloading {}...".format(version_str))
-            download = self.__download(version)
+            download = cls.__download(version)
 
             log("Installing new server...")
-            if os.path.isdir(self.server_dir) == False:
-                os.mkdir(self.server_dir)
-            os.replace(download, self.server_jar)
+            if os.path.isdir(cls.server_dir) == False:
+                os.mkdir(cls.server_dir)
+            os.replace(download, cls.server_jar)
 
+            log("Server installed!")
+            Versioner.updateInstalledVersion(version)
 
-    def __download(self, version):
+    @classmethod
+    def __download(cls, version):
         version_str = ""
         if version["patch"] is None:
-            version_str = ".".join(version["major"], version["minor"])
+            version_str = ".".join([version["major"], version["minor"]])
         else:
-            version_str = ".".join(version["major"], version["minor"],
-                version["patch"])
+            version_str = ".".join([version["major"], version["minor"],
+                version["patch"]])
 
         filename = "paper-{}-{}.jar".format(version_str, version["build"])
-        url = self.DOWNLOAD_URL.format(version_str, version["build"], filename)
+        url = cls.DOWNLOAD_URL.format(version_str, version["build"], filename)
         with requests.get(url, stream=True) as request:
             request.raise_for_status()
-            with open(self.temp_jar, 'wb') as file:
+            with open(cls.temp_jar, 'wb') as file:
                 for chunk in request.iter_content(chunk_size=8192):
                     if chunk:
                         file.write(chunk)
@@ -81,4 +88,4 @@ class Installer:
                         return None
 
         log("Download Complete!")
-        return self.temp_jar
+        return cls.temp_jar

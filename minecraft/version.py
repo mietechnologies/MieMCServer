@@ -1,6 +1,7 @@
+from datetime import MINYEAR
 import sys, os, requests
 sys.path.append("..")
-from util.configuration import Minecraft
+from util.configuration import Minecraft, Maintenance
 from util.syslog import log
 from util.date import Date
 from enum import Enum
@@ -36,11 +37,11 @@ class Versioner:
         '''Converts a version dictionary into a string.'''
         version_str = ""
         if version["patch"] is None:
-            version_str = ".".join(version["major"], version["minor"])
-            version_str = ":".join(version_str, version["build"])
+            version_str = ".".join([version["major"], version["minor"]])
+            version_str = ":".join([version_str, str(version["build"])])
         else:
-            version_str = ".".join(version["major"], version["minor"], version["patch"])
-            version_str = ":".join(version_str, version["build"])
+            version_str = ".".join([version["major"], version["minor"], version["patch"]])
+            version_str = ":".join([version_str, str(version["build"])])
         return version_str
 
     @classmethod
@@ -125,7 +126,7 @@ class Versioner:
         has specified whether they want to update minor builds will determine 
         how far this function will look'''
 
-        if Minecraft.version_group is None or Minecraft.allow_major_update:
+        if Minecraft.version_group is None or Maintenance.update_allow_major_update:
             version_request = requests.get(cls.VERSION_MANIFEST_URL.format(""))
             data = cls.__extractAbsoluteVersion(version_request.json())
             build_data = cls.__getLatestBuild(data["version_group"])
@@ -173,25 +174,28 @@ class Versioner:
         latest_version = cls.__getLatestVersion()
 
         log("Checking for an update...")
-        # Version Group
-        if current_version["version_group"] is None:
+        if current_version is None:
             return (UpdateType.MAJOR, latest_version)
-        # Major
-        major_check = current_version["major"] is not None
-        if major_check and int(current_version["major"]) < int(latest_version["major"]):
-            return (UpdateType.MAJOR, latest_version)
-        # Minor
-        minor_check = current_version["minor"] is not None
-        if minor_check and int(current_version["minor"]) < int(latest_version["minor"]):
-            return (UpdateType.MAJOR, latest_version)
-        # Patch
-        patch_check = current_version["patch"] is None
-        if patch_check or int(current_version["patch"]) < int(latest_version["patch"]):
-            return (UpdateType.MINOR, latest_version)
-        # Build
-        build_check = current_version["build"] is None
-        if build_check or int(current_version["build"]) < int(latest_version["build"]):
-            return (UpdateType.BUILD, latest_version)
+        else:
+            # Version Group
+            if current_version["version_group"] is None:
+                return (UpdateType.MAJOR, latest_version)
+            # Major
+            major_check = current_version["major"] is not None
+            if major_check and int(current_version["major"]) < int(latest_version["major"]):
+                return (UpdateType.MAJOR, latest_version)
+            # Minor
+            minor_check = current_version["minor"] is not None
+            if minor_check and int(current_version["minor"]) < int(latest_version["minor"]):
+                return (UpdateType.MAJOR, latest_version)
+            # Patch
+            patch_check = current_version["patch"] is None
+            if patch_check or int(current_version["patch"]) < int(latest_version["patch"]):
+                return (UpdateType.MINOR, latest_version)
+            # Build
+            build_check = current_version["build"] is None
+            if build_check or int(current_version["build"]) < int(latest_version["build"]):
+                return (UpdateType.BUILD, latest_version)
 
         log("No update found.")
         return (UpdateType.NONE, None)
@@ -212,8 +216,12 @@ class Versioner:
         Keyword arguments:
             version -- A dictionary containing the keys: major, minor, patch, build, and version_group.
         """
-        install_date = Date.timestamp()
-        update_dict = version
-        update_dict["install_date"] = install_date
-        Minecraft.update(update_dict)
+        Minecraft.install_date = Date.timestamp()
+        Minecraft.major = int(version.get("major", Minecraft.major))
+        Minecraft.minor = int(version.get("minor", Minecraft.minor))
+        Minecraft.patch = int(version.get("patch", Minecraft.patch))
+        Minecraft.build = int(version.get("build", Minecraft.build))
+        Minecraft.version_group = version.get("version_group",
+                                              Minecraft.version_group)
+        Minecraft.update()
         
