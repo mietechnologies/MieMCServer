@@ -16,17 +16,21 @@
 #    - '-bu', '--backup': This will backup the Minecraft Server
 # *****************************************************************************
 
-import argparse, sys, os
-from util.configuration import File, Minecraft
+from util.configuration import File, Minecraft, Maintenance
+from minecraft.version import Versioner, UpdateType
 from util.mielib.custominput import bool_input
-from util.emailer import Emailer
-from minecraft.version import Versioner
+from minecraft.install import Installer
 from util.syslog import log, clear_log
+from util.emailer import Emailer
+import argparse, sys, os
+from rcon import Client
+import asyncio
 import zipfile
 from time import sleep # TODO: Remove me once we're ready to go to production
 
 VERSION = "0.0.1"
 
+# TODO: UPDATE ALL OF THE PATH OBJECTS TO REFLECT THE NEW FILE SYSTEM
 def parse(args):
     mc_version = args.minecraft_version
     version = args.version
@@ -37,6 +41,7 @@ def parse(args):
 
     running_log = []
 
+    # Done
     if mc_version is not False:
         running_log.append('-mcv')
         if Minecraft.build is not None:
@@ -44,22 +49,27 @@ def parse(args):
         else:
             log("Minecraft Server has not been installed yet.")
     
+    # Done
     if version is not False:
         running_log.append('-v')
         log("minePi Version v{}".format(VERSION))
 
+    # Done
     if command is not None:
         running_log.append('-c {}'.format(command))
-        log("Command Passed: {}".format(command))
+        runCommand(command)
+        
 
+    # TODO: This needs finished
     if update is not None:
         running_log.append('-u')
         updateServer(update)
 
+    # TODO: This needs finished
     if backup is not None:
         # Check to see if the input is 'Default', if it is use the config
         # location. If not, use the passed in path
-        if backup is "Default":
+        if backup == "Default":
             path = "/usr/brett/minecraft/backup"
         else:
             path = backup
@@ -68,10 +78,12 @@ def parse(args):
         sleep(2)
         log("Backup complete!")
 
+    # Mostly Done TODO: Will need updated once I update configuration
     if method is not None:
         running_log.append('-gc {}'.format(method))
         generateConfig(method)
 
+    # TODO: This logic still needs fleshed out
     if not running_log:
         run()
 
@@ -81,8 +93,19 @@ def run():
         log("Found config.yml")
         # Trim End
         # Backup
-        # CheckVersion
-        # Update, if appropriate
+        Installer.install()
+        log("Starting server...")
+        ram = "{}M".format(Minecraft.allocated_ram)
+        # CD into server directory
+        current_dir = os.path.dirname(__file__)
+        script_path = os.path.join(current_dir, "scripts/start-server.sh")
+        log("Setting up bootlog file...")
+        bootlog_path = os.path.join(current_dir, "logs/bootlog.txt")
+        server_dir = os.path.join(current_dir, "server")
+        os.popen("{} {} {} > {}".format(script_path,
+                                        ram,
+                                        server_dir,
+                                        bootlog_path))
         # Start Server
         # Run post-start commands
     else:
@@ -91,6 +114,8 @@ def run():
         # Run Cron setup
         # Download latest Minecraft Server
         # Start Server
+
+    log("Server started!")
 
 def generateConfig(method):
     user_response = bool_input("This will override your current config.yml," \
@@ -111,10 +136,41 @@ def generateConfig(method):
         log("Generate config cancelled.")
 
 def updateServer(override):
-    user_response = override
-    if override == "":
-        user_response = bool_input("Fuck?", default=True)
-        print(user_response)
+    if not File.data:
+        log("Cancelling... You haven't setup a config.yml file yet. You can " \
+            "generate a config file by running the command 'python3 main.py -" \
+            "gc'")
+    else:
+        update, version = Versioner.hasUpdate()
+
+        if update is not UpdateType.NONE:
+            should_update = False
+            output = "You have a {} update. Version {} is available".format(
+                update,
+                Versioner.versionString(version)
+            )
+            log(output)
+
+            if update is UpdateType.MAJOR:
+                if not Maintenance.update_allow_major_update:
+                    user_input = bool_input("The setting to allow major updates " \
+                        "is set to 'False'. Would you like to override this " \
+                        "setting for this update?")
+                    should_update = user_input
+                else:
+                    should_update = True
+            else:
+                should_update = True
+
+            if should_update:
+                Installer.install(override_settings=should_update)
+
+def runCommand(command):
+    # TODO: Reference the server.properties file for the password
+    with Client('mieserver.ddns.net', 25575, passwd='test') as client:
+        response = client.run(command)
+
+        print(response)
 
 def main():
 
