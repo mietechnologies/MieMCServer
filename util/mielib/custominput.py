@@ -53,7 +53,7 @@ def choice_input(output, options, default=None, abrv=True):
         user_input = input(message)
         possible_option = option(options, user_input)
 
-        if user_input == "" and default.response is not None:
+        if user_input == "" and default is not None:
             return default.response
         elif possible_option is None:
             print("I'm sorry, I didn't understand that input.")
