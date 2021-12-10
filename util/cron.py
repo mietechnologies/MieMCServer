@@ -44,7 +44,6 @@ class WeekDay(IntEnum):
     def cronValue(self):
         return int(self)
 
-
 class CronDate:
 
     FREQUENCY_OPTIONS = [
@@ -94,8 +93,38 @@ class CronDate:
             return "@reboot"
 
     @staticmethod
-    def convertFromCronTime() -> CronDate:
-        pass
+    def convertFromCronTime(cron_string) -> CronDate:
+        cron_split = cron_string.split(" ")
+        length = len(cron_split)
+        minutes = None
+        hours = None
+        week_day = None
+        month_day = None
+        frequency = None
+        if length == 1:
+            return CronDate(CronFrequency.REBOOT)
+        else:
+            for index in range(length):
+                item = cron_split[index]
+                if item != "*":
+                    if index == 0:
+                        minutes = int(item)
+                    elif index == 1:
+                        hours = int(item)
+                    elif index == 2:
+                        month_day = int(item)
+                        frequency = CronFrequency.MONTHLY
+                    elif index == 4:
+                        week_day = WeekDay(int(item))
+                        frequency = CronFrequency.WEEKLY
+            else:
+                if not frequency:
+                    frequency = CronFrequency.DAILY
+                return CronDate(frequency,
+                                week_day, 
+                                month_day, 
+                                "{}:{} 24".format(hours, minutes))
+
 
     @staticmethod
     def validTime(check):
@@ -118,6 +147,9 @@ class CronDate:
 
 
     def __convertTime(self, time):
+        if time == None:
+            return (None, None)
+
         time, type = time.split(" ")
         time_split = time.split(":")
         hour_split = int(time_split[0])
