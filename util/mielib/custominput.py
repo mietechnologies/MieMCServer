@@ -1,4 +1,64 @@
 from .responseoption import ResponseOption, option, optionList
+import re
+
+def int_input(output, default=None):
+    message = "{} ".format(output)
+    if default:
+        message += "[{}] ".format(default)
+
+    while (True):
+        user_input = input(message)
+        try:
+            valid_input = int(user_input)
+            return valid_input
+        except:
+            print("I'm sorry, I didn't understand that input.")
+
+def email_input(output, provider="gmail", multiples=False):
+    message = "{} ".format(output)
+    if multiples:
+        message += "(To enter multiple addresses, seperate each with ', ') "
+    
+    valid_inputs = False
+    valid_emails = []
+    while (not valid_inputs):
+        user_response = input(message)
+        if multiples:
+            emails_split = user_response.split(", ")
+            for email in emails_split:
+                if __validate_email(email):
+                    valid_emails.append(email)
+                else:
+                    new_email = __email_error(email)
+                    valid_emails.append(new_email)
+            else:
+                return valid_emails
+        else:
+            if __validate_email(user_response, provider):
+                return user_response
+            else:
+                print("I'm sorry, {} isn't a valid email.".format(user_response))
+
+def __validate_email(email, provider=None):
+    regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+
+    if (re.fullmatch(regex, email)):
+        if provider:
+            provider = provider + ".com"
+            if provider in email:
+                return True
+        else:
+            return True
+
+    return False
+
+def __email_error(email):
+    email = email
+    while (True):
+        message = "I'm sorry, {} is not a valid email. Please try again: ".format(email)
+        email = input(message)
+        if __validate_email(email):
+            return email
 
 def bool_input(output, default=None, abrv=True):
     '''A function to get a user's response to a question that has a yes or no
