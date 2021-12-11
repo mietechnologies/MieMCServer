@@ -41,7 +41,6 @@ class File:
             "You are free to edit your config.yml file manual after creation.")
         ram = int_input("How much RAM would you like to dedicate to your " \
             "Minecraft Server? (your input will be Mbs)", default=512)
-        version_input = ?
         should_update = bool_input("Would you like to allow major updates? "\
             "(we caution against this due to early release bugs)", default=False)
         email_address = input("What is the gmail address you would like me " \

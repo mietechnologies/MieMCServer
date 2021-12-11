@@ -16,3 +16,8 @@ class Date:
     @staticmethod
     def elapstedTime(firstDate, secondDate):
         return abs(firstDate - secondDate.total_seconds())
+
+    @staticmethod 
+    def strippedTimestamp():
+        timestamp = Date.timestamp()
+        return timestamp.replace('/', '-').replace(' ', '_').replace(':', '-')
