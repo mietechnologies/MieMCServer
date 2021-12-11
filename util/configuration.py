@@ -49,7 +49,7 @@ class File:
         password = input("What is the password for the provided email?")
         recipient = input("What email address(es) would you like to receive " \
             "the logs and reports? (To input multiples, separate with ', ')")
-        recip
+        
         # version_str = input("What version would you like to install? [#.##.#] ")
         # should_update = bool(input("Would you like to allow major updates? [y/n] "))
         # email_address = input("What gmail address would you like use to send " \
