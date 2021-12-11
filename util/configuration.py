@@ -43,42 +43,10 @@ class File:
         # TODO: Flesh Out
         print("I will ask a series of questions to build your config.yml\n" \
             "You are free to edit your config.yml file manual after creation.")
-        ram = ci.int_input("How much RAM would you like to dedicate to your " \
-            "Minecraft Server? (your input will be Mbs)", default=512)
-        should_update = bool_input("Would you like to allow major updates? "\
-            "(we caution against this due to early release bugs)", default=False)
-        email_address = input("What is the gmail address you would like me " \
-            "to use to send you reports?")
-        password = input("What is the password for the provided email?")
-        recipient = input("What email address(es) would you like to receive " \
-            "the logs and reports? (To input multiples, separate with ', ')")
+        Email.build()
         
-        # version_str = input("What version would you like to install? [#.##.#] ")
         # should_update = bool(input("Would you like to allow major updates? [y/n] "))
-        # email_address = input("What gmail address would you like use to send " \
-        #     "your logs and reports from? ")
-        # password = input("What is the password to the email provided? ")
-        # recipient = input("What email address(es) would you like to recieve " \
-        #     "the logs and reports? (If inputting multiple, seperate with a ', ') ")
-        # recipients = recipient.split(", ")
         # version_split = version_str.split(".")
-        # config = {
-        #     "Minecraft" : {
-        #         "allocated_ram" : ram,
-        #         "allow_major_update" : should_update,
-        #         "major" : int(version_split[0]),
-        #         "minor": int(version_split[1]),
-        #         "patch" : int(version_split[2]),
-        #         "version_group" : ".".join([version_split[0], version_split[1]])
-        #     },
-        #     "Email" : {
-        #         "address" : email_address,
-        #         "password" : password,
-        #         "server" : "smtp.gmail.com",
-        #         "port" : 587,
-        #         "recipients" : recipients
-        #     }
-        # }
 
         os.remove(cls.__file_dir)
         file = open(cls.__file_dir, "w")
@@ -102,6 +70,18 @@ class Minecraft:
             return "{}.{}:{}".format(cls.major, cls.minor, cls.build)
         else:
             return "{}.{}.{}:{}".format(cls.major, cls.minor, cls.patch, cls.build)
+
+    @classmethod
+    def build(cls):
+        ram = ci.int_input("How much RAM would you like to dedicate to your " \
+            "Minecraft Server? (your input will be Mbs)", default=512)
+        # version_str = input("What version would you like to install? [#.##.#] ")
+        version = ci.regex_input("What version would you like to install?", 
+                              regex="#.##.#/#.##",
+                              default="1.17.1")
+        should_update = ci.bool_input("Would you like to allow major updates? "\
+            "(we caution against this due to early release bugs)", default=False)
+        
 
     @classmethod
     def update(cls):
@@ -136,6 +116,19 @@ class Email:
     recipients = __data.get("recipients", [])
 
     @classmethod
+    def build(cls):
+        email_address = ci.email_input("What is the gmail address you would " \
+            "like me to use to send you reports?", provider="gmail")
+        password = ci.confirm_input("What is the password to the account you " \
+            "just enetered? ")
+        recipeints = ci.email_input("What email address(es) would you like " \
+            "to recieve the logs and reports?", multiples=True)
+        cls.address = email_address
+        cls.password = password
+        cls.recipeints = recipeints
+        cls.update()
+
+    @classmethod
     def update(cls):
         cls.__data["address"] = cls.address
         cls.__data["password"] = cls.password
@@ -165,6 +158,10 @@ class Maintenance:
     backup_number = __backup.get("number", 1)
     update_schedule = __update.get("schedule", "")
     update_allow_major_update = __update.get("allow_major_update", False)
+
+    @classmethod
+    def build(cls):
+        pass
 
     @classmethod
     def update(cls):
