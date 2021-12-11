@@ -16,6 +16,8 @@
 #    - '-bu', '--backup': This will backup the Minecraft Server
 # *****************************************************************************
 
+from util.backup import Backup
+from util.date import Date
 from util.configuration import File, Minecraft, Maintenance
 from minecraft.version import Versioner, UpdateType
 from util.mielib.custominput import bool_input
@@ -65,18 +67,10 @@ def parse(args):
         running_log.append('-u')
         updateServer(update)
 
-    # TODO: This needs finished
     if backup is not None:
-        # Check to see if the input is 'Default', if it is use the config
-        # location. If not, use the passed in path
-        if backup == "Default":
-            path = "/usr/brett/minecraft/backup"
-        else:
-            path = backup
-        running_log.append('-bu {}'.format(path))
-        log("Backing up to: {}".format(path))
-        sleep(2)
-        log("Backup complete!")
+        running_log.append('-bu {}'.format(Maintenance.backup_path))
+        filename = 'world.{}.zip'.format(Date.strippedTimestamp())
+        Backup.put(Installer.server_dir, Maintenance.backup_path, filename)
 
     # Mostly Done TODO: Will need updated once I update configuration
     if method is not None:
@@ -192,7 +186,7 @@ def main():
         "latest version.", dest="update", nargs="?", const="", required=False)
 
     parser.add_argument('-bu', '--backup', help="Backup your Minecraft Server", 
-        dest="path", nargs="?", const="Default", type=str, required=False)
+        dest="path", action='store_true', required=False)
 
     parser.add_argument('-gc', '--generate-config', help="This will generate " \
         "the configuration for this program. It will take one of two inputs: " \
