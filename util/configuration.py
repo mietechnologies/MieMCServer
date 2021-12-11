@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 from .mielib.custominput import choice_input, regex_input, range_input, \
     int_input
+=======
+from .mielib import custominput as ci
+from .cron import CronDate, CronFrequency
+>>>>>>> c83e2dd... Updated my method of importing mielib
 import yaml, os
 
 class File:
@@ -38,7 +43,7 @@ class File:
         # TODO: Flesh Out
         print("I will ask a series of questions to build your config.yml\n" \
             "You are free to edit your config.yml file manual after creation.")
-        ram = int_input("How much RAM would you like to dedicate to your " \
+        ram = ci.int_input("How much RAM would you like to dedicate to your " \
             "Minecraft Server? (your input will be Mbs)", default=512)
         should_update = bool_input("Would you like to allow major updates? "\
             "(we caution against this due to early release bugs)", default=False)
