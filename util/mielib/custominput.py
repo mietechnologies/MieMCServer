@@ -30,7 +30,7 @@ def confirm_input(output):
         else:
             return first_password
 
-def email_input(output, provider="gmail", multiples=False):
+def email_input(output, provider=None, multiples=False):
     message = "{} ".format(output)
     if multiples:
         message += "(To enter multiple addresses, seperate each with ', ') "
