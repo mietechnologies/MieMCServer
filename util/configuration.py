@@ -1,6 +1,7 @@
-import os
-import yaml
-from .cron import CronDate
+from .mielib.custominput import choice_input, regex_input, range_input, \
+    int_input
+from .cron import CronDate, CronFrequency
+import yaml, os
 
 class File:
     __util_dir = os.path.dirname(__file__)
@@ -36,9 +37,19 @@ class File:
     @classmethod
     def build(cls):
         # TODO: Flesh Out
-        # print("I will ask a series of questions to build your config.yml")
-        # ram = int(input("How much ram would you like your Minecraft Server to " \
-        #     "have? (your input will be mb) "))
+        print("I will ask a series of questions to build your config.yml\n" \
+            "You are free to edit your config.yml file manual after creation.")
+        ram = int_input("How much RAM would you like to dedicate to your " \
+            "Minecraft Server? (your input will be Mbs)", default=512)
+        version_input = ?
+        should_update = bool_input("Would you like to allow major updates? "\
+            "(we caution against this due to early release bugs)", default=False)
+        email_address = input("What is the gmail address you would like me " \
+            "to use to send you reports?")
+        password = input("What is the password for the provided email?")
+        recipient = input("What email address(es) would you like to receive " \
+            "the logs and reports? (To input multiples, separate with ', ')")
+        recip
         # version_str = input("What version would you like to install? [#.##.#] ")
         # should_update = bool(input("Would you like to allow major updates? [y/n] "))
         # email_address = input("What gmail address would you like use to send " \
