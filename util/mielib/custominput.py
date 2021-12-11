@@ -14,6 +14,22 @@ def int_input(output, default=None):
         except:
             print("I'm sorry, I didn't understand that input.")
 
+def confirm_input(output):
+    valid_password = False
+
+    while (not valid_password):
+        first_password = input(output)
+        second_password = input("Confirm your previous input by typing it " \
+            "again please: ")
+
+        while (second_password != first_password):
+            second_password = input("Inputs don't match. Please re-enter " \
+                "the original input: (Enter '!' to restart) ")
+            if second_password == "!":
+                break
+        else:
+            return first_password
+
 def email_input(output, provider="gmail", multiples=False):
     message = "{} ".format(output)
     if multiples:
