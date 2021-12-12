@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-from .mielib.custominput import choice_input, regex_input, range_input, \
-    int_input
-=======
 from .mielib import custominput as ci
-from .cron import CronDate, CronFrequency
->>>>>>> c83e2dd... Updated my method of importing mielib
 import yaml, os
 
 class File:
@@ -154,14 +148,59 @@ class Maintenance:
     complete_shutdown = __data.get("complete_shutdown", "")
     schedule = __data.get("schedule", "")
     backup_schedule = __backup.get("schedule", "")
-    backup_path = __backup.get("path", "")
+    backup_path = __backup.get("path", "~/MC_Backups")
     backup_number = __backup.get("number", 1)
     update_schedule = __update.get("schedule", "")
     update_allow_major_update = __update.get("allow_major_update", False)
 
     @classmethod
     def build(cls):
-        pass
+        print("*" * 120)
+        print("Warning: A system restart is good practice to clear out any " \
+            "residual problems that might still be in RAM. Also, in order to " \
+            "run the commands file a server restart is required.")
+        print("*" * 120)
+        restart_cron = ci.cron_date_input("restart")
+
+        print("*" * 120)
+        print("Warning: It is good practice to backup your server so if any" \
+            "thing were to happen, you would be able to revert back to your " \
+            "previous backup.")
+        print("*" * 120)
+        backup_cron = ci.cron_date_input("backup Minecraft")
+        backup_path = input("Where would you like your backups to be stored? " \
+            "[~/MC_Backups] ")
+        backup_limit = ci.int_input("How many backups would you like to be " \
+            "stored before removing old backups?")
+
+        print("*" * 120)
+        print("Warning: It is wise to check for updates on a regular basis so " \
+            "any bugs the developers might find and fix will be applied to " \
+            "your server. We can understand your concern for larger updates, " \
+            "so we will ask your permission on if you want us to do bigger " \
+            "updates automatically. If not, we will email you and alert you " \
+            "of any major updates.")
+        print("*" * 120)
+        update_cron = ci.cron_date_input("check for updates")
+        major_updates = ci.bool_input("Would you like me to update to " \
+            "major releases?", default=False)
+            
+        print("*" * 120)
+        print("Warning: I have ben preprogrammed with some useful maintenance " \
+            "scripts to help keep your server up and running smoothly. It is " \
+            "always good to run these scripts so your players experience as " \
+            "little server lag as possible.")
+        print("*" * 120)
+        maintenance_cron = ci.cron_date_input("run maintenance scripts")
+
+        cls.complete_shutdown = restart_cron
+        cls.schedule = maintenance_cron
+        cls.backup_schedule = backup_cron
+        cls.backup_path = backup_path
+        cls.backup_number = backup_limit
+        cls.update_schedule = update_cron
+        cls.update_allow_major_update = major_updates
+        cls.update()
 
     @classmethod
     def update(cls):
