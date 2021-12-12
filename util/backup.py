@@ -1,5 +1,4 @@
-import os
-from os import mkdir
+import os, shutil
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from .configuration import Maintenance
@@ -18,6 +17,7 @@ class Backup:
         Archives all files and folders in the source directory into the file provided, placing the created 
         file at the designated path.
         '''
+        path = os.path.expanduser(path)
         zipfile = '{}/{}'.format(path, file)
 
         # SANITY CHECK: User could have:
@@ -26,8 +26,8 @@ class Backup:
         # - Deleted directory
         # So, if the directory doesn't exist, make it
         if not os.path.isdir(path):
-            os.system('mkdir {}'.format(path))
-        
+            os.mkdir(path)
+
         # Archive all files in the source directory
         # TODO: I'm not sure if this actually compresses the file or just zips them but we should check into
         # it in the future. For now, it gets the job done.
@@ -39,9 +39,9 @@ class Backup:
                         os.path.relpath(os.path.join(root, file), 
                         os.path.join(source, '..')))
 
+        log("Finished creating local backup!")
         # Clean up, if needed
         cls.localClean(path)
-        log('Finished creating local backup!')
 
     @classmethod
     def localClean(cls, path: str):

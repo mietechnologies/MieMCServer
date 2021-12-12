@@ -108,7 +108,6 @@ class Versioner:
         '''Checks to see if a version has been set in the configuration. If it 
         has it will return the version information, otherwise it will return
         None'''
-
         if Minecraft.minor is None:
             return None
         else:

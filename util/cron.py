@@ -4,19 +4,21 @@ from crontab import CronTab
 from enum import IntEnum
 
 class CronScheduler:
-    cron = CronTab(user='michaelcraun')
+    cron = CronTab(user='bachapin')
     # TODO: Add some functionality to convert a more human readable "date/time"
     #       input into an usable crantab time
 
-    def createRecurringJob(self, time, file, comment):
+    def createRecurringJob(self, time, command, comment):
         for job in self.cron:
             if job.comment == comment:
+                self.cron.remove(job)
+                new_job = self.cron.new(command=command, comment=comment)
+                new_job.setall(time)
+                self.cron.write()
                 break
         else:
-            command = 'sudo python /home/pi/minePi/cron/{} > /home/pi/minePi/logs.txt'.format(file)
             this_job = self.cron.new(command=command, comment=comment)
             this_job.setall(time)
-            print("Creating '{}' cron job...".format(comment))
             self.cron.write()
 
     def removeJob(self, comment):

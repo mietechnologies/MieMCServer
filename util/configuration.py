@@ -1,6 +1,5 @@
 from .mielib import custominput as ci
 from .extension import cleanString
-from .syslog import log
 import yaml, os
 
 class File:
@@ -48,7 +47,7 @@ class File:
             "You are free to edit your config.yml file manually after creation.")
 
         Email.build()
-        Minecraft.build()
+        Minecraft.build_object()
         Maintenance.build()
 
         return True
@@ -73,7 +72,7 @@ class Minecraft:
             return "{}.{}.{}:{}".format(cls.major, cls.minor, cls.patch, cls.build)
 
     @classmethod
-    def build(cls):
+    def build_object(cls):
         cls.reset()
         ram = ci.int_input("How much RAM would you like to dedicate to your " \
             "Minecraft Server? (your input will be Mbs)", default=1024)
@@ -134,7 +133,6 @@ class Email:
             "to recieve the logs and reports?", multiples=True)
         cls.address = email_address
         cls.password = password
-        print(recipients)
         cls.recipients = recipients
         cls.update()
 
@@ -161,12 +159,12 @@ class Maintenance:
     __data = File.data.get("Maintenance", {})
     __backup = __data.get("backup", {})
     __update = __data.get("update", {})
-    complete_shutdown = __data.get("complete_shutdown", "")
-    schedule = __data.get("schedule", "")
-    backup_schedule = __backup.get("schedule", "")
+    complete_shutdown = __data.get("complete_shutdown", "0 4 1 * *")
+    schedule = __data.get("schedule", "0 4 * * *")
+    backup_schedule = __backup.get("schedule", "0 3 * * *")
     backup_path = __backup.get("path", "~/MC_Backups")
     backup_number = __backup.get("number", 1)
-    update_schedule = __update.get("schedule", "")
+    update_schedule = __update.get("schedule", "0 3 * * 0")
     update_allow_major_update = __update.get("allow_major_update", False)
 
     @classmethod
@@ -224,15 +222,15 @@ class Maintenance:
 
     @classmethod
     def reset(cls):
-        cls.complete_shutdown = ""
-        cls.schedule = ""
-        cls.backup_schedule = ""
+        cls.complete_shutdown = "0 4 1 * *"
+        cls.schedule = "0 4 * * *"
+        cls.backup_schedule = "0 3 * * *"
         cls.backup_path = "~/MC_Backups"
         cls.backup_number = 1
-        cls.update_schedule = ""
+        cls.update_schedule = "0 3 * * 0"
         cls.update_allow_major_update = False
 
-class RCON: 
+class RCON:
     enabled = False
     password = None
     port = None
@@ -261,6 +259,7 @@ class RCON:
                 elif 'rcon.password' in line: 
                     cls.password = cleanString(line, ['rcon.password=', '\n'])
         else:
+            from .syslog import log
             log('ERR: No server.properties file found!')
 
     @classmethod
@@ -280,5 +279,3 @@ class RCON:
                         line = 'rcon.password={}\n'.format(cls.password)
                     
                     fileOut.write(line)
-        else:
-            log('ERR: No server.properties file found!')

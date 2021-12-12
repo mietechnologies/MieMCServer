@@ -18,17 +18,19 @@
 
 from util.backup import Backup
 from util.date import Date
-from util.configuration import RCON, File, Minecraft, Maintenance
+from util import configuration as c
 from minecraft.version import Versioner, UpdateType
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
 from util.syslog import log, clear_log
 from util.emailer import Emailer
+from util.cron import CronScheduler
+from scripts import reboot
 import argparse, sys, os
 from rcon import Client
 import asyncio
 import zipfile
-from time import sleep # TODO: Remove me once we're ready to go to production
+from time import sleep
 
 VERSION = "0.0.1"
 
@@ -37,18 +39,21 @@ def parse(args):
     mc_version = args.minecraft_version
     version = args.version
     command = args.command
+    commands = args.commands
     update = args.update
     backup = args.path
     method = args.generate_config
     clean = args.clean
+    stop = args.stop
+    restart = args.restart
 
     running_log = []
 
     # Done
     if mc_version is not False:
         running_log.append('-mcv')
-        if Minecraft.build is not None:
-            log("Minecraft Server: {}".format(Minecraft.version_str()))
+        if c.Minecraft.build is not None:
+            log("Minecraft Server: {}".format(c.Minecraft.version_str()))
         else:
             log("Minecraft Server has not been installed yet.")
     
@@ -68,20 +73,37 @@ def parse(args):
         updateServer(update)
 
     if backup:
-        running_log.append('-bu {}'.format(Maintenance.backup_path))
+        running_log.append('-bu {}'.format(c.Maintenance.backup_path))
+        runCommand("say System is backing up Minecraft world.")
         filename = 'world.{}.zip'.format(Date.strippedTimestamp())
-        Backup.put(Installer.server_dir, Maintenance.backup_path, filename)
+        Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
-    # Mostly Done TODO: Will need updated once I update configuration
     if method is not None:
         running_log.append('-gc {}'.format(method))
         generateConfig(method)
 
     if clean:
         running_log.append('-k')
+        runCommand("say System maintenance scripts are being ran.")
         maintenance()
 
-    # TODO: This logic still needs fleshed out
+    if commands:
+        running_log.append('-rc')
+        executeCommandList()
+
+    if stop:
+        running_log.append('-q')
+        runCommand("say The server is being saved, and then stopped in 60 " \
+            "seconds.")
+        sleep(60)
+        stopServer()
+
+    if restart:
+        running_log.append('-q')
+        runCommand("say The server is being restarted in 60 seconds.")
+        sleep(60)
+        reboot.run()
+
     if not running_log:
         run()
 
@@ -94,6 +116,13 @@ def executeCleanCommands():
     dir = os.path.dirname(__file__)
     cleanCommandFile = os.path.join(dir, 'clean-commands.txt')
     for command in linesFromFile(cleanCommandFile):
+        runCommand(command)
+
+def executeCommandList():
+    log('Running custom commands...')
+    dir = os.path.dirname(__file__)
+    custom_command_file = os.path.join(dir, 'commands.txt')
+    for command in linesFromFile(custom_command_file):
         runCommand(command)
 
 def linesFromFile(file: str, deleteFetched: bool = False):
@@ -140,33 +169,72 @@ def trimEnd():
 
 def run():
     log("Checking config.yml...")
-    if File.exists:
+    if c.File.exists:
         log("Found config.yml")
-        maintenance()
-        # Backup
+        setupCrontab()
         Installer.install()
-        log("Starting server...")
-        ram = "{}M".format(Minecraft.allocated_ram)
-        # CD into server directory
-        current_dir = os.path.dirname(__file__)
-        script_path = os.path.join(current_dir, "scripts/start-server.sh")
-        log("Setting up bootlog file...")
-        bootlog_path = os.path.join(current_dir, "logs/bootlog.txt")
-        server_dir = os.path.join(current_dir, "server")
-        os.popen("{} {} {} > {}".format(script_path,
-                                        ram,
-                                        server_dir,
-                                        bootlog_path))
-        # Start Server
-        # Run post-start commands
+        startServer()
     else:
         log("Did not find config.yml")
-        generateConfig("auto")
-        # Run Cron setup
-        # Download latest Minecraft Server
-        # Start Server
+        generateConfig("manual")
+        setupCrontab()
+        Installer.install(override_settings = True)
+        startServer()
+        c.RCON.build()
+        
 
     log("Server started!")
+
+def startServer():
+    log("Starting server...")
+    ram = "{}M".format(c.Minecraft.allocated_ram)
+    current_dir = os.path.dirname(__file__)
+    script_path = os.path.join(current_dir, "scripts/start-server.sh")
+    log("Setting up bootlog file...")
+    bootlog_path = os.path.join(current_dir, "logs/bootlog.txt")
+    server_dir = os.path.join(current_dir, "server")
+    os.popen("{} {} {} > {}".format(script_path,
+                                    ram,
+                                    server_dir,
+                                    bootlog_path))
+
+def stopServer():
+    runCommand('stop')
+
+def setupCrontab():
+    dir = os.path.dirname(__file__)
+    prog = os.path.join(dir, 'main.py')
+    scheduler = CronScheduler()
+    # TODO: Restart
+    restart_command = "python3 {} --run-commands --stop --restart".format(prog)
+    scheduler.createRecurringJob(c.Maintenance.complete_shutdown,
+                                 restart_command,
+                                 "maintenance.restart")
+    log("Scheduling crontab job 'maintenance.restart'")
+    # Backup
+    backup_command = "python3 {} --backup".format(prog)
+    scheduler.createRecurringJob(c.Maintenance.backup_schedule,
+                                 backup_command,
+                                 "maintenance.backup")
+    log("Scheduling crontab job 'maintenance.backup'")
+    # Maintenance
+    maintenance_command = "python3 {} --clean".format(prog)
+    scheduler.createRecurringJob(c.Maintenance.schedule,
+                                 maintenance_command,
+                                 "maintenance.scripts")
+    log("Scheduling crontab job 'maintenance.scripts'")
+    # Updates
+    update_command = "python3 {} --update".format(prog)
+    scheduler.createRecurringJob(c.Maintenance.update_schedule,
+                                 update_command,
+                                 "maintenance.update")
+    log("Scheduling crontab job 'maintenance.update'")
+    # Reboot
+    reboot_command = "python3 {}".format(prog)
+    scheduler.createRecurringJob("@reboot",
+                                 reboot_command,
+                                 "reboot")
+    log("Scheduling crontab job 'reboot'")
 
 def generateConfig(method):
     
@@ -175,13 +243,13 @@ def generateConfig(method):
         "config.yml, are you sure you want to do that?", default=False)
         if user_response:
             log("Automatically generating a default config.yml")
-            File.generate()
+            c.File.generate()
             log("config.yml generated!")
         else:
             log("Generate config cancelled")
     elif method.lower() == "manual":
         log("Generating user-interactive config.yml", silently=True)
-        built = File.build()
+        built = c.File.build()
         if not built:
             log("Generate config cancelled")
         else:
@@ -191,7 +259,7 @@ def generateConfig(method):
             " menu to learn more. ".format(method))
 
 def updateServer(override):
-    if not File.data:
+    if not c.File.data:
         log("Cancelling... You haven't setup a config.yml file yet. You can " \
             "generate a config file by running the command 'python3 main.py -" \
             "gc'")
@@ -207,13 +275,12 @@ def updateServer(override):
             log(output)
 
             if update is UpdateType.MAJOR:
-                if not Maintenance.update_allow_major_update:
-                    user_input = bool_input("The setting to allow major updates " \
-                        "is set to 'False'. Would you like to override this " \
-                        "setting for this update?")
-                    should_update = user_input
-                else:
+                if override.lower() in ["y", "yes", "true"]:
                     should_update = True
+                elif not c.Maintenance.update_allow_major_update:
+                    log("Did not update due to your settings. Please update " \
+                        "manually.")
+                    should_update = False
             else:
                 should_update = True
 
@@ -221,9 +288,9 @@ def updateServer(override):
                 Installer.install(override_settings=should_update)
 
 def runCommand(command):
-    RCON.read()
-    if RCON.enabled and RCON.password is not '':
-        with Client('mieserver.ddns.net', RCON.port, passwd=RCON.password) as client:
+    c.RCON.read()
+    if c.RCON.enabled and c.RCON.password != '':
+        with Client('mieserver.ddns.net', c.RCON.port, passwd=c.RCON.password) as client:
             response = client.run(command)
             # Sqizzle any known errors so we can log them
             if 'Unknown command' in response:
@@ -264,6 +331,17 @@ def main():
     parser.add_argument('-k', '--clean', help='Run clean up scripts to help with '\
         'lag on your Minecraft Server.', dest='clean', action='store_true', 
         required=False)
+
+    parser.add_argument('-r', '--restart', help='This command completely ' \
+        'restarts your server hardware.', dest='restart', action='store_true',
+        required=False)
+
+    parser.add_argument('-q', '--stop', help='This will stop the Minecraft ' \
+        'server.', dest='stop', action='store_true', required=False)
+
+    parser.add_argument('-rc', '--run-commands', help='Run the commands ' \
+        'line by line in the commands.txt file.', dest='commands',
+        action='store_true', required=False)
 
     parser.add_argument('-gc', '--generate-config', help="This will generate " \
         "the configuration for this program. It will take one of two inputs: " \

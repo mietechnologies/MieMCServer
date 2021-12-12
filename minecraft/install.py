@@ -23,15 +23,15 @@ class Installer:
         if type is not UpdateType.NONE and override:
             return (True, version)
 
-        if type is UpdateType.MAJOR and not Maintenance.update_allow_major_update:
-            cls.__adminUpdateAlert(version)
-
         if type is UpdateType.BUILD or type is UpdateType.MINOR:
             return (True, version)
-        elif type is UpdateType.MAJOR and not Versioner.serverExists():
-            return (True, version)
-        elif type is UpdateType.MAJOR and Maintenance.update_allow_major_update:
-            return (True, version)
+        elif type is UpdateType.MAJOR:
+            if not Versioner.serverExists():
+                return (True, version)
+            elif Maintenance.update_allow_major_update:
+                return (True, version)
+            else:
+                cls.__adminUpdateAlert(version)
         else:
             return (False, None)
 
