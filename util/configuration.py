@@ -48,7 +48,7 @@ class File:
             "You are free to edit your config.yml file manually after creation.")
 
         Email.build()
-        Minecraft.build()
+        Minecraft.build_object()
         Maintenance.build()
 
         return True
@@ -73,7 +73,7 @@ class Minecraft:
             return "{}.{}.{}:{}".format(cls.major, cls.minor, cls.patch, cls.build)
 
     @classmethod
-    def build(cls):
+    def build_object(cls):
         cls.reset()
         ram = ci.int_input("How much RAM would you like to dedicate to your " \
             "Minecraft Server? (your input will be Mbs)", default=1024)
