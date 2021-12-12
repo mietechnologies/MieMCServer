@@ -18,4 +18,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-## [#.#.#] - YYYY.MM.DD
+## [1.0.0] - 2021.12.12
