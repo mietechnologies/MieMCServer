@@ -122,7 +122,7 @@ def executeCommandList():
     log('Running custom commands...')
     dir = os.path.dirname(__file__)
     custom_command_file = os.path.join(dir, 'commands.txt')
-    for command in linesFromFile(custom_command_file):
+    for command in linesFromFile(custom_command_file, deleteFetched=True):
         runCommand(command)
 
 def linesFromFile(file: str, deleteFetched: bool = False):
