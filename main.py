@@ -224,6 +224,10 @@ def main():
         'lag on your Minecraft Server.', dest='clean', action='store_true', 
         required=False)
 
+    parser.add_argument('-k', '--clean', help='Run clean up scripts to help with '\
+        'lag on your Minecraft Server.', dest='clean', action='store_true', 
+        required=False)
+
     parser.add_argument('-gc', '--generate-config', help="This will generate " \
         "the configuration for this program. It will take one of two inputs: " \
         "'auto' or 'manual'. By picking 'auto' we will handle creating a " \
