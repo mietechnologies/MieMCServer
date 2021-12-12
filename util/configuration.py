@@ -1,6 +1,5 @@
 from .mielib import custominput as ci
 from .extension import cleanString
-from .syslog import log
 import yaml, os
 
 class File:
@@ -134,7 +133,6 @@ class Email:
             "to recieve the logs and reports?", multiples=True)
         cls.address = email_address
         cls.password = password
-        print(recipients)
         cls.recipients = recipients
         cls.update()
 
@@ -232,7 +230,7 @@ class Maintenance:
         cls.update_schedule = "0 3 * * 0"
         cls.update_allow_major_update = False
 
-class RCON: 
+class RCON:
     enabled = False
     password = None
     port = None
@@ -261,6 +259,7 @@ class RCON:
                 elif 'rcon.password' in line: 
                     cls.password = cleanString(line, ['rcon.password=', '\n'])
         else:
+            from .syslog import log
             log('ERR: No server.properties file found!')
 
     @classmethod
@@ -280,5 +279,3 @@ class RCON:
                         line = 'rcon.password={}\n'.format(cls.password)
                     
                     fileOut.write(line)
-        else:
-            log('ERR: No server.properties file found!')
