@@ -1,6 +1,6 @@
 from .mielib import custominput as ci
 from .extension import cleanString
-from.syslog import log
+from .syslog import log
 import yaml, os
 
 class File:
