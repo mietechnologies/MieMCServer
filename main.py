@@ -38,6 +38,7 @@ def parse(args):
     update = args.update
     backup = args.path
     method = args.generate_config
+    clean = args.clean
 
     running_log = []
 
@@ -83,15 +84,46 @@ def parse(args):
         running_log.append('-gc {}'.format(method))
         generateConfig(method)
 
+    if clean:
+        running_log.append('-k')
+        clean()
+
     # TODO: This logic still needs fleshed out
     if not running_log:
         run()
+
+def clean():
+    trimEnd()
+
+def trimEnd():
+    log('Trimming the end!')
+    log('To keep specific end regions, update the end-regions.txt file in the project root with the regions you would like to keep.')
+    log('To determine what region files to keep, see Xisumavoid\'s video at https://www.youtube.com/watch?v=fGlqDBcgmIc')
+    dir = os.path.dirname(__file__)
+    endRegionDir = os.path.join(dir, 'server/world_the_end/DIM1/region')
+    endRegionLog = os.path.join(dir, 'end-regions.txt')
+    regionsToKeep = []
+    filecount = 0
+
+    if os.path.isfile(endRegionLog):
+        lines = open(endRegionLog, 'r').readlines()
+        for line in lines:
+            if line.startswith('#') == False and line != '':
+                regionsToKeep.append(line.replace('\n', ''))
+                
+    for file in os.listdir(endRegionDir):
+        if file not in regionsToKeep:
+            region = os.path.join(endRegionDir, file)
+            os.remove(region)
+            filecount += 1
+
+    log('Finished trimming the end! Removed {} region(s)!'.format(filecount))
 
 def run():
     log("Checking config.yml...")
     if File.exists:
         log("Found config.yml")
-        # Trim End
+        clean()
         # Backup
         Installer.install()
         log("Starting server...")
@@ -193,6 +225,10 @@ def main():
 
     parser.add_argument('-bu', '--backup', help="Backup your Minecraft Server", 
         dest="path", nargs="?", const="Default", type=str, required=False)
+
+    parser.add_argument('-k', '--clean', help='Run clean up scripts to help with '\
+        'lag on your Minecraft Server.', dest='clean', action='store_true', 
+        required=False)
 
     parser.add_argument('-gc', '--generate-config', help="This will generate " \
         "the configuration for this program. It will take one of two inputs: " \

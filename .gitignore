@@ -26,3 +26,6 @@ collect-libraries.sh
 install-libraries.sh
 delete-server.sh
 test.py
+
+# Include all scripting files
+!end-regions.txt
