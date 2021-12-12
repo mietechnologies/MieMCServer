@@ -1,5 +1,4 @@
-from .mielib.custominput import choice_input, regex_input, range_input, \
-    int_input
+from .mielib import custominput as ci
 import yaml, os
 
 class File:
@@ -35,49 +34,22 @@ class File:
 
     @classmethod
     def build(cls):
-        # TODO: Flesh Out
-        print("I will ask a series of questions to build your config.yml\n" \
-            "You are free to edit your config.yml file manual after creation.")
-        ram = int_input("How much RAM would you like to dedicate to your " \
-            "Minecraft Server? (your input will be Mbs)", default=512)
-        should_update = bool_input("Would you like to allow major updates? "\
-            "(we caution against this due to early release bugs)", default=False)
-        email_address = input("What is the gmail address you would like me " \
-            "to use to send you reports?")
-        password = input("What is the password for the provided email?")
-        recipient = input("What email address(es) would you like to receive " \
-            "the logs and reports? (To input multiples, separate with ', ')")
-        
-        # version_str = input("What version would you like to install? [#.##.#] ")
-        # should_update = bool(input("Would you like to allow major updates? [y/n] "))
-        # email_address = input("What gmail address would you like use to send " \
-        #     "your logs and reports from? ")
-        # password = input("What is the password to the email provided? ")
-        # recipient = input("What email address(es) would you like to recieve " \
-        #     "the logs and reports? (If inputting multiple, seperate with a ', ') ")
-        # recipients = recipient.split(", ")
-        # version_split = version_str.split(".")
-        # config = {
-        #     "Minecraft" : {
-        #         "allocated_ram" : ram,
-        #         "allow_major_update" : should_update,
-        #         "major" : int(version_split[0]),
-        #         "minor": int(version_split[1]),
-        #         "patch" : int(version_split[2]),
-        #         "version_group" : ".".join([version_split[0], version_split[1]])
-        #     },
-        #     "Email" : {
-        #         "address" : email_address,
-        #         "password" : password,
-        #         "server" : "smtp.gmail.com",
-        #         "port" : 587,
-        #         "recipients" : recipients
-        #     }
-        # }
+        if os.path.exists(cls.__file_dir):
+            user_response = ci.bool_input("This will override your current " \
+                "config.yml, are you sure you want to do that?", default=False)
+            if user_response:
+                os.remove(cls.__file_dir)
+            else:
+                return False
 
-        os.remove(cls.__file_dir)
-        file = open(cls.__file_dir, "w")
-        yaml.dump(config, file, default_flow_style=False)
+        print("I will ask a series of questions to build your config.yml\n" \
+            "You are free to edit your config.yml file manually after creation.")
+
+        Email.build()
+        Minecraft.build()
+        Maintenance.build()
+
+        return True
 
 class Minecraft:
     SECTION_NAME = "Minecraft"
@@ -97,6 +69,26 @@ class Minecraft:
             return "{}.{}:{}".format(cls.major, cls.minor, cls.build)
         else:
             return "{}.{}.{}:{}".format(cls.major, cls.minor, cls.patch, cls.build)
+
+    @classmethod
+    def build(cls):
+        cls.reset()
+        ram = ci.int_input("How much RAM would you like to dedicate to your " \
+            "Minecraft Server? (your input will be Mbs)", default=1024)
+        version = ci.version_input("What version of Minecraft would you like " \
+            "to install?")
+        if version != "":
+            version_split = version.split(".")
+            if len(version_split) == 2:
+                cls.major = version_split[0]
+                cls.minor = version_split[1]
+            elif len(version_split) == 3:
+                cls.major = version_split[0]
+                cls.minor = version_split[1]
+                cls.patch = version_split[2]
+            cls.version_group = "{}.{}".format(version_split[0], version_split[1])
+
+        cls.update()
 
     @classmethod
     def update(cls):
@@ -131,6 +123,20 @@ class Email:
     recipients = __data.get("recipients", [])
 
     @classmethod
+    def build(cls):
+        email_address = ci.email_input("What is the gmail address you would " \
+            "like me to use to send you reports?", provider="gmail")
+        password = ci.confirm_input("What is the password to the account you " \
+            "just enetered? ")
+        recipients = ci.email_input("What email address(es) would you like " \
+            "to recieve the logs and reports?", multiples=True)
+        cls.address = email_address
+        cls.password = password
+        print(recipients)
+        cls.recipients = recipients
+        cls.update()
+
+    @classmethod
     def update(cls):
         cls.__data["address"] = cls.address
         cls.__data["password"] = cls.password
@@ -150,16 +156,56 @@ class Email:
 
 class Maintenance:
     SECTION_NAME = "Maintenance"
-    __data = File.data.get("Maintenance")
+    __data = File.data.get("Maintenance", {})
     __backup = __data.get("backup", {})
     __update = __data.get("update", {})
     complete_shutdown = __data.get("complete_shutdown", "")
     schedule = __data.get("schedule", "")
     backup_schedule = __backup.get("schedule", "")
-    backup_path = __backup.get("path", "")
+    backup_path = __backup.get("path", "~/MC_Backups")
     backup_number = __backup.get("number", 1)
     update_schedule = __update.get("schedule", "")
     update_allow_major_update = __update.get("allow_major_update", False)
+
+    @classmethod
+    def build(cls):
+        print("Warning: A system restart is good practice to clear out any " \
+            "residual problems that might still be in RAM. Also, in order to " \
+            "run the commands file a server restart is required.")
+        restart_cron = ci.cron_date_input("restart")
+
+        print("Warning: It is good practice to backup your server so if any" \
+            "thing were to happen, you would be able to revert back to your " \
+            "previous backup.")
+        backup_cron = ci.cron_date_input("backup Minecraft")
+        backup_path = input("Where would you like your backups to be stored? ")
+        backup_limit = ci.int_input("How many backups would you like to be " \
+            "stored before removing old backups?")
+
+        print("Warning: It is wise to check for updates on a regular basis so " \
+            "any bugs the developers might find and fix will be applied to " \
+            "your server. We can understand your concern for larger updates, " \
+            "so we will ask your permission on if you want us to do bigger " \
+            "updates automatically. If not, we will email you and alert you " \
+            "of any major updates.")
+        update_cron = ci.cron_date_input("check for updates")
+        major_updates = ci.bool_input("Would you like me to update to " \
+            "major releases?", default=False)
+            
+        print("Warning: I have ben preprogrammed with some useful maintenance " \
+            "scripts to help keep your server up and running smoothly. It is " \
+            "always good to run these scripts so your players experience as " \
+            "little server lag as possible.")
+        maintenance_cron = ci.cron_date_input("run maintenance scripts")
+
+        cls.complete_shutdown = restart_cron
+        cls.schedule = maintenance_cron
+        cls.backup_schedule = backup_cron
+        cls.backup_path = backup_path
+        cls.backup_number = backup_limit
+        cls.update_schedule = update_cron
+        cls.update_allow_major_update = major_updates
+        cls.update()
 
     @classmethod
     def update(cls):

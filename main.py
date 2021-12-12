@@ -169,22 +169,26 @@ def run():
     log("Server started!")
 
 def generateConfig(method):
-    user_response = bool_input("This will override your current config.yml," \
-            " are you sure you want to do that?", default=False)
-
-    if user_response:
-        if method.lower() == "auto":
+    
+    if method.lower() == "auto":
+        user_response = bool_input("This will override your current " \
+        "config.yml, are you sure you want to do that?", default=False)
+        if user_response:
             log("Automatically generating a default config.yml")
             File.generate()
-            log("Config.yml generated!")
-        elif method.lower() == "manual":
-            log("Generating user-interactive config.yml", silently=True)
-            File.build()
+            log("config.yml generated!")
         else:
-            print("'{}' is not a valid input. Please consult the help ['-h'] " \
-                " menu to learn more. ".format(method))
+            log("Generate config cancelled")
+    elif method.lower() == "manual":
+        log("Generating user-interactive config.yml", silently=True)
+        built = File.build()
+        if not built:
+            log("Generate config cancelled")
+        else:
+            log("config.yml generated!")
     else:
-        log("Generate config cancelled.")
+        print("'{}' is not a valid input. Please consult the help ['-h'] " \
+            " menu to learn more. ".format(method))
 
 def updateServer(override):
     if not File.data:

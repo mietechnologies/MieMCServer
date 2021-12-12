@@ -6,7 +6,12 @@ sys.excepthook = lambda type, value, tb: handleUncaughtException(type, value, tb
 
 __util_dir = os.path.dirname(__file__)
 __root_dir = os.path.join(__util_dir, "..")
-__log_file = os.path.join(__root_dir, "logs/log.txt")
+__log_dir = os.path.join(__root_dir, "logs")
+__log_file = os.path.join(__log_dir, "log.txt")
+
+def create_log_directory():
+    if not os.path.exists(__log_dir):
+        os.mkdir(__log_dir)
 
 def handleUncaughtException(type, exception, tb):
     error = repr(exception)
@@ -29,6 +34,8 @@ def log(message, silently=False, display_date=False):
     '''A method to log events within the program. Calling this method will log 
     the current time and the given message. It can also print the log message 
     to the console for the user to view'''
+    create_log_directory()
+    
     with open(__log_file, "a") as logs:
         timestamp = Date.timestamp()
         printMessage = "[{}] {}".format(timestamp, message)
