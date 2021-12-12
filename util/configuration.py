@@ -1,4 +1,6 @@
 from .mielib import custominput as ci
+from .extension import cleanString
+from.syslog import log
 import yaml, os
 
 class File:
@@ -229,3 +231,54 @@ class Maintenance:
         cls.backup_number = 1
         cls.update_schedule = ""
         cls.update_allow_major_update = False
+
+class RCON: 
+    enabled = False
+    password = None
+    port = None
+
+    @classmethod
+    def build(cls):
+        print('RCON is a protocol that allows server administrators to remotely execute Minecraft commands.')
+        print('Mie-MCServer uses RCON to run clean up commands to automatically maintain your server.')
+        print('Please take a moment to set up RCON by answering the following questions.')
+        cls.port = ci.int_input('What internet port would you like to use for RCON?', 25575)
+        cls.password = ci.confirm_input('What password would you like to use for issuing commands via RCON? ')
+        cls.enabled = True
+        cls.update()
+
+    @classmethod
+    def read(cls):
+        dir = os.path.dirname(__file__)
+        properties = os.path.join(dir, '../server/server.properties')
+        if os.path.isfile(properties):
+            lines = open(properties, 'r').readlines()
+            for line in lines:
+                if 'rcon.port' in line: 
+                    cls.port = int(cleanString(line, ['rcon.port=', '\n']))
+                elif 'enable-rcon' in line: 
+                    cls.enabled = bool(cleanString(line, ['enable-rcon=', '\n']))
+                elif 'rcon.password' in line: 
+                    cls.password = cleanString(line, ['rcon.password=', '\n'])
+        else:
+            log('ERR: No server.properties file found!')
+
+    @classmethod
+    def update(cls):
+        dir = os.path.dirname(__file__)
+        properties = os.path.join(dir, '../server/server.properties')
+        if os.path.isfile(properties):
+            with open(properties, 'r') as fileIn:
+                lines = fileIn.readlines()
+                fileOut = open(properties, 'w')
+                for line in lines:
+                    if 'rcon.port' in line:
+                        line = 'rcon.port={}\n'.format(cls.port)
+                    elif 'enable-rcon' in line:
+                        line = 'enable-rcon={}\n'.format(cls.enabled).lower()
+                    elif 'rcon.password' in line: 
+                        line = 'rcon.password={}\n'.format(cls.password)
+                    
+                    fileOut.write(line)
+        else:
+            log('ERR: No server.properties file found!')
