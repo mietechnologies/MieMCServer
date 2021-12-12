@@ -46,14 +46,10 @@ class File:
             "You are free to edit your config.yml file manually after creation.")
 
         Email.build()
-        # Minecraft.build()
+        Minecraft.build()
         Maintenance.build()
 
         return True
-
-        # os.remove(cls.__file_dir)
-        # file = open(cls.__file_dir, "w")
-        # yaml.dump(config, file, default_flow_style=False)
 
 class Minecraft:
     SECTION_NAME = "Minecraft"
@@ -76,15 +72,23 @@ class Minecraft:
 
     @classmethod
     def build(cls):
+        cls.reset()
         ram = ci.int_input("How much RAM would you like to dedicate to your " \
-            "Minecraft Server? (your input will be Mbs)", default=512)
-        # version_str = input("What version would you like to install? [#.##.#] ")
-        # version = ci.regex_input("What version would you like to install?", 
-        #                       regex="#.##.#/#.##",
-        #                       default="1.17.1")
-        should_update = ci.bool_input("Would you like to allow major updates? "\
-            "(we caution against this due to early release bugs)", default=False)
-        
+            "Minecraft Server? (your input will be Mbs)", default=1024)
+        version = ci.version_input("What version of Minecraft would you like " \
+            "to install?")
+        if version != "":
+            version_split = version.split(".")
+            if len(version_split) == 2:
+                cls.major = version_split[0]
+                cls.minor = version_split[1]
+            elif len(version_split) == 3:
+                cls.major = version_split[0]
+                cls.minor = version_split[1]
+                cls.patch = version_split[2]
+            cls.version_group = "{}.{}".format(version_split[0], version_split[1])
+
+        cls.update()
 
     @classmethod
     def update(cls):
