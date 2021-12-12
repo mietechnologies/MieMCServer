@@ -18,7 +18,7 @@
 
 from util.backup import Backup
 from util.date import Date
-from util.configuration import File, Minecraft, Maintenance
+from util.configuration import RCON, File, Minecraft, Maintenance
 from minecraft.version import Versioner, UpdateType
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
@@ -221,11 +221,23 @@ def updateServer(override):
                 Installer.install(override_settings=should_update)
 
 def runCommand(command):
-    # TODO: Reference the server.properties file for the password
-    with Client('mieserver.ddns.net', 25575, passwd='test') as client:
-        response = client.run(command)
-
-        print(response)
+    RCON.read()
+    if RCON.enabled and RCON.password is not '':
+        with Client('mieserver.ddns.net', RCON.port, passwd=RCON.password) as client:
+            response = client.run(command)
+            # Sqizzle any known errors so we can log them
+            if 'Unknown command' in response:
+                log('Could not execute command [{}]: {}'.format(command, response))
+            elif 'Expected whitespace' in response:
+                log('Could not execute command [{}]: {}'.format(command, response))
+            elif 'Invalid or unknown' in response:
+                log('Could not execute command [{}]: {}'.format(command, response))
+            elif response == '': 
+                log('Issued server command [{}]'.format(command))
+            else: 
+                log(response)
+    else: 
+        log('ERR: RCON has not been correctly initialized!')
 
 def main():
 
