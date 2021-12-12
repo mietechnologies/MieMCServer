@@ -34,17 +34,26 @@ class File:
 
     @classmethod
     def build(cls):
-        # TODO: Flesh Out
-        print("I will ask a series of questions to build your config.yml\n" \
-            "You are free to edit your config.yml file manual after creation.")
-        Email.build()
-        
-        # should_update = bool(input("Would you like to allow major updates? [y/n] "))
-        # version_split = version_str.split(".")
+        if os.path.exists(cls.__file_dir):
+            user_response = ci.bool_input("This will override your current " \
+                "config.yml, are you sure you want to do that?", default=False)
+            if user_response:
+                os.remove(cls.__file_dir)
+            else:
+                return False
 
-        os.remove(cls.__file_dir)
-        file = open(cls.__file_dir, "w")
-        yaml.dump(config, file, default_flow_style=False)
+        print("I will ask a series of questions to build your config.yml\n" \
+            "You are free to edit your config.yml file manually after creation.")
+
+        Email.build()
+        # Minecraft.build()
+        Maintenance.build()
+
+        return True
+
+        # os.remove(cls.__file_dir)
+        # file = open(cls.__file_dir, "w")
+        # yaml.dump(config, file, default_flow_style=False)
 
 class Minecraft:
     SECTION_NAME = "Minecraft"
@@ -70,9 +79,9 @@ class Minecraft:
         ram = ci.int_input("How much RAM would you like to dedicate to your " \
             "Minecraft Server? (your input will be Mbs)", default=512)
         # version_str = input("What version would you like to install? [#.##.#] ")
-        version = ci.regex_input("What version would you like to install?", 
-                              regex="#.##.#/#.##",
-                              default="1.17.1")
+        # version = ci.regex_input("What version would you like to install?", 
+        #                       regex="#.##.#/#.##",
+        #                       default="1.17.1")
         should_update = ci.bool_input("Would you like to allow major updates? "\
             "(we caution against this due to early release bugs)", default=False)
         
@@ -115,11 +124,12 @@ class Email:
             "like me to use to send you reports?", provider="gmail")
         password = ci.confirm_input("What is the password to the account you " \
             "just enetered? ")
-        recipeints = ci.email_input("What email address(es) would you like " \
+        recipients = ci.email_input("What email address(es) would you like " \
             "to recieve the logs and reports?", multiples=True)
         cls.address = email_address
         cls.password = password
-        cls.recipeints = recipeints
+        print(recipients)
+        cls.recipients = recipients
         cls.update()
 
     @classmethod
@@ -142,7 +152,7 @@ class Email:
 
 class Maintenance:
     SECTION_NAME = "Maintenance"
-    __data = File.data.get("Maintenance")
+    __data = File.data.get("Maintenance", {})
     __backup = __data.get("backup", {})
     __update = __data.get("update", {})
     complete_shutdown = __data.get("complete_shutdown", "")
@@ -155,42 +165,33 @@ class Maintenance:
 
     @classmethod
     def build(cls):
-        print("*" * 120)
         print("Warning: A system restart is good practice to clear out any " \
             "residual problems that might still be in RAM. Also, in order to " \
             "run the commands file a server restart is required.")
-        print("*" * 120)
         restart_cron = ci.cron_date_input("restart")
 
-        print("*" * 120)
         print("Warning: It is good practice to backup your server so if any" \
             "thing were to happen, you would be able to revert back to your " \
             "previous backup.")
-        print("*" * 120)
         backup_cron = ci.cron_date_input("backup Minecraft")
-        backup_path = input("Where would you like your backups to be stored? " \
-            "[~/MC_Backups] ")
+        backup_path = input("Where would you like your backups to be stored? ")
         backup_limit = ci.int_input("How many backups would you like to be " \
             "stored before removing old backups?")
 
-        print("*" * 120)
         print("Warning: It is wise to check for updates on a regular basis so " \
             "any bugs the developers might find and fix will be applied to " \
             "your server. We can understand your concern for larger updates, " \
             "so we will ask your permission on if you want us to do bigger " \
             "updates automatically. If not, we will email you and alert you " \
             "of any major updates.")
-        print("*" * 120)
         update_cron = ci.cron_date_input("check for updates")
         major_updates = ci.bool_input("Would you like me to update to " \
             "major releases?", default=False)
             
-        print("*" * 120)
         print("Warning: I have ben preprogrammed with some useful maintenance " \
             "scripts to help keep your server up and running smoothly. It is " \
             "always good to run these scripts so your players experience as " \
             "little server lag as possible.")
-        print("*" * 120)
         maintenance_cron = ci.cron_date_input("run maintenance scripts")
 
         cls.complete_shutdown = restart_cron
