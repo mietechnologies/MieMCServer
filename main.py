@@ -30,7 +30,7 @@ import argparse, sys, os
 from rcon import Client
 import asyncio
 import zipfile
-from time import sleep # TODO: Remove me once we're ready to go to production
+from time import sleep
 
 VERSION = "0.0.1"
 
@@ -74,6 +74,7 @@ def parse(args):
 
     if backup:
         running_log.append('-bu {}'.format(c.Maintenance.backup_path))
+        runCommand("say System is backing up Minecraft world.")
         filename = 'world.{}.zip'.format(Date.strippedTimestamp())
         Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
@@ -83,6 +84,7 @@ def parse(args):
 
     if clean:
         running_log.append('-k')
+        runCommand("say System maintenance scripts are being ran.")
         maintenance()
 
     if commands:
@@ -91,10 +93,15 @@ def parse(args):
 
     if stop:
         running_log.append('-q')
+        runCommand("say The server is being saved, and then stopped in 60 " \
+            "seconds.")
+        sleep(60)
         stopServer()
 
     if restart:
         running_log.append('-q')
+        runCommand("say The server is being restarted in 60 seconds.")
+        sleep(60)
         reboot.run()
 
     if not running_log:
@@ -164,6 +171,7 @@ def run():
     log("Checking config.yml...")
     if c.File.exists:
         log("Found config.yml")
+        setupCrontab()
         Installer.install()
         startServer()
     else:
@@ -172,6 +180,8 @@ def run():
         setupCrontab()
         Installer.install(override_settings = True)
         startServer()
+        c.RCON.build()
+        
 
     log("Server started!")
 
@@ -197,6 +207,10 @@ def setupCrontab():
     scheduler = CronScheduler()
     # TODO: Restart
     restart_command = "python3 {} --run-commands --stop --restart".format(prog)
+    scheduler.createRecurringJob(c.Maintenance.complete_shutdown,
+                                 restart_command,
+                                 "maintenance.restart")
+    log("Scheduling crontab job 'maintenance.restart'")
     # Backup
     backup_command = "python3 {} --backup".format(prog)
     scheduler.createRecurringJob(c.Maintenance.backup_schedule,
@@ -275,7 +289,7 @@ def updateServer(override):
 
 def runCommand(command):
     c.RCON.read()
-    if c.RCON.enabled and c.RCON.password is not '':
+    if c.RCON.enabled and c.RCON.password != '':
         with Client('mieserver.ddns.net', c.RCON.port, passwd=c.RCON.password) as client:
             response = client.run(command)
             # Sqizzle any known errors so we can log them
