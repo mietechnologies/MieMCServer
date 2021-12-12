@@ -80,7 +80,7 @@ class CronDate:
 
     def convertToCronTime(self):
         if self.frequency == CronFrequency.DAILY:
-            return "{} {} * * *".format(self.hour, self.minute)
+            return "{} {} * * *".format(self.minute, self.hour)
         elif self.frequency == CronFrequency.WEEKLY:
             return "{} {} * * {}".format(self.minute,
                                          self.hour,
