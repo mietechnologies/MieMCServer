@@ -10,11 +10,14 @@ def int_input(output, default=None):
 
     while (True):
         user_input = input(message)
-        try:
-            valid_input = int(user_input)
-            return valid_input
-        except:
-            print("I'm sorry, I didn't understand that input.")
+        if default and user_input == "":
+            return default
+        else:
+            try:
+                valid_input = int(user_input)
+                return valid_input
+            except:
+                print("I'm sorry, I didn't understand that input.")
 
 def confirm_input(output):
     valid_password = False
@@ -163,55 +166,32 @@ def range_input(output, lower, upper, default=None):
         else:
             print("I'm sorry, I didn't understand that input.")
 
-def regex_input(output, regex, default=None):
-    split_regex = regex.split(" ")
-    message = "{} [{}] ".format(output, regex)
+def time_input(output, default=None):
+    regex = r'^([012])?\d:[0-5][0-9] (p|a|24)'
+    ammendment = "[##:## a/p/24]"
+    message = "{} {} ".format(output, ammendment)
+    user_response = ""
     valid_input = False
-    valid_num = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    valid_alpha = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", 
-    "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
-    valid_alpha_num = valid_num + valid_alpha
 
     while (not valid_input):
-        user_input = str(input(message))
-        user_input_split = user_input.split(" ")
-        valid_format = True
+        user_response = input(message)
+        valid_input = re.fullmatch(regex, user_response)
+    else:
+        return user_response
 
-        if user_input == "" and default is not None:
-            return default
-        elif len(split_regex) is len(user_input_split):
-            for index in range(0, len(split_regex)):
-                item = split_regex[index]
-                check = user_input_split[index]
-            
-                if "/" in item:
-                    options = item.split("/")
-                    if check not in options:
-                        valid_format = False
-                        break
-                else:
-                    if len(item) is not len(check):
-                        valid_format = False
-                        break
-                    else:
-                        for inner_index in range(0, len(item)):
-                            if item[inner_index] == "#":
-                                if check[inner_index] not in valid_num:
-                                    valid_format = False
-                                    break
-                            elif item[inner_index] == "$":
-                                if check[inner_index] not in valid_alpha:
-                                    valid_format = False
-                                    break
-                            elif item[inner_index] == "*":
-                                if check[inner_index] not in valid_alpha_num:
-                                    valid_format = False
-                                    break
-            else:
-                if valid_format:
-                    return user_input
+def version_input(output):
+    regex = r'\d+\.\d+(.\d+)?'
+    ammendment = "[#.##.#/#.##]"
+    message = "{} {} ".format(output, ammendment)
+    user_response = None
+    valid_input = False
 
-        print("I'm sorry, I didn't understand that input.")
+    while (not valid_input):
+        user_response = input(message)
+        if user_response == "" or re.fullmatch(regex, user_response):
+            valid_input = True
+    else:
+        return user_response
 
 def cron_date_input(output):
     freq_output = "How frequently would you like your server to " \
@@ -233,7 +213,7 @@ def cron_date_input(output):
     elif freq == CronFrequency.MONTHLY:
         month_day = range_input(month_output, lower=1, upper=28)
 
-    time = regex_input(time_output, regex="##:## a/p/24")
+    time = time_input(time_output)
 
     cron_date = CronDate(freq, week_day, month_day, time)
     return cron_date.convertToCronTime()
