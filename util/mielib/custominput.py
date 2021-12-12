@@ -1,4 +1,5 @@
 from .responseoption import ResponseOption, option, optionList
+from .cron import CronDate, CronFrequency
 import re
 
 def int_input(output, default=None):
@@ -210,3 +211,24 @@ def regex_input(output, regex, default=None):
                     return user_input
 
         print("I'm sorry, I didn't understand that input.")
+
+def cron_date_input(output):
+    freq_output = "How frequentyly would you like your server to " \
+        "{}?".format(output)
+    week_day_output = "What day of the week would you like your server to " \
+        "{}?".format(output)
+    month_output = "What day of the month would ou like your server to " \
+        "{}?".format(output)
+    time_output = "What time of the day would you like your server to " \
+        "{}?".format(output)
+    freq = choice_input(freq_output, options=CronDate.FREQUENCY_OPTIONS)
+    if freq == CronFrequency.WEEKLY:
+        week_day = choice_input(week_day_output,
+                                options=CronDate.WEEK_DAY_OPTIONS)
+    elif freq == CronFrequency.MONTHLY:
+        month_day = range_input(month_output, lower=1, upper=28)
+
+    time = regex_input(time_output, regex="##:## a/p/24")
+
+    cron_date = CronDate(freq, week_day, month_day, time)
+    return cron_date.convertToCronTime()
