@@ -7,7 +7,7 @@ Email:
 Maintenance:
   backup:
     number: 1
-    path: ~/MC_Backups
+    path: /Users/michaelcraun/MC_Backups
     schedule: ''
   complete_shutdown: ''
   schedule: ''

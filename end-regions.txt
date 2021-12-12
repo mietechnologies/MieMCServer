@@ -1,0 +1,45 @@
+# These regions are always kept. Do not modify the regions below in any way
+r.-3.-3.mca
+r.-3.-2.mca
+r.-3.-1.mca
+r.-3.0.mca
+r.-3.1.mca
+r.-3.2.mca
+r.-2.-3.mca
+r.-2.-2.mca
+r.-2.-1.mca
+r.-2.0.mca
+r.-2.1.mca
+r.-2.2.mca
+r.-1.-3.mca
+r.-1.-2.mca
+r.-1.-1.mca
+r.-1.0.mca
+r.-1.1.mca
+r.-1.2.mca
+r.0.-3.mca
+r.0.-2.mca
+r.0.-1.mca
+r.0.0.mca
+r.0.1.mca
+r.0.2.mca
+r.1.-3.mca
+r.1.-2.mca
+r.1.-1.mca
+r.1.0.mca
+r.1.1.mca
+r.1.2.mca
+r.2.-3.mca
+r.2.-2.mca
+r.2.-1.mca
+r.2.0.mca
+r.2.1.mca
+r.2.2.mca
+
+# These are the custom regions in the end you would like to keep. When modifying this file ensure that the following is adhered to:
+# 1. Each region to be kept is contained on it's own line
+# 2. There are no extra line breaks between region files nor any extra leading or trailing spaces
+# 3. Any comments made about any given region is preceded with a "#" symbol
+# Failure to adhere to these rules could result in a crash when trimming the end
+# To keep specific end regions, update the end-regions.txt file in the project root with the regions you would like to keep.
+# To determine what region files to keep, see Xisumavoid's video at https://www.youtube.com/watch?v=fGlqDBcgmIc

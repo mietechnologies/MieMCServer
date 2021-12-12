@@ -1,6 +1,5 @@
 from .mielib.custominput import choice_input, regex_input, range_input, \
     int_input
-from .cron import CronDate, CronFrequency
 import yaml, os
 
 class File:
