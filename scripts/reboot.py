@@ -13,5 +13,3 @@ def run():
     email_log(subject, body)
     clear_log()
     os.system('sudo reboot')
-
-# TODO: Wherever this is being called from needs to email the log!

@@ -32,9 +32,8 @@ import asyncio
 import zipfile
 from time import sleep
 
-VERSION = "0.0.1"
+VERSION = "1.0.0"
 
-# TODO: UPDATE ALL OF THE PATH OBJECTS TO REFLECT THE NEW FILE SYSTEM
 def parse(args):
     mc_version = args.minecraft_version
     version = args.version
@@ -67,7 +66,6 @@ def parse(args):
         running_log.append('-c {}'.format(command))
         runCommand(command)
         
-    # TODO: This needs finished
     if update is not None:
         running_log.append('-u')
         updateServer(update)
@@ -205,7 +203,7 @@ def setupCrontab():
     dir = os.path.dirname(__file__)
     prog = os.path.join(dir, 'main.py')
     scheduler = CronScheduler()
-    # TODO: Restart
+    
     restart_command = "python3 {} --run-commands --stop --restart".format(prog)
     scheduler.createRecurringJob(c.Maintenance.complete_shutdown,
                                  restart_command,
