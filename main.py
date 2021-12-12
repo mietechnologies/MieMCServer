@@ -59,7 +59,7 @@ def parse(args):
     # Done
     if version is not False:
         running_log.append('-v')
-        log("minePi Version v{}".format(VERSION))
+        log("MIE-MCServer Version v{}".format(VERSION))
 
     # Done
     if command is not None:
