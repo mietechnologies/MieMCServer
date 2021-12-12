@@ -62,13 +62,12 @@ def parse(args):
         running_log.append('-c {}'.format(command))
         runCommand(command)
         
-
     # TODO: This needs finished
     if update is not None:
         running_log.append('-u')
         updateServer(update)
 
-    if backup is not None:
+    if backup:
         running_log.append('-bu {}'.format(Maintenance.backup_path))
         filename = 'world.{}.zip'.format(Date.strippedTimestamp())
         Backup.put(Installer.server_dir, Maintenance.backup_path, filename)
@@ -80,11 +79,46 @@ def parse(args):
 
     if clean:
         running_log.append('-k')
-        trimEnd()
+        maintenance()
 
     # TODO: This logic still needs fleshed out
     if not running_log:
         run()
+
+def maintenance():
+    executeCleanCommands()
+    trimEnd()
+
+def executeCleanCommands():
+    log('Running clean up commands...')
+    dir = os.path.dirname(__file__)
+    cleanCommandFile = os.path.join(dir, 'clean-commands.txt')
+    for command in linesFromFile(cleanCommandFile):
+        runCommand(command)
+
+def linesFromFile(file: str, deleteFetched: bool = False):
+    lines = []
+    with open(file, 'r') as fileIn:
+        tmpLines = fileIn.readlines()
+        fileOut = open(file, 'w')
+        for line in tmpLines:
+            # Always preserve all comments and empty lines when fetching commands from a file:
+            if '#' in line:
+                fileOut.write(line)
+            elif line == '\n':
+                fileOut.write(line)
+            # If line is command and fetched commands should be kept:
+            elif not deleteFetched:
+                lines.append(line.replace('\n', ''))
+                fileOut.write(line)
+            # If line is command and fetched commands should be removed:
+            elif deleteFetched: 
+                lines.append(line.replace('\n', ''))
+            # Otherwise, the line is unhandled; log the line that was encountered and keep it in the file
+            else:
+                log('Line from {} not recognized [{}]'.format(file, line))
+                fileOut.write(line)
+    return lines
 
 def trimEnd():
     log('Trimming the end!')
@@ -93,14 +127,8 @@ def trimEnd():
     dir = os.path.dirname(__file__)
     endRegionDir = os.path.join(dir, 'server/world_the_end/DIM1/region')
     endRegionLog = os.path.join(dir, 'end-regions.txt')
-    regionsToKeep = []
+    regionsToKeep = linesFromFile(endRegionLog)
     filecount = 0
-
-    if os.path.isfile(endRegionLog):
-        lines = open(endRegionLog, 'r').readlines()
-        for line in lines:
-            if line.startswith('#') == False and line != '':
-                regionsToKeep.append(line.replace('\n', ''))
                 
     for file in os.listdir(endRegionDir):
         if file not in regionsToKeep:
@@ -114,7 +142,7 @@ def run():
     log("Checking config.yml...")
     if File.exists:
         log("Found config.yml")
-        clean()
+        maintenance()
         # Backup
         Installer.install()
         log("Starting server...")

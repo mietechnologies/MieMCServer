@@ -28,4 +28,5 @@ delete-server.sh
 test.py
 
 # Include all scripting files
+!clean-commands.txt
 !end-regions.txt
