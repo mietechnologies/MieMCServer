@@ -80,14 +80,11 @@ def parse(args):
 
     if clean:
         running_log.append('-k')
-        clean()
+        trimEnd()
 
     # TODO: This logic still needs fleshed out
     if not running_log:
         run()
-
-def clean():
-    trimEnd()
 
 def trimEnd():
     log('Trimming the end!')
@@ -219,10 +216,6 @@ def main():
 
     parser.add_argument('-bu', '--backup', help="Backup your Minecraft Server", 
         dest="path", action='store_true', required=False)
-
-    parser.add_argument('-k', '--clean', help='Run clean up scripts to help with '\
-        'lag on your Minecraft Server.', dest='clean', action='store_true', 
-        required=False)
 
     parser.add_argument('-k', '--clean', help='Run clean up scripts to help with '\
         'lag on your Minecraft Server.', dest='clean', action='store_true', 
