@@ -9,7 +9,6 @@ class Backup:
     def put(cls, source: str, path: str, file: str):
         log('Backing up the current world...')
         cls.localBackup(source, path, file)
-        # TODO: If off-site storage is enabled...
 
     @classmethod
     def localBackup(cls, source: str, path: str, file: str):
