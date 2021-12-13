@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # ****************************** Developer Notes ******************************
 # Goal: This script will run and maintain a Minecraft Server, utilizing crontab
 # jobs to handle maintenance, and allowing for custom commands to be run from
@@ -204,31 +205,31 @@ def setupCrontab():
     prog = os.path.join(dir, 'main.py')
     scheduler = CronScheduler()
     
-    restart_command = "python3 {} --run-commands --stop --restart".format(prog)
+    restart_command = "{} --run-commands --stop --restart".format(prog)
     scheduler.createRecurringJob(c.Maintenance.complete_shutdown,
                                  restart_command,
                                  "maintenance.restart")
     log("Scheduling crontab job 'maintenance.restart'")
     # Backup
-    backup_command = "python3 {} --backup".format(prog)
+    backup_command = "{} --backup".format(prog)
     scheduler.createRecurringJob(c.Maintenance.backup_schedule,
                                  backup_command,
                                  "maintenance.backup")
     log("Scheduling crontab job 'maintenance.backup'")
     # Maintenance
-    maintenance_command = "python3 {} --clean".format(prog)
+    maintenance_command = "{} --clean".format(prog)
     scheduler.createRecurringJob(c.Maintenance.schedule,
                                  maintenance_command,
                                  "maintenance.scripts")
     log("Scheduling crontab job 'maintenance.scripts'")
     # Updates
-    update_command = "python3 {} --update".format(prog)
+    update_command = "{} --update".format(prog)
     scheduler.createRecurringJob(c.Maintenance.update_schedule,
                                  update_command,
                                  "maintenance.update")
     log("Scheduling crontab job 'maintenance.update'")
     # Reboot
-    reboot_command = "python3 {}".format(prog)
+    reboot_command = "{}".format(prog)
     scheduler.createRecurringJob("@reboot",
                                  reboot_command,
                                  "reboot")
