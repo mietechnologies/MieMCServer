@@ -32,6 +32,8 @@ import asyncio
 import zipfile
 from time import sleep
 
+from util.temp import PiTemp
+
 VERSION = "1.0.0"
 
 def parse(args):
@@ -45,6 +47,7 @@ def parse(args):
     clean = args.clean
     stop = args.stop
     restart = args.restart
+    critical_events = args.critical_events
 
     running_log = []
 
@@ -101,6 +104,10 @@ def parse(args):
         runCommand("say The server is being restarted in 60 seconds.")
         sleep(60)
         reboot.run()
+
+    if critical_events:
+        running_log.append('-ce')
+        PiTemp.execute()
 
     if not running_log:
         run()
@@ -368,6 +375,10 @@ def main():
         " may manually edit or re-generate your config at any time.", 
         dest="generate_config", nargs="?" ,const="auto", type=str,
         required=False)
+
+    if c.Temp.exists():
+        parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
+            'events that may be occuring on your Raspberry Pi.', dest='critical_events', action='store_true', required=False)
 
     parser.set_defaults(func=parse)
     args = parser.parse_args()
