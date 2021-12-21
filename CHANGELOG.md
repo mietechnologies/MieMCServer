@@ -19,3 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 ## [1.0.0] - 2021.12.12
+
+## [1.1] - TBD
+- 2021.12.21: Added GitHub templates
