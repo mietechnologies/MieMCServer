@@ -299,6 +299,10 @@ class Temp:
         cls.update()
 
     @classmethod
+    def exists(cls):
+        return cls.__data is not {}
+
+    @classmethod
     def update(cls):
         cls.__data['current'] = cls.current
         cls.__data['date'] = cls.date

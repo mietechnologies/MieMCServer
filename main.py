@@ -183,7 +183,25 @@ def run():
 
     log("Server started!")
 
+def startMonitorsIfNeeded():
+    dir = os.path.dirname(__file__)
+    prog = os.path.join(dir, 'main.py')
+    scheduler = CronScheduler()
+
+    # Temp if on RasPi
+    if c.Temp.exists():
+        log('Start monitor of CPU temp...')
+        critical_events_command = 'python3 {} --critical-events'.format(prog)
+        scheduler.createRecurringJob(
+            '* * * * *', 
+            critical_events_command, 
+            'detect_critical_events')
+
+def stopMonitors():
+    CronScheduler().removeJob('detect_critical_events')
+
 def startServer():
+    startMonitorsIfNeeded()
     log("Starting server...")
     ram = "{}M".format(c.Minecraft.allocated_ram)
     current_dir = os.path.dirname(__file__)
@@ -197,6 +215,7 @@ def startServer():
                                     bootlog_path))
 
 def stopServer():
+    stopMonitors()
     runCommand('stop')
 
 def setupCrontab():
