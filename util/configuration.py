@@ -46,6 +46,10 @@ class File:
         print("I will ask a series of questions to build your config.yml\n" \
             "You are free to edit your config.yml file manually after creation.")
 
+        if ci.bool_input('First, I need to know if you\'re using a ' \
+            'Raspberry Pi.', default=False):
+            Temp.build()
+
         Email.build()
         Minecraft.build_object()
         Maintenance.build()
@@ -113,7 +117,6 @@ class Minecraft:
         cls.install_date = ""
         cls.version_group = None
 
-
 class Email:
     SECTION_NAME = "Email"
     __data = File.data.get("Email", {})
@@ -152,7 +155,6 @@ class Email:
         cls.server = "smtp.gmail.com"
         cls.port = 587
         cls.recipients = []
-
 
 class Maintenance:
     SECTION_NAME = "Maintenance"
@@ -279,3 +281,29 @@ class RCON:
                         line = 'rcon.password={}\n'.format(cls.password)
                     
                     fileOut.write(line)
+
+class Temp:
+    __data = File.data.get("Temp", {})
+    current = __data.get('current', None)
+    date = __data.get('date', None)
+    elapsed = __data.get('elapsed', None)
+    maximum = __data.get('maximum', None)
+    minutes = __data.get('minutes', None)
+    overheating = __data.get('overheating', False)
+
+    @classmethod
+    def build(cls):
+        print('Because I\'m running on a Raspberry Pi, core temperature can be worrysome so I monitor my core temperature for you.')
+        cls.maximum = ci.int_input('So, how hot should I let myself get?', default=70)
+        cls.minutes = ci.int_input('And how long should I be at this temp before I shut everything down?', default=3)
+        cls.update()
+
+    @classmethod
+    def update(cls):
+        cls.__data['current'] = cls.current
+        cls.__data['date'] = cls.date
+        cls.__data['elapsed'] = cls.elapsed
+        cls.__data['maximum'] = cls.maximum
+        cls.__data['minutes'] = cls.minutes
+        cls.__data['overheating'] = cls.overheating
+        File.update('Temp', cls.__data)
