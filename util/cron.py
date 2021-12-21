@@ -4,7 +4,7 @@ from crontab import CronTab
 from enum import IntEnum
 
 class CronScheduler:
-    cron = CronTab(user='bachapin')
+    cron = CronTab(user='pi')
 
     def createRecurringJob(self, time, command, comment):
         for job in self.cron:
