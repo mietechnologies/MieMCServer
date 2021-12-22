@@ -196,7 +196,7 @@ def startMonitorsIfNeeded():
     scheduler = CronScheduler()
 
     # Temp if on RasPi
-    if c.Temp.exists():
+    if c.Temperature.exists():
         log('Start monitor of CPU temp...')
         critical_events_command = 'python {} --critical-events'.format(prog)
         scheduler.createRecurringJob(
@@ -376,7 +376,7 @@ def main():
         dest="generate_config", nargs="?" ,const="auto", type=str,
         required=False)
 
-    if c.Temp.exists():
+    if c.Temperature.exists():
         parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
             'events that may be occuring on your Raspberry Pi.', dest='critical_events', action='store_true', required=False)
 

@@ -48,7 +48,7 @@ class File:
 
         if ci.bool_input('First, I need to know if you\'re using a ' \
             'Raspberry Pi.', default=False):
-            Temp.build()
+            Temperature.build()
 
         Email.build()
         Minecraft.build_object()
@@ -282,14 +282,11 @@ class RCON:
                     
                     fileOut.write(line)
 
-class Temp:
-    __data = File.data.get("Temp", {})
-    current = __data.get('current', None)
-    date = __data.get('date', None)
-    elapsed = __data.get('elapsed', None)
+class Temperature:
+    __data = File.data.get("Temperature", {})
+    elapsed = __data.get('elapsed', 0)
     maximum = __data.get('maximum', None)
     minutes = __data.get('minutes', None)
-    overheating = __data.get('overheating', False)
 
     @classmethod
     def build(cls):
@@ -303,11 +300,12 @@ class Temp:
         return cls.__data is not {}
 
     @classmethod
+    def is_overheating(cls, current_temp: float) -> bool:
+        return current_temp >= cls.maximum
+
+    @classmethod
     def update(cls):
-        cls.__data['current'] = cls.current
-        cls.__data['date'] = cls.date
         cls.__data['elapsed'] = cls.elapsed
         cls.__data['maximum'] = cls.maximum
         cls.__data['minutes'] = cls.minutes
-        cls.__data['overheating'] = cls.overheating
-        File.update('Temp', cls.__data)
+        File.update('Temperature', cls.__data)

@@ -2,7 +2,7 @@ import os
 
 from util.date import Date
 
-from .configuration import Temp
+from .configuration import Temperature
 from .syslog import log
 
 # dev imports
@@ -31,21 +31,17 @@ class PiTemp:
         a current timestamp. The stored values are then compared to determine if the
         system should restart or not.
         '''
-        Temp.current = cls.measure()
-        Temp.date = Date().timestamp()
-        if Temp.overheating:
-            if Temp.current <= Temp.maximum:
-                log("[PiTemp] - Temperature has dropped to a nominal range [{}]".format(Temp.current))
-                Temp.elapsed = 0
-            else:
-                Temp.elapsed += 1
-                log("[PiTemp] - WARN: Temperature is still too high [{}]".format(Temp.current))
-                if Temp.elapsed > Temp.minutes:
-                    log("[PiTemp] - ERR: Temperature was too hot for too long - rebooting")
-                    os.popen('sudo reboot')
+        current = cls.measure()
+        if Temperature.is_overheating(current) and Temperature.elapsed > 0:
+            Temperature.elapsed += 1
+            log("[PiTemp] - WARN: Temperature is still too high [{}]".format(current))
+            if Temperature.elapsed > Temperature.minutes:
+                log("[PiTemp] - ERR: Temperature was too hot for too long - rebooting")
+                os.popen('sudo reboot')
+        elif Temperature.is_overheating(current):
+            log("[PiTemp] - WARN: Temp is too high [{}]".format(current))
+            Temperature.elapsed += 1
         else:
-            if Temp.current >= Temp.maximum:
-                log("[PiTemp] - WARN: Temp is too high [{}]".format(Temp.current))
-                Temp.elapsed = 0
-                Temp.overheating = True
-        Temp.update()
+            Temperature.elapsed = 0
+
+        Temperature.update()
