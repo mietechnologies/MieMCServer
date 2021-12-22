@@ -295,7 +295,7 @@ class Temp:
     def build(cls):
         print('Because I\'m running on a Raspberry Pi, core temperature can be worrysome so I monitor my core temperature for you.')
         cls.maximum = ci.int_input('So, how hot should I let myself get?', default=70)
-        cls.minutes = ci.int_input('And how long should I be at this temp before I shut everything down?', default=3)
+        cls.minutes = ci.int_input('And how many minutes should pass before I shut everything down?', default=3)
         cls.update()
 
     @classmethod
