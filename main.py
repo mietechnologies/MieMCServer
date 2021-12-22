@@ -32,6 +32,8 @@ import asyncio
 import zipfile
 from time import sleep
 
+from util.temp import PiTemp
+
 VERSION = "1.0.0"
 
 def parse(args):
@@ -45,6 +47,7 @@ def parse(args):
     clean = args.clean
     stop = args.stop
     restart = args.restart
+    critical_events = args.critical_events
 
     running_log = []
 
@@ -101,6 +104,10 @@ def parse(args):
         runCommand("say The server is being restarted in 60 seconds.")
         sleep(60)
         reboot.run()
+
+    if critical_events:
+        running_log.append('-ce')
+        PiTemp.execute()
 
     if not running_log:
         run()
@@ -183,7 +190,25 @@ def run():
 
     log("Server started!")
 
+def startMonitorsIfNeeded():
+    dir = os.path.dirname(__file__)
+    prog = os.path.join(dir, 'main.py')
+    scheduler = CronScheduler()
+
+    # Temp if on RasPi
+    if c.Temperature.exists():
+        log('Start monitor of CPU temp...')
+        critical_events_command = 'python {} --critical-events'.format(prog)
+        scheduler.createRecurringJob(
+            '* * * * *', 
+            critical_events_command, 
+            'detect_critical_events')
+
+def stopMonitors():
+    CronScheduler().removeJob('detect_critical_events')
+
 def startServer():
+    startMonitorsIfNeeded()
     log("Starting server...")
     ram = "{}M".format(c.Minecraft.allocated_ram)
     current_dir = os.path.dirname(__file__)
@@ -197,6 +222,7 @@ def startServer():
                                     bootlog_path))
 
 def stopServer():
+    stopMonitors()
     runCommand('stop')
 
 def setupCrontab():
@@ -349,6 +375,10 @@ def main():
         " may manually edit or re-generate your config at any time.", 
         dest="generate_config", nargs="?" ,const="auto", type=str,
         required=False)
+
+    if c.Temperature.exists():
+        parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
+            'events that may be occuring on your Raspberry Pi.', dest='critical_events', action='store_true', required=False)
 
     parser.set_defaults(func=parse)
     args = parser.parse_args()
