@@ -198,7 +198,7 @@ def startMonitorsIfNeeded():
     # Temp if on RasPi
     if c.Temp.exists():
         log('Start monitor of CPU temp...')
-        critical_events_command = 'python3 {} --critical-events'.format(prog)
+        critical_events_command = 'python {} --critical-events'.format(prog)
         scheduler.createRecurringJob(
             '* * * * *', 
             critical_events_command, 
