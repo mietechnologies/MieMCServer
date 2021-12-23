@@ -8,9 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added GitHub templates.
-- Added user input to ask if user is running the project on a Raspberry Pi. If the project is running on a Raspberry Pi, setup now asks the user for input in regards to CPU temperature monitoring and starts monitoring the temperature when the Minecraft server starts and stops monitoring when the Minecraft server stops. If the monitor detects that the CPU is overheating, the monitor automatically reboots the system it is running on.
-
 ### Changed
 
 ### Deprecated
@@ -22,3 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 ## [1.0.0] - 2021.12.12
+
+## [1.1] - 2021.12.24
+- Added GitHub templates for pull request and pull request review.
+- Rewrote README with the goal of making the workflow of this project clear to future developers.
+- Merged MinePi project (custom functionality for running this project on Raspberry Pi). When running this project on a Raspberry Pi, the project now monitors the system's CPU temperature and shuts down if it detects a critical event.
