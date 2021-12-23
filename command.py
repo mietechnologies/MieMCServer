@@ -15,6 +15,7 @@ def runCommand(command: str):
         log("ERR: RCON has not been correctly initialized.")
 
 def runTerminal(commands: list[str] = None):
+    RCON.read()
     if RCON.enabled and RCON.password != "":
         with Client("mieserver.ddns.net",
                     RCON.port,
@@ -26,13 +27,14 @@ def runTerminal(commands: list[str] = None):
                     __handleResponse(response, command)
             else:
                 exit_command = "!exit"
-                user_input = ""
+                user_input = input(">> ")
 
                 while (user_input != exit_command):
-                    user_input = input(">> ")
                     response = client.run(user_input)
                     __handleResponse(response, user_input)
-
+                    user_input = input(">> ")
+    else:
+        log("ERR: RCON has not been correctly initialized.")
 
 def __handleResponse(response: str, command: str):
     invalid_responses = ["Unknown command",
@@ -42,5 +44,5 @@ def __handleResponse(response: str, command: str):
     if response in invalid_responses:
         log("Could not execute command [{}]: {}".format(command,
                                                         response))
-    else:
+    elif response:
         log(response)
