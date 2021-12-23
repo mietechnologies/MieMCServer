@@ -1,3 +1,4 @@
+from requests.api import delete
 from minecraft.version import Versioner, UpdateType
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
@@ -9,8 +10,8 @@ from util.syslog import log
 from util.date import Date
 from scripts import reboot
 from time import sleep
-import argparse
 import command as cmd
+import argparse
 import os
 
 VERSION = "1.0.0"
@@ -44,10 +45,12 @@ def parse(args):
         running_log.append('-v')
         log("minePi Version v{}".format(VERSION))
 
-    # Done
     if command is not None:
         running_log.append('-c {}'.format(command))
-        cmd.runCommand(command)
+        if command == "":
+            cmd.runTerminal()
+        else:
+            cmd.runCommand(command)
         
     if update is not None:
         running_log.append('-u')
@@ -100,15 +103,13 @@ def executeCleanCommands():
     log('Running clean up commands...')
     dir = os.path.dirname(__file__)
     cleanCommandFile = os.path.join(dir, 'clean-commands.txt')
-    for command in linesFromFile(cleanCommandFile):
-        cmd.runCommand(command)
+    cmd.runTerminal(linesFromFile(cleanCommandFile))
 
 def executeCommandList():
     log('Running custom commands...')
     dir = os.path.dirname(__file__)
     custom_command_file = os.path.join(dir, 'commands.txt')
-    for command in linesFromFile(custom_command_file, deleteFetched=True):
-        cmd.runCommand(command)
+    cmd.runTerminal(linesFromFile(custom_command_file, deleteFetched=True))
 
 def linesFromFile(file: str, deleteFetched: bool = False):
     lines = []
@@ -291,25 +292,6 @@ def updateServer(override):
             if should_update:
                 Installer.install(override_settings=should_update)
 
-# def runCommand(command):
-#     c.RCON.read()
-#     if c.RCON.enabled and c.RCON.password != '':
-#         with Client('mieserver.ddns.net', c.RCON.port, passwd=c.RCON.password) as client:
-#             response = client.run(command)
-#             # Sqizzle any known errors so we can log them
-#             if 'Unknown command' in response:
-#                 log('Could not execute command [{}]: {}'.format(command, response))
-#             elif 'Expected whitespace' in response:
-#                 log('Could not execute command [{}]: {}'.format(command, response))
-#             elif 'Invalid or unknown' in response:
-#                 log('Could not execute command [{}]: {}'.format(command, response))
-#             elif response == '': 
-#                 log('Issued server command [{}]'.format(command))
-#             else: 
-#                 log(response)
-#     else: 
-#         log('ERR: RCON has not been correctly initialized!')
-
 def main():
 
     parser = argparse.ArgumentParser(description="This program is your " \
@@ -322,8 +304,12 @@ def main():
     parser.add_argument('-v', '--version', help="The version of this software.",
         dest="version", action="store_true", required=False)
 
-    parser.add_argument('-c', '--command', help="This will run a command on " \
-        "the Minecraft Server", dest="command", type=str, required=False)
+    parser.add_argument('-c', '--command', help="If ran by itself, without " \
+        "the addition of an argument, this will start a terminal which you " \
+        "can enter multiple commands in sequence. If an argument is passed " \
+        "it will run that command only. In order to stop the terminal you " \
+        "can enter '!exit' and it will safely end the terminal session.", 
+        dest="command", nargs="?", const="", type=str, required=False)
 
     parser.add_argument('-u', '--update', help="Checks to see if there is a " \
         "newer version of Minecraft Server. If there is, it will install the " \
