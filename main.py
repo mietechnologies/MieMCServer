@@ -1,38 +1,16 @@
-# ****************************** Developer Notes ******************************
-# Goal: This script will run and maintain a Minecraft Server, utilizing crontab
-# jobs to handle maintenance, and allowing for custom commands to be run from
-# the terminal. 
-# 1. Setup the basic argument system
-#    - No Args: This will be the initial call. It will start everything,
-#      from the ground up. It will generate the config file, setup all the
-#      needed cron jobs, and start the Minecraft server.
-#    - '-mcv', '--mc-version': This will return the currently used Minecraft
-#      Server Version.
-#    - '-v', '--version': This will return the version of this software.
-#    - '-c', '--command': This will accept a string (which will need rapped in
-#      quotations) that will run a command on the server (as long as its running)
-#    - '-u', '--update': Checks for a Minecraft Server update, and updates if
-#      newer version exists.
-#    - '-bu', '--backup': This will backup the Minecraft Server
-# *****************************************************************************
-
-from util.backup import Backup
-from util.date import Date
-from util import configuration as c
 from minecraft.version import Versioner, UpdateType
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
-from util.syslog import log, clear_log
-from util.emailer import Emailer
 from util.cron import CronScheduler
-from scripts import reboot
-import argparse, sys, os
-from rcon import Client
-import asyncio
-import zipfile
-from time import sleep
-
+from util import configuration as c
+from util.backup import Backup
 from util.temp import PiTemp
+from util.syslog import log
+from util.date import Date
+from scripts import reboot
+from time import sleep
+import argparse
+import os
 
 VERSION = "1.1.2"
 
