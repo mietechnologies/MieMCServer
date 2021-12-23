@@ -21,7 +21,7 @@ As features are added, please keep the following requirements in mind:
 - More to come?
 
 ### Pull Requests
-Big or small, we welcome any pull request that stands to make this project even better. When submitting your PR, please use the supplied [pull request template](link_to_pull_request_template). When a PR is reviewed, we will use the [pull request review template](link_to_pull_request_review_template), so please make sure that you follow the guidelines contained within the template.
+Big or small, we welcome any pull request that stands to make this project even better. When submitting your PR, please use the supplied [pull request template](https://github.com/mietechnologies/MIE-MCServer/blob/main/.github/PULL_REQUEST_TEMPLATE.md). When a PR is reviewed, we will use the [pull request review template](https://github.com/mietechnologies/MIE-MCServer/blob/main/.github/PULL_REQUEST_REVIEW_TEMPLATE.md), so please make sure that you follow the guidelines contained within the template.
 
 ### Issues
 Bug reports and other issues are also welcome. If you encounter any issues while developing and/or using this project, please open an issue. When submitting your issue, please use the supplied [issue template](link_to_issue_template).
