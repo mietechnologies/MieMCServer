@@ -1,10 +1,11 @@
 from __future__ import annotations
 from .mielib.responseoption import ResponseOption
+from .mielib.system import username
 from crontab import CronTab
 from enum import IntEnum
 
 class CronScheduler:
-    cron = CronTab(user='pi')
+    cron = CronTab(user=username())
 
     def createRecurringJob(self, time, command, comment):
         for job in self.cron:
