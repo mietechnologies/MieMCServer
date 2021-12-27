@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added automatic fetching of the system username for use in CronTab so that we do not
+have to ask the user for it and allow for automatic cron job scheduling.
 - The ability to run a user's own custom shell scripts placed in `./scripts/custom-command.sh`
 - Discord Integration. The user now has the ability to configure settings to post messages into their Discord server.
   - Unhandled exceptions. When the system runs into an unhandled error it will now post a message to your configured Discord server.
