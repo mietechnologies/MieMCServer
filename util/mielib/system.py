@@ -10,8 +10,5 @@ def username() -> str:
     str:The system username of the currently executing machine.
     '''
     root_path = os.path.expanduser('~/')
-    path_components = root_path.split('/')
-    for component in reversed(path_components):
-        if component != '':
-            return component
-    raise(NameError('Could not find user name for this system'))
+    normalized_path = os.path.normpath(root_path)
+    return os.path.basename(normalized_path)
