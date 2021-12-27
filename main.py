@@ -27,6 +27,7 @@ def parse(args):
     clean = args.clean
     stop = args.stop
     restart = args.restart
+    debug = args.debug
     update_config = args.update_config
     if c.Temperature.exists():
         critical_events = args.critical_events
@@ -34,8 +35,7 @@ def parse(args):
     running_log = []
 
     if debug is not False:
-        run_debug()
-        print('******* DEBUG EXECUTION FINISHED ******\n')
+        runDebug()
         return
 
     # Done
@@ -416,6 +416,11 @@ def main():
         "desired collection's name in as a parameter. (i.e. Email, Minecraft, " \
         "etc. [not case sensitive])", nargs='?', dest="update_config", 
         type=str, required=False)
+
+    parser.add_argument('-D', '--debug', help='This will run any processes ' \
+        'implemented in the runDebug method of main.py. WARN: This command ' \
+        'will ignore any and all other commands!', dest='debug', 
+        action='store_true', required=False)
 
     if c.Temperature.exists():
         parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
