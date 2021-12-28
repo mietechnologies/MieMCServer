@@ -24,6 +24,7 @@ class File:
     def generate(cls):
         Minecraft.reset()
         Email.reset()
+        Messaging.reset()
         Maintenance.reset()
 
         if os.path.exists(cls.__file_dir):
@@ -254,6 +255,10 @@ class Messaging:
     def update(cls):
         cls.__data['discord'] = cls.discord
         File.update('Messaging', cls.__data)
+
+    @classmethod
+    def reset(cls):
+        cls.discord = None
 
 class RCON:
     enabled = False
