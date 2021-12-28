@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added first draft of the README
+- During setup, the user now has the ability to configure settings to post messages to a Discord server
+- The project now messages a Discord server when it encounters an unhandled exception if this setting has been configured
 
 ### Changed
 
