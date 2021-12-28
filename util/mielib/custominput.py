@@ -187,9 +187,9 @@ def url_input(output) -> str:
     Returns:
     A valid user-input url
     '''
-    regex = r'https?:\/\/(www\.)[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)'
+    regex = r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)'
     ammendment = '[http://www.example.com]'
-    message = '{} {}'.format(output, ammendment)
+    message = '{} {} '.format(output, ammendment)
     user_response = None
     valid_input = False
 
