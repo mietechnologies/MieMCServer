@@ -31,6 +31,7 @@ class File:
         
         Minecraft.update()
         Email.update()
+        Messaging.update()
         Maintenance.update()
 
     @classmethod
@@ -51,6 +52,7 @@ class File:
             Temperature.build()
 
         Email.build()
+        Messaging.build()
         Minecraft.build_object()
         Maintenance.build()
 
@@ -239,14 +241,14 @@ class Messaging:
     @classmethod
     def build(cls):
         if ci.bool_input('If you\'d like, I can post important updates (like '\
-            'server shut downs and restarts) to a Discord server. These updates'\
-            ' would include when the server is going to shut down Would you like '\
+            'server shut downs and restarts) to a Discord server. Would you like '\
             'to use this service?', False):
             print('Alright, the only information I need to setup discord is a '\
                 'webhook URL. You can find out how to get that information at '\
                 'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-'\
                 'Webhooks.')
             cls.discord = ci.url_input('So, what is that webhook URL?')
+            cls.update()
 
     @classmethod
     def update(cls):
