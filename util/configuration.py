@@ -130,8 +130,8 @@ class Email:
     def build(cls):
         email_address = ci.email_input("What is the gmail address you would " \
             "like me to use to send you reports?", provider="gmail")
-        password = ci.confirm_input("What is the password to the account you " \
-            "just enetered? ")
+        password = ci.password_input("What is the password to the account you" \
+            " just enetered?")
         recipients = ci.email_input("What email address(es) would you like " \
             "to recieve the logs and reports?", multiples=True)
         cls.address = email_address
@@ -239,11 +239,16 @@ class RCON:
 
     @classmethod
     def build(cls):
-        print('RCON is a protocol that allows server administrators to remotely execute Minecraft commands.')
-        print('Mie-MCServer uses RCON to run clean up commands to automatically maintain your server.')
-        print('Please take a moment to set up RCON by answering the following questions.')
-        cls.port = ci.int_input('What internet port would you like to use for RCON?', 25575)
-        cls.password = ci.confirm_input('What password would you like to use for issuing commands via RCON? ')
+        print('RCON is a protocol that allows server administrators to ' \
+            'remotely execute Minecraft commands.')
+        print('Mie-MCServer uses RCON to run clean up commands to ' \
+            'automatically maintain your server.')
+        print('Please take a moment to set up RCON by answering the ' \
+            'following questions.')
+        cls.port = ci.int_input('What internet port would you like to use ' \
+            'for RCON?', 25575)
+        cls.password = ci.password_input('What password would you like to ' \
+            'use for issuing commands via RCON?', pattern=r'^[a-zA-Z0-9_]+$')
         cls.enabled = True
         cls.update()
 
