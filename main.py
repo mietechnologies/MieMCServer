@@ -132,6 +132,7 @@ def executeCommandList():
         runCommand(command)
 
 def executeCustomShellScript():
+    log('Running custom shell script...')
     dir = os.path.dirname(__file__)
     custom_script = os.path.join(dir, 'scripts/custom-command.sh')
     os.chmod(custom_script, 0o755)
