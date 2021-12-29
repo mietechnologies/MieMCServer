@@ -22,13 +22,15 @@ def handleUncaughtException(type, exception, tb):
     log("{}\nTraceback (most recent call last):\n{}".format(error, trace))
 
     subject = "Uncaught Exception Encountered!"
-    body = ("Hey there!\nWish I was bringing you better news, but it looks " \
-        "like I've encountered an unhandled exception:\n\n{}\nTraceback " \
-        "(most recent call last):\n{}\n\nUnfortunately, this means that the " \
-        "server has failed...\nBelow I have attached the logs of the " \
-        "server's recent activity. Perhaps some of the last entries can " \
-        "point you in the right direction on what may have caused the issue." \
-        "\n\nThansk,\nMinePi"
+    body = ("Hey there!\n\tI wish I was bringing you better news, but it looks" \
+        " like I've encountered an unhandled exceptions:\n\n{}\nTraceback " \
+        "(most recent call last):\n{}\n\n\tUnfortunately, this is an error I am" \
+        " currenty unable to handle on my own. Depending on where this error" \
+        " originated from, your Minecraft server may not be started as a " \
+        "result.\n\nThanks,\nMIE-MCServer\n\nP.S. If you've encountered the " \
+        "same error multiple times, and its not a result of a change you've " \
+        "made to the program, please create an issue at: "\
+        "https://github.com/mietechnologies/MIE-MCServer/issues"
             .format(error, trace))
 
     messageDiscord('It looks like I just encountered an unhandled error. The ' \
