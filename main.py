@@ -120,7 +120,8 @@ def parse(args):
 
 def maintenance():
     executeCleanCommands()
-    trim_end_regions()
+    trimEnd()
+    executeCustomShellScript()
 
 def executeCleanCommands():
     log('Running clean up commands...')
@@ -135,6 +136,13 @@ def executeCommandList():
     custom_command_file = os.path.join(dir, 'commands.txt')
     for command in linesFromFile(custom_command_file, deleteFetched=True):
         runCommand(command)
+
+def executeCustomShellScript():
+    log('Running custom shell script...')
+    dir = os.path.dirname(__file__)
+    custom_script = os.path.join(dir, 'scripts/custom-command.sh')
+    os.chmod(custom_script, 0o755)
+    os.system(custom_script)
 
 def linesFromFile(file: str, deleteFetched: bool = False):
     lines = []
