@@ -30,6 +30,7 @@ seconds before rebooting.
 
 ### Fixed
 - The temperature monitor was starting even when it hadn't been configured.
+- An issue with the Emailer preventing it from sending emails as expected
 
 ### Security
 
