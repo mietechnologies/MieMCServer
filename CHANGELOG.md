@@ -17,6 +17,7 @@ have to ask the user for it and allow for automatic cron job scheduling.
 ### Removed
 
 ### Fixed
+- An issue with the Emailer preventing it from sending emails as expected
 
 ### Security
 
