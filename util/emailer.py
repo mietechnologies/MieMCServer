@@ -2,7 +2,7 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from .configuration import Email
-from os.path import basename
+from os.path import basename, normpath
 import smtplib
 
 
@@ -25,15 +25,17 @@ class Emailer:
         msg.attach(MIMEText(self.body, "plain"))
 
         for attachment in self.attachments:
-            with open(attachment, "rb") as file:
-                aFile = MIMEApplication(file.read(), _subtype="txt")
-                aFile.add_header("Content-Disposition", "attachment",
-                    filename=basename(file))
-                msg.attach(file)
+            with open(attachment, 'rb') as file:
+                attachment_file = MIMEApplication(file.read(), _subtype="txt")
+                name = basename(normpath(attachment))
+                attachment_file.add_header("Content-Disposition",
+                                           "attachment",
+                                           filename=name)
+                msg.attach(attachment_file)
 
         server = smtplib.SMTP(Email.server, Email.port)
         server.starttls()
         server.login(Email.address, Email.password)
-        server.sendmail(Email.address, self.recipients, msg.as_string())
+        server.sendmail(Email.address, Email.recipients, msg.as_string())
 
         server.quit()
