@@ -47,8 +47,8 @@ def parse(args):
     clean = args.clean
     stop = args.stop
     restart = args.restart
-    critical_events = args.critical_events
-    debug = args.debug
+    if c.Temperature.exists():
+        critical_events = args.critical_events
 
     running_log = []
 
@@ -111,7 +111,7 @@ def parse(args):
         sleep(60)
         reboot.run()
 
-    if critical_events:
+    if c.Temperature.exists() and critical_events:
         running_log.append('-ce')
         PiTemp.execute()
 
@@ -350,7 +350,7 @@ def updateServer(override):
 def runCommand(command):
     c.RCON.read()
     if c.RCON.enabled and c.RCON.password != '':
-        with Client('mieserver.ddns.net', c.RCON.port, passwd=c.RCON.password) as client:
+        with Client('minecraun.ddns.net', c.RCON.port, passwd=c.RCON.password) as client:
             response = client.run(command)
             # Sqizzle any known errors so we can log them
             if 'Unknown command' in response:
