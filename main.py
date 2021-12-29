@@ -134,6 +134,7 @@ def executeCommandList():
 def executeCustomShellScript():
     dir = os.path.dirname(__file__)
     custom_script = os.path.join(dir, 'scripts/custom-command.sh')
+    os.chmod(custom_script, 0o755)
     os.system(custom_script)
 
 def linesFromFile(file: str, deleteFetched: bool = False):
