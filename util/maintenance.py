@@ -89,7 +89,6 @@ class Maintenance:
         messages the Discord server (if enabled).
         '''
         log(f'Starting maintenance at {Date.timestamp()}')
-        print(f'python {cls.root_dir}/main.py -q')
         os.system(f'python {cls.root_dir}/main.py -q')
 
         c.Maintenance.maintenance_running = True
