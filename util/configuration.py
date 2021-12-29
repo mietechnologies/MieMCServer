@@ -297,7 +297,7 @@ class Temperature:
 
     @classmethod
     def exists(cls):
-        return cls.__data is not {}
+        return cls.__data != {}
 
     @classmethod
     def is_overheating(cls, current_temp: float) -> bool:
