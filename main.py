@@ -1,5 +1,6 @@
 from requests.api import delete
 from minecraft.version import Versioner, UpdateType
+from util.maintenance import Maintenance
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
 from util.cron import CronScheduler
@@ -31,6 +32,13 @@ def parse(args):
     update_config = args.update_config
     if c.Temperature.exists():
         critical_events = args.critical_events
+
+    if c.Temperature.exists():
+        critical_events = args.critical_events
+
+    end_maintenance = args.end_maintenance
+    schedule_maintenance = args.maintenance
+    start_maintenance = args.start_maintenance
 
     running_log = []
 
@@ -104,6 +112,18 @@ def parse(args):
     if update_config:
         running_log.append('-uc')
         updateConfig(update_config)
+
+    if schedule_maintenance:
+        running_log.append('-m')
+        Maintenance.schedule()
+
+    if start_maintenance:
+        running_log.append('-sm')
+        Maintenance.start()
+
+    if end_maintenance:
+        running_log.append('-em')
+        Maintenance.end()
 
     if not running_log:
         run()
@@ -383,6 +403,29 @@ def main():
         " may manually edit or re-generate your config at any time.", 
         dest="generate_config", nargs="?" ,const="auto", type=str,
         required=False)
+
+    # Maintenance arguments
+    parser.add_argument(
+        '-m',
+        '--maintenance',
+        help='Schedule maintenance for your system and/or Minecraft server.',
+        action='store_true',
+        required=False
+    )
+    parser.add_argument(
+        '-sm',
+        '--start-maintenance',
+        help='Start maintenance mode immediately.',
+        action='store_true',
+        required=False
+    )
+    parser.add_argument(
+        '-em',
+        '--end-maintenance',
+        help='End maintenance mode immediately.',
+        action='store_true',
+        required=False
+    )
 
     parser.add_argument('-uc', '--update-config', help="This command enables " \
         "the user to update a configuration collection by passing the " \
