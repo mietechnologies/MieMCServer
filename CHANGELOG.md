@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added first draft of the README
+- The ability to run a user's own custom shell scripts placed in `./scripts/custom-command.sh`
 
 ### Changed
 
