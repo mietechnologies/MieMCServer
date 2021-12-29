@@ -170,9 +170,8 @@ def range_input(output, lower, upper, default=None):
             print("I'm sorry, I didn't understand that input.")
 
 def time_input(output, default=None):
-    regex = r'^([012])?\d:[0-5][0-9] (p|a|24)'
-    ammendment = "[##:## a/p/24]"
-    message = "{} {} ".format(output, ammendment)
+    regex = r'^([012])?\d:[0-5][0-9] ?(p|a|P|a)?(m|M)?$'
+    message = "{} ".format(output)
     user_response = ""
     valid_input = False
 
@@ -312,3 +311,21 @@ def server_address_input(output: str) -> str:
             message = 'That server address is invalid, please try again. '
     else:
         return user_response
+
+def calendar_date_input(output) -> str:
+    regex = r'^[0|1][0-9]\/[0-3][0-9]\/2\d{3}$'
+    ammendment = '[MM/DD/YYYY]'
+    message = '{} {} '.format(output, ammendment)
+    user_response = None
+    valid_input = False
+
+    while (not valid_input):
+        user_response = input(message)
+        valid_input = re.fullmatch(regex, user_response)
+    else:
+        return user_response
+
+def date_time_input(date_output: str, time_output: str) -> str:
+    date = calendar_date_input(date_output)
+    time = time_input(time_output)
+    return '{} {}'.format(date, time)
