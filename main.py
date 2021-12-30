@@ -47,7 +47,8 @@ def parse(args):
     clean = args.clean
     stop = args.stop
     restart = args.restart
-    critical_events = args.critical_events
+    if c.Temperature.exists():
+        critical_events = args.critical_events
 
     running_log = []
 
@@ -105,7 +106,7 @@ def parse(args):
         sleep(60)
         reboot.run()
 
-    if critical_events:
+    if c.Temperature.exists() and critical_events:
         running_log.append('-ce')
         PiTemp.execute()
 
