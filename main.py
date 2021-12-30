@@ -315,7 +315,7 @@ def updateServer(override):
 def runCommand(command):
     c.RCON.read()
     if c.RCON.enabled and c.RCON.password != '':
-        with Client('minecraun.ddns.net', c.RCON.port, passwd=c.RCON.password) as client:
+        with Client('mieserver.ddns.net', c.RCON.port, passwd=c.RCON.password) as client:
             response = client.run(command)
             # Sqizzle any known errors so we can log them
             if 'Unknown command' in response:
