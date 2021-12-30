@@ -134,7 +134,7 @@ class Email:
         email_address = ci.email_input("What is the gmail address you would " \
             "like me to use to send you reports?", provider="gmail")
         password = ci.password_input("What is the password to the account you" \
-            " just enetered?")
+            " just entered?")
         recipients = ci.email_input("What email address(es) would you like " \
             "to recieve the logs and reports?", multiples=True)
         cls.address = email_address
