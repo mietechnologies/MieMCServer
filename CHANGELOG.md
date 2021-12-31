@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Added first draft of the README
+- Added automatic fetching of the system username for use in CronTab so that we do not
+have to ask the user for it and allow for automatic cron job scheduling.
 
 ### Changed
 
@@ -16,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- An issue with the Emailer preventing it from sending emails as expected
 
 ### Security
 
