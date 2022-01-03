@@ -179,7 +179,6 @@ class Maintenance:
     backup_number = __backup.get("number", 1)
     update_schedule = __update.get("schedule", "0 3 * * 0")
     update_allow_major_update = __update.get("allow_major_update", False)
-    maintenance_running = __scheduled_maintenance.get('running', False)
     maintenance_start = __scheduled_maintenance.get('start', None)
     maintenance_end = __scheduled_maintenance.get('end', None)
 
@@ -230,7 +229,6 @@ class Maintenance:
         cls.__backup["number"] = cls.backup_number
         cls.__update["schedule"] = cls.update_schedule
         cls.__update["allow_major_update"] = cls.update_allow_major_update
-        cls.__scheduled_maintenance['running'] = cls.maintenance_running
         cls.__scheduled_maintenance['start'] = cls.maintenance_start
         cls.__scheduled_maintenance['end'] = cls.maintenance_end
         cls.__data["complete_shutdown"] = cls.complete_shutdown
@@ -249,6 +247,10 @@ class Maintenance:
         cls.backup_number = 1
         cls.update_schedule = "0 3 * * 0"
         cls.update_allow_major_update = False
+
+    @classmethod
+    def is_running(cls):
+        return cls.maintenance_start is not None
 
 class Messaging:
     __data = File.data.get('Messaging', {})
