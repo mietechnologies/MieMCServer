@@ -40,11 +40,11 @@ class Maintenance:
         '''
         # Jobs have already been scheduled but have not been completed.
         # Should we overwrite?
-        if cls.scheduler.job_exists(comment='start maintenance automatically'):
+        if cls.scheduler.job_exists(comment='maintenance.start'):
             if ci.bool_input('WARN: Maintenance is scheduled but not ' \
                 'completed yet. Should I overwrite?', default=False):
-                cls.scheduler.removeJob(comment='end maintenance automatically')
-                cls.scheduler.removeJob(comment='start maintenance automatically')
+                cls.scheduler.removeJob(comment='maintenance.end')
+                cls.scheduler.removeJob(comment='maintenance.start')
             else:
                 return
 
@@ -93,6 +93,10 @@ class Maintenance:
             'as quickly as possible. Until then, **the server will be shut ' \
             'down.**')
 
+        cls.scheduler.removeJob('maintenance.restart')
+        cls.scheduler.removeJob('maintenance.backup')
+        cls.scheduler.removeJob('maintenance.scripts')
+        cls.scheduler.removeJob('maintenance.update')
         c.Maintenance.maintenance_start = Date.timestamp()
         c.Maintenance.update()
 
