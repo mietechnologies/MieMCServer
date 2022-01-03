@@ -34,7 +34,6 @@ class CronScheduler:
         command (str): The command to execute when running this job.
         comment (str): A designation used mostly to identify this job.
         '''
-        print(time)
         if not self.job_exists(comment):
             job = self.cron.new(command, comment)
             job.setall(time)

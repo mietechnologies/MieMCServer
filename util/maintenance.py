@@ -19,17 +19,16 @@ class Maintenance:
         enabled).
         '''
         log(f'Ending maintenance at { Date.timestamp() }')
-
-        c.Maintenance.maintenance_running = False
-        c.Maintenance.update()
-
-        cls.scheduler.removeJob('end maintenance automatically')
-        cls.scheduler.removeJob('start maintenance automatically')
-
         messageDiscord('Server maintenance has ended! The server should be ' \
             'up and running in a few minutes!')
 
-        os.system(f'python {cls.root_dir}/main.py -r')
+        cls.scheduler.removeJob('maintenance.end')
+        cls.scheduler.removeJob('maintenance.start')
+        c.Maintenance.maintenance_end = None
+        c.Maintenance.maintenance_start = None
+        c.Maintenance.update()
+
+        os.system(f'python {cls.root_dir}/main.py')
 
     @classmethod
     def schedule(cls):
@@ -49,7 +48,8 @@ class Maintenance:
             else:
                 return
 
-        print('WARN: During scheduled maintenance, I will shut down your Minecraft server.')
+        print('WARN: During scheduled maintenance, I will shut down your '\
+            'Minecraft server.')
         start = ci.date_time_input(
             date_output='When do you want to start maintenance?',
             time_output='And what time?'
@@ -62,17 +62,17 @@ class Maintenance:
         # Schedule cron jobs to automatically start and stop maintenance
         cron_end = CronDate(date=end).convertToCronTime()
         cron_start = CronDate(date=start).convertToCronTime()
-        end_command = f'python {cls.root_dir}/main.py -em'
-        start_command = f'python {cls.root_dir}/main.py -sm'
+        end_command = f'python {cls.root_dir}/main.py -m end'
+        start_command = f'python {cls.root_dir}/main.py -m start'
         cls.scheduler.create_job_if_needed(
             cron_start,
             start_command,
-            'start maintenance automatically'
+            'maintenance.start'
         )
         cls.scheduler.create_job_if_needed(
             cron_end,
             end_command,
-            'end maintenance automatically'
+            'maintenance.end'
         )
 
         # Inform users that maintenance has been scheduled via Discord
@@ -89,11 +89,11 @@ class Maintenance:
         messages the Discord server (if enabled).
         '''
         log(f'Starting maintenance at {Date.timestamp()}')
-        os.system(f'python {cls.root_dir}/main.py -q')
+        messageDiscord('Server maintenance has started and will be completed ' \
+            'as quickly as possible. Until then, **the server will be shut ' \
+            'down.**')
 
-        c.Maintenance.maintenance_running = True
+        c.Maintenance.maintenance_start = Date.timestamp()
         c.Maintenance.update()
 
-        messageDiscord('Server maintenance has started and will be ' \
-            'completed as quickly as possible. Until then, **the server ' \
-            'will be shut down.**')
+        os.system(f'python {cls.root_dir}/main.py -q')

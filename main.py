@@ -1,3 +1,25 @@
+# ****************************** Developer Notes ******************************
+# Goal: This script will run and maintain a Minecraft Server, utilizing crontab
+# jobs to handle maintenance, and allowing for custom commands to be run from
+# the terminal. 
+# 1. Setup the basic argument system
+#    - No Args: This will be the initial call. It will start everything,
+#      from the ground up. It will generate the config file, setup all the
+#      needed cron jobs, and start the Minecraft server.
+#    - '-mcv', '--mc-version': This will return the currently used Minecraft
+#      Server Version.
+#    - '-v', '--version': This will return the version of this software.
+#    - '-c', '--command': This will accept a string (which will need rapped in
+#      quotations) that will run a command on the server (as long as its running)
+#    - '-u', '--update': Checks for a Minecraft Server update, and updates if
+#      newer version exists.
+#    - '-bu', '--backup': This will backup the Minecraft Server
+# *****************************************************************************
+
+from re import sub
+from util.backup import Backup
+from util.date import Date
+from util import configuration as c
 from requests.api import delete
 from minecraft.version import Versioner, UpdateType
 from util.maintenance import Maintenance
@@ -28,6 +50,7 @@ def parse(args):
     clean = args.clean
     stop = args.stop
     restart = args.restart
+    maintenance_action = args.maintenance
     debug = args.debug
     update_config = args.update_config
     if c.Temperature.exists():
@@ -35,10 +58,6 @@ def parse(args):
 
     if c.Temperature.exists():
         critical_events = args.critical_events
-
-    end_maintenance = args.end_maintenance
-    schedule_maintenance = args.maintenance
-    start_maintenance = args.start_maintenance
 
     running_log = []
 
@@ -105,6 +124,14 @@ def parse(args):
         sleep(60)
         reboot.run()
 
+    if maintenance_action is not None:
+        if maintenance_action == 'schedule':
+            Maintenance.schedule()
+        elif maintenance_action == 'start':
+            Maintenance.start()
+        else:
+            Maintenance.end()
+
     if c.Temperature.exists() and critical_events:
         running_log.append('-ce')
         PiTemp.execute()
@@ -125,7 +152,7 @@ def parse(args):
         running_log.append('-em')
         Maintenance.end()
 
-    if not running_log:
+    if not running_log and not c.Maintenance.is_running():
         run()
 
 def maintenance():
@@ -426,27 +453,15 @@ def main():
         dest="generate_config", nargs="?" ,const="auto", type=str,
         required=False)
 
-    # Maintenance arguments
     parser.add_argument(
         '-m',
         '--maintenance',
-        help='Schedule maintenance for your system and/or Minecraft server.',
-        action='store_true',
-        required=False
-    )
-    parser.add_argument(
-        '-sm',
-        '--start-maintenance',
-        help='Start maintenance mode immediately.',
-        action='store_true',
-        required=False
-    )
-    parser.add_argument(
-        '-em',
-        '--end-maintenance',
-        help='End maintenance mode immediately.',
-        action='store_true',
-        required=False
+        help='Schedule, start, or end maintenance for your Minecraft server ' \
+            'or hosting system.',
+        const='schedule',
+        type=str,
+        nargs='?',
+        choices=('schedule', 'start', 'end')
     )
 
     parser.add_argument('-uc', '--update-config', help="This command enables " \
