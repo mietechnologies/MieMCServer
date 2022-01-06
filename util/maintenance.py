@@ -24,8 +24,7 @@ class Maintenance:
 
         cls.scheduler.removeJob('maintenance.end')
         cls.scheduler.removeJob('maintenance.start')
-        c.Maintenance.maintenance_end = None
-        c.Maintenance.maintenance_start = None
+        c.Maintenance.maintenance_running = False
         c.Maintenance.update()
 
         os.system(f'python {cls.root_dir}/main.py')
@@ -78,9 +77,9 @@ class Maintenance:
         # Inform users that maintenance has been scheduled via Discord
         discord_end = Date.format(end, '%m/%d/%Y %I:%M %p')
         discord_start = Date.format(start, '%m/%d/%Y %I:%M %p')
-        messageDiscord('Server maintenance has been scheduled. **The ' \
-            f'server will be down** starting on {discord_start} and '\
-            f'ending on {discord_end}.')
+        messageDiscord('Server maintenance has been scheduled. **The server ' \
+            f'will be down** starting on {discord_start} and ending on ' \
+            f'{discord_end}.')
 
     @classmethod
     def start(cls):
@@ -97,7 +96,7 @@ class Maintenance:
         cls.scheduler.removeJob('maintenance.backup')
         cls.scheduler.removeJob('maintenance.scripts')
         cls.scheduler.removeJob('maintenance.update')
-        c.Maintenance.maintenance_start = Date.timestamp()
+        c.Maintenance.maintenance_running = True
         c.Maintenance.update()
 
         os.system(f'python {cls.root_dir}/main.py -q')
