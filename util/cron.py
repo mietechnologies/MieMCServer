@@ -41,8 +41,8 @@ class CronScheduler:
 
     def job_exists(self, comment: str) -> bool:
         '''
-        Determines if a job already exists in CronTab by looping through
-        the already existing jobs in CronTab.
+        Determines if a job already exists in CronTab by looping through the
+        already existing jobs in CronTab.
 
         Parameters:
         comment (str): The designation of the job to search for.
@@ -56,6 +56,7 @@ class CronScheduler:
         for job in self.cron:
             if job.comment == comment:
                 self.cron.remove(job)
+        self.cron.write()
 
 class CronFrequency(IntEnum):
     DAILY = 0

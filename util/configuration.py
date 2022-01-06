@@ -171,16 +171,14 @@ class Maintenance:
     __data = File.data.get("Maintenance", {})
     __backup = __data.get("backup", {})
     __update = __data.get("update", {})
-    __scheduled_maintenance = __data.get('scheduled', {})
     complete_shutdown = __data.get("complete_shutdown", "0 4 1 * *")
     schedule = __data.get("schedule", "0 4 * * *")
     backup_schedule = __backup.get("schedule", "0 3 * * *")
     backup_path = __backup.get("path", "~/MC_Backups")
     backup_number = __backup.get("number", 1)
+    maintenance_running = __data.get('scheduled_running', False)
     update_schedule = __update.get("schedule", "0 3 * * 0")
     update_allow_major_update = __update.get("allow_major_update", False)
-    maintenance_start = __scheduled_maintenance.get('start', None)
-    maintenance_end = __scheduled_maintenance.get('end', None)
 
     @classmethod
     def build(cls):
@@ -229,13 +227,11 @@ class Maintenance:
         cls.__backup["number"] = cls.backup_number
         cls.__update["schedule"] = cls.update_schedule
         cls.__update["allow_major_update"] = cls.update_allow_major_update
-        cls.__scheduled_maintenance['start'] = cls.maintenance_start
-        cls.__scheduled_maintenance['end'] = cls.maintenance_end
         cls.__data["complete_shutdown"] = cls.complete_shutdown
         cls.__data["schedule"] = cls.schedule
         cls.__data["backup"] = cls.__backup
         cls.__data["update"] = cls.__update
-        cls.__data['scheduled'] = cls.__scheduled_maintenance
+        cls.__data['scheduled_running'] = cls.maintenance_running
         File.update(cls.SECTION_NAME, cls.__data)
 
     @classmethod
@@ -247,10 +243,6 @@ class Maintenance:
         cls.backup_number = 1
         cls.update_schedule = "0 3 * * 0"
         cls.update_allow_major_update = False
-
-    @classmethod
-    def is_running(cls):
-        return cls.maintenance_start is not None
 
 class Messaging:
     __data = File.data.get('Messaging', {})
