@@ -125,6 +125,7 @@ def parse(args):
         reboot.run()
 
     if maintenance_action is not None:
+        running_log.append(f'-m {maintenance_action}')
         if maintenance_action == 'schedule':
             Maintenance.schedule()
         elif maintenance_action == 'start':
