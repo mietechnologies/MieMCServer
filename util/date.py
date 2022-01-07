@@ -1,5 +1,5 @@
 from datetime import datetime
-from .extension import stringContainsAnyCase
+from .extension import stringContains, stringContainsAnyCase
 
 class Date:
     @staticmethod
@@ -17,6 +17,11 @@ class Date:
             return Date.timeFromDate(date, '%I:%M %p')
 
         if '/' in date:
+            if stringContains(
+                date,
+                r'\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}.\d+'
+            ):
+                return Date.timeFromDate(date, '%m/%d/%Y %H:%M:%S.%f')
             return Date.timeFromDate(date, '%m/%d/%Y %H:%M')
         return Date.timeFromDate(date, '%H:%M')
 
@@ -41,8 +46,23 @@ class Date:
         return datetime.strptime(dateString, date_format)
 
     @staticmethod
-    def elapstedTime(firstDate, secondDate):
+    def elapsedTime(firstDate, secondDate):
         return abs(firstDate - secondDate.total_seconds())
+
+    @staticmethod
+    def difference(past_date: datetime, future_date: datetime) -> float:
+        '''
+        Calculates the difference of time between two datetime objects.
+
+        Parameters:
+            - past_date (datetime): The current/past date to compare
+            - future_date (datetime): The current/future date to compare
+
+        Returns:
+            The difference of past_date and future_date. If past_date is later
+            than future_date, this method will return a negative number.
+        '''
+        return (future_date - past_date).total_seconds()
 
     @staticmethod 
     def strippedTimestamp():
