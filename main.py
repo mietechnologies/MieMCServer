@@ -256,11 +256,26 @@ def run():
         generateConfig("manual")
         setupCrontab()
         Installer.install(override_settings = True)
-        startServer()
-        c.RCON.build()
-        
 
-    log("Server started!")
+        # This is presumably the first run so the EULA has not yet been
+        # accepted, meaning that starting the server WILL fail
+        startServer()
+
+        c.RCON.build()
+        root_dir = os.path.dirname(__file__)
+        eula = os.path.join(root_dir, 'server/eula.txt')
+        if c.Minecraft.accept_eula():
+            lines = linesFromFile(eula, False)
+            with open(eula, 'w') as eula_out:
+                for line in lines:
+                    eula_out.write(line.replace('eula=false', 'eula=true'))
+            log('User has accepted Minecraft\'s EULA!')
+            startServer()
+            log("Server started!")
+        else:
+            log('User has declined Minecraft\'s EULA!')
+            log('Gefore running the Minecraft server, you MUST accept ' \
+                f'Minecraft\'s EULA by updating the { eula } file!')
 
 def startMonitorsIfNeeded():
     dir = os.path.dirname(__file__)

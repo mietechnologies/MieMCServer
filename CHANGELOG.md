@@ -16,6 +16,7 @@ have to ask the user for it and allow for automatic cron job scheduling.
 - Password input is now hidden during setup
 - Command Terminal. You can now open a command terminal with '-c' with no additional arguments.
 - We now ask for and store the server address during configuration to use in conjuction with RCON and other services (in the future).
+- Added functionality to automatically sign Minecraft's EULA upon user acceptance.
 
 ### Changed
 - The reboot process now issues a statement to the players on the server 
