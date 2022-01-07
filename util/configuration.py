@@ -75,6 +75,22 @@ class Minecraft:
     version_group = __version.get("version_group", None)
 
     @classmethod
+    def accept_eula(cls) -> bool:
+        '''
+        Prompts the user to accept or decline Minecraft's EULA.
+        
+        Returns:
+            A boolean indicating whether or not the user accepted the EULA.
+        '''
+        print('\n\n****** WARNING ******')
+        print('Hosting a Minecraft server requires you to accept Minecraft\'s \
+            EULA.')
+        print('You can find more information about Minecraft\'s EULA at \
+            https://account.mojang.com/documents/minecraft_eula')
+        return ci.bool_input('If you like, I can accept the terms of the EULA \
+            for you now. Would you like me to do that?', default=True)
+
+    @classmethod
     def version_str(cls):
         if cls.patch is None:
             return "{}.{}:{}".format(cls.major, cls.minor, cls.build)
@@ -323,6 +339,9 @@ class RCON:
                         line = 'rcon.password={}\n'.format(cls.password)
                     
                     fileOut.write(line)
+        else:
+            from .syslog import log
+            log('ERR: No server.properties file found!')
 
 class Server:
     '''
