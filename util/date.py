@@ -1,5 +1,5 @@
 from datetime import datetime
-from .extension import stringContains, stringContainsAnyCase
+from .extension import string_contains, stringContainsAnyCase
 
 class Date:
     @staticmethod
@@ -17,7 +17,7 @@ class Date:
             return Date.timeFromDate(date, '%I:%M %p')
 
         if '/' in date:
-            if stringContains(
+            if string_contains(
                 date,
                 r'\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}.\d+'
             ):
