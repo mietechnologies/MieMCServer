@@ -49,14 +49,46 @@ class Maintenance:
 
         print('WARN: During scheduled maintenance, I will shut down your '\
             'Minecraft server.')
-        start = ci.date_time_input(
-            date_output='When do you want to start maintenance?',
-            time_output='And what time?'
-        )
-        end = ci.date_time_input(
-            date_output='When do you want to end maintenance?',
-            time_output='And what time?'
-        )
+        end = None
+        start = None
+
+        while start is None:
+            tmp_start = ci.date_time_input(
+                date_output='When do you want to start maintenance?',
+                time_output='And what time?'
+            )
+
+            # Compare the start date to the current date:
+            #   - Start date should not be lesser than current date
+            today_timestamp = Date.timestamp()
+            today_datetime = Date.date_from_string(today_timestamp)
+            start_datetime = Date.date_from_string(tmp_start)
+            start_difference = Date.difference(today_datetime, start_datetime)
+            if start_difference > 0:
+                start = tmp_start
+            else:
+                print('Sorry, maintenance can only be scheduled to start at ' \
+                    'a future date...')
+
+        while end is None:
+            tmp_end = ci.date_time_input(
+                date_output='When do you want to end maintenance?',
+                time_output='And what time?'
+            )
+
+            # Compare the end date to the start date:
+            # - End date should not be lesser than start date
+            # - End date should be at least 5 minutes greater than start date
+            end_datetime = Date.date_from_string(tmp_end)
+            start_datetime = Date.date_from_string(start)
+            start_difference = Date.difference(start_datetime, end_datetime)
+            if start_difference >= 5 * 60:
+                end = tmp_end
+            else:
+                print('Sorry, maintenance can only be scheduled to end more ' \
+                    'than 5 minutes after it has been scheduled to start...')
+
+        print(f'starting at { start } and ending at { end }')
 
         # Schedule cron jobs to automatically start and stop maintenance
         cron_end = CronDate(date=end).convertToCronTime()
