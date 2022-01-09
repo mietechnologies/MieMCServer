@@ -1,38 +1,18 @@
-# ****************************** Developer Notes ******************************
-# Goal: This script will run and maintain a Minecraft Server, utilizing crontab
-# jobs to handle maintenance, and allowing for custom commands to be run from
-# the terminal. 
-# 1. Setup the basic argument system
-#    - No Args: This will be the initial call. It will start everything,
-#      from the ground up. It will generate the config file, setup all the
-#      needed cron jobs, and start the Minecraft server.
-#    - '-mcv', '--mc-version': This will return the currently used Minecraft
-#      Server Version.
-#    - '-v', '--version': This will return the version of this software.
-#    - '-c', '--command': This will accept a string (which will need rapped in
-#      quotations) that will run a command on the server (as long as its running)
-#    - '-u', '--update': Checks for a Minecraft Server update, and updates if
-#      newer version exists.
-#    - '-bu', '--backup': This will backup the Minecraft Server
-# *****************************************************************************
-
-from util.backup import Backup
-from util.date import Date
-from util import configuration as c
+from requests.api import delete
 from minecraft.version import Versioner, UpdateType
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
-from util.syslog import log, clear_log
-from util.emailer import Emailer
 from util.cron import CronScheduler
-from scripts import reboot
-import argparse, sys, os
-from rcon import Client
-import asyncio
-import zipfile
-from time import sleep
-
+from util import configuration as c
+from util.backup import Backup
 from util.temp import PiTemp
+from util.syslog import log
+from util.date import Date
+from scripts import reboot
+from time import sleep
+import command as cmd
+import argparse
+import os
 
 VERSION = "1.0.0"
 
@@ -65,10 +45,12 @@ def parse(args):
         running_log.append('-v')
         log("minePi Version v{}".format(VERSION))
 
-    # Done
     if command is not None:
         running_log.append('-c {}'.format(command))
-        runCommand(command)
+        if command == "":
+            cmd.runTerminal()
+        else:
+            cmd.runCommand(command)
         
     if update is not None:
         running_log.append('-u')
@@ -76,7 +58,7 @@ def parse(args):
 
     if backup:
         running_log.append('-bu {}'.format(c.Maintenance.backup_path))
-        runCommand("say System is backing up Minecraft world.")
+        cmd.runCommand("say System is backing up Minecraft world.")
         filename = 'world.{}.zip'.format(Date.strippedTimestamp())
         Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
@@ -86,7 +68,7 @@ def parse(args):
 
     if clean:
         running_log.append('-k')
-        runCommand("say System maintenance scripts are being ran.")
+        cmd.runCommand("say System maintenance scripts are being ran.")
         maintenance()
 
     if commands:
@@ -95,14 +77,14 @@ def parse(args):
 
     if stop:
         running_log.append('-q')
-        runCommand("say The server is being saved, and then stopped in 60 " \
-            "seconds.")
+        cmd.runCommand("say The server is being saved, and then stopped " \
+            "in 60 seconds.")
         sleep(60)
         stopServer()
 
     if restart:
         running_log.append('-q')
-        runCommand("say The server is being restarted in 60 seconds.")
+        cmd.runCommand("say The server is being restarted in 60 seconds.")
         sleep(60)
         reboot.run()
 
@@ -121,15 +103,13 @@ def executeCleanCommands():
     log('Running clean up commands...')
     dir = os.path.dirname(__file__)
     cleanCommandFile = os.path.join(dir, 'clean-commands.txt')
-    for command in linesFromFile(cleanCommandFile):
-        runCommand(command)
+    cmd.runTerminal(linesFromFile(cleanCommandFile))
 
 def executeCommandList():
     log('Running custom commands...')
     dir = os.path.dirname(__file__)
     custom_command_file = os.path.join(dir, 'commands.txt')
-    for command in linesFromFile(custom_command_file, deleteFetched=True):
-        runCommand(command)
+    cmd.runTerminal(linesFromFile(custom_command_file, deleteFetched=True))
 
 def linesFromFile(file: str, deleteFetched: bool = False):
     lines = []
@@ -224,7 +204,7 @@ def startServer():
 
 def stopServer():
     stopMonitors()
-    runCommand('stop')
+    cmd.runCommand('stop')
 
 def setupCrontab():
     dir = os.path.dirname(__file__)
@@ -312,25 +292,6 @@ def updateServer(override):
             if should_update:
                 Installer.install(override_settings=should_update)
 
-def runCommand(command):
-    c.RCON.read()
-    if c.RCON.enabled and c.RCON.password != '':
-        with Client('mieserver.ddns.net', c.RCON.port, passwd=c.RCON.password) as client:
-            response = client.run(command)
-            # Sqizzle any known errors so we can log them
-            if 'Unknown command' in response:
-                log('Could not execute command [{}]: {}'.format(command, response))
-            elif 'Expected whitespace' in response:
-                log('Could not execute command [{}]: {}'.format(command, response))
-            elif 'Invalid or unknown' in response:
-                log('Could not execute command [{}]: {}'.format(command, response))
-            elif response == '': 
-                log('Issued server command [{}]'.format(command))
-            else: 
-                log(response)
-    else: 
-        log('ERR: RCON has not been correctly initialized!')
-
 def main():
 
     parser = argparse.ArgumentParser(description="This program is your " \
@@ -343,8 +304,12 @@ def main():
     parser.add_argument('-v', '--version', help="The version of this software.",
         dest="version", action="store_true", required=False)
 
-    parser.add_argument('-c', '--command', help="This will run a command on " \
-        "the Minecraft Server", dest="command", type=str, required=False)
+    parser.add_argument('-c', '--command', help="If ran by itself, without " \
+        "the addition of an argument, this will start a terminal which you " \
+        "can enter multiple commands in sequence. If an argument is passed " \
+        "it will run that command only. In order to stop the terminal you " \
+        "can enter '!exit' and it will safely end the terminal session.", 
+        dest="command", nargs="?", const="", type=str, required=False)
 
     parser.add_argument('-u', '--update', help="Checks to see if there is a " \
         "newer version of Minecraft Server. If there is, it will install the " \
