@@ -53,7 +53,8 @@ def parse(args):
     running_log = []
 
     if debug is not False:
-        runDebug()
+        run_debug()
+        print('******* DEBUG EXECUTION FINISHED ******\n')
         return
 
     # Done
@@ -119,7 +120,7 @@ def parse(args):
 
 def maintenance():
     executeCleanCommands()
-    trimEnd()
+    trim_end_regions()
 
 def executeCleanCommands():
     log('Running clean up commands...')
@@ -159,23 +160,45 @@ def linesFromFile(file: str, deleteFetched: bool = False):
                 fileOut.write(line)
     return lines
 
-def trimEnd():
-    log('Trimming the end!')
-    log('To keep specific end regions, update the end-regions.txt file in the project root with the regions you would like to keep.')
-    log('To determine what region files to keep, see Xisumavoid\'s video at https://www.youtube.com/watch?v=fGlqDBcgmIc')
-    dir = os.path.dirname(__file__)
-    endRegionDir = os.path.join(dir, 'server/world_the_end/DIM1/region')
-    endRegionLog = os.path.join(dir, 'end-regions.txt')
-    regionsToKeep = linesFromFile(endRegionLog)
-    filecount = 0
-                
-    for file in os.listdir(endRegionDir):
-        if file not in regionsToKeep:
-            region = os.path.join(endRegionDir, file)
-            os.remove(region)
-            filecount += 1
+def trim_end_regions():
+    '''
+    Cleans the subdirectories related to the end to serve two purposes:
+        1. Eliminates lag related to unused and loaded end chunks
+        2. Eliminates the need for players to travel very far to find resources
+           related to the end
+    '''
 
-    log('Finished trimming the end! Removed {} region(s)!'.format(filecount))
+    log('Trimming the end!')
+    log('To keep specific end regions, update the end-regions.txt file in ' \
+        'the project root with the regions you would like to keep.')
+    log('To determine what region files to keep, see Xisumavoid\'s video at ' \
+        'https://www.youtube.com/watch?v=fGlqDBcgmIc')
+    
+    # Fetch the end region root directory
+    root_dir = os.path.dirname(__file__)
+    end_dir = os.path.join(root_dir, 'server/world_the_end/DIM1')
+
+    # Fetch the regions the user would like to keep
+    end_region_log = os.path.join(root_dir, 'end-regions.txt')
+    regions_to_keep = linesFromFile(end_region_log)
+    filecount = 0
+
+    # Iterate through all subdirectories of the end region root directory
+    # and the files contained within each
+    for directory in os.listdir(end_dir):
+        path = os.path.join(end_dir, directory)
+        if os.path.isdir(path):
+            dir_count = 0
+            for file in os.listdir(path):
+                # If the file is not listed in the regions to keep, delete it
+                if file not in regions_to_keep:
+                    region = os.path.join(path, file)
+                    os.remove(region)
+                    dir_count += 1
+                    filecount += 1
+            if dir_count > 0:
+                log(f'Removed {dir_count} from {directory}!')
+    log(f'Finished trimming the end! Removed {filecount} region(s)!')
 
 def run():
     log("Checking config.yml...")
@@ -335,8 +358,28 @@ def runCommand(command):
     else: 
         log('ERR: RCON has not been correctly initialized!')
 
-def runDebug():
-    print('debug') # DO NOT DELETE THIS LINE!
+def run_debug():
+    '''
+    A helper method to make debugging and testing the application and 
+    implementations easier.
+    '''
+
+    # DO NOT DELETE THE LINE BELOW!
+    print('\n\n***** EXECUTING DEBUG METHODS ******') 
+
+    print('Copying files from the server; your input may be required...')
+    root_dir = os.path.dirname(__file__)
+    remote_dir = 'bachapin@mieserver.ddns.net:/home/bachapin/MIE-MCServer/' \
+        'server/world_the_end/DIM1'
+    local_dir = os.path.join(root_dir, 'server/world_the_end')
+    os.system(f'scp -r {remote_dir} {local_dir}')
+
+    trim_end_regions()
+    print('\n****** NOTE: The console above should state that several regions ' \
+        'were deleted! *******')
+    trim_end_regions()
+    print('\n****** NOTE: The console above should state that 0 regions were ' \
+        'deleted! ******')
 
 def main():
 

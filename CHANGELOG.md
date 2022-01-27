@@ -18,6 +18,10 @@ have to ask the user for it and allow for automatic cron job scheduling.
 
 ### Fixed
 - An issue with the Emailer preventing it from sending emails as expected
+- Unknown to us, Paper servers split entity, poi, and region data for the end 
+regions into separate directories. Previously, we were only removing region
+data for the /region directory. Now, we remove region data for all 
+subdirectories in the /server/world_the_end/DIM1/ directory.
 
 ### Security
 
