@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Discord Integration. The user now has the ability to configure settings to post messages into their Discord server.
+  - Unhandled exceptions. When the system runs into an unhandled error it will now post a message to your configured Discord server.
 - Password input is now hidden during setup
-
-- Command Terminal; You can now open a command terminal with '-c' with no additional arguments.
+- Command Terminal. You can now open a command terminal with '-c' with no additional arguments.
 
 ### Changed
 

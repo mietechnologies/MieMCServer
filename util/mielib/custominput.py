@@ -180,6 +180,27 @@ def time_input(output, default=None):
     else:
         return user_response
 
+def url_input(output) -> str:
+    '''
+    Asks for and confirms input of valid url from the user in the
+    https://www.example.com format.
+
+    Returns:
+    A valid user-input url
+    '''
+    regex = r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)'
+    ammendment = '[http://www.example.com]'
+    message = '{} {} '.format(output, ammendment)
+    user_response = None
+    valid_input = False
+
+    while(not valid_input):
+        user_response = input(message)
+        if re.fullmatch(regex, user_response):
+            valid_input = True
+    else:
+        return user_response
+
 def version_input(output):
     regex = r'\d+\.\d+(.\d+)?'
     ammendment = "[#.##.#/#.##]"

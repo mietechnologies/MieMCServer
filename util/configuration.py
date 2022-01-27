@@ -24,6 +24,7 @@ class File:
     def generate(cls):
         Minecraft.reset()
         Email.reset()
+        Messaging.reset()
         Maintenance.reset()
 
         if os.path.exists(cls.__file_dir):
@@ -31,6 +32,7 @@ class File:
         
         Minecraft.update()
         Email.update()
+        Messaging.update()
         Maintenance.update()
 
     @classmethod
@@ -51,6 +53,7 @@ class File:
             Temperature.build()
 
         Email.build()
+        Messaging.build()
         Minecraft.build_object()
         Maintenance.build()
 
@@ -231,6 +234,31 @@ class Maintenance:
         cls.backup_number = 1
         cls.update_schedule = "0 3 * * 0"
         cls.update_allow_major_update = False
+
+class Messaging:
+    __data = File.data.get('Messaging', {})
+    discord = __data.get('discord', None)
+
+    @classmethod
+    def build(cls):
+        if ci.bool_input('If you\'d like, I can post important updates (like '\
+            'server shut downs and restarts) to a Discord server. Would you like '\
+            'to use this service?', False):
+            print('Alright, the only information I need to setup discord is a '\
+                'webhook URL. You can find out how to get that information at '\
+                'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-'\
+                'Webhooks.')
+            cls.discord = ci.url_input('So, what is that webhook URL?')
+            cls.update()
+
+    @classmethod
+    def update(cls):
+        cls.__data['discord'] = cls.discord
+        File.update('Messaging', cls.__data)
+
+    @classmethod
+    def reset(cls):
+        cls.discord = None
 
 class RCON:
     enabled = False
