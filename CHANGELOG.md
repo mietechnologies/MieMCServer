@@ -15,9 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
-- An issue with the Emailer preventing it from sending emails as expected
 
 ### Security
+
+## [1.1.2] - 2022.01.27
+
+### Fixed
+- An issue with the Emailer preventing it from sending emails as expected
 
 ## [1.1.1] - 2022.01.27
 

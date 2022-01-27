@@ -34,7 +34,7 @@ from time import sleep
 
 from util.temp import PiTemp
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 
 def parse(args):
     mc_version = args.minecraft_version
