@@ -34,7 +34,7 @@ from time import sleep
 
 from util.temp import PiTemp
 
-VERSION = "1.0.0"
+VERSION = "1.1.1"
 
 def parse(args):
     mc_version = args.minecraft_version
@@ -48,8 +48,13 @@ def parse(args):
     stop = args.stop
     restart = args.restart
     critical_events = args.critical_events
+    debug = args.debug
 
     running_log = []
+
+    if debug is not False:
+        runDebug()
+        return
 
     # Done
     if mc_version is not False:
@@ -330,6 +335,9 @@ def runCommand(command):
     else: 
         log('ERR: RCON has not been correctly initialized!')
 
+def runDebug():
+    print('debug') # DO NOT DELETE THIS LINE!
+
 def main():
 
     parser = argparse.ArgumentParser(description="This program is your " \
@@ -375,6 +383,11 @@ def main():
         " may manually edit or re-generate your config at any time.", 
         dest="generate_config", nargs="?" ,const="auto", type=str,
         required=False)
+
+    parser.add_argument('-D', '--debug', help='This will run any processes ' \
+        'implemented in the runDebug method of main.py. WARN: This command ' \
+        'will ignore any and all other commands!', dest='debug', 
+        action='store_true', required=False)
 
     if c.Temperature.exists():
         parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
