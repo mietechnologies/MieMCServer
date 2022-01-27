@@ -212,7 +212,7 @@ class Versioner:
     def updateInstalledVersion(cls, version):
         """Update all appropriate files of a new server install
         
-        Keyword arguments:
+        Parameters:
             version -- A dictionary containing the keys: major, minor, patch, build, and version_group.
         """
         Minecraft.install_date = Date.timestamp()
