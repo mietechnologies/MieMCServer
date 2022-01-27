@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [1.1.2] - 2022.01.27
+
+### Fixed
+- An issue with the Emailer preventing it from sending emails as expected
+- Unknown to us, Paper servers split entity, poi, and region data for the end 
+regions into separate directories. Previously, we were only removing region
+data for the /region directory. Now, we remove region data for all 
+subdirectories in the /server/world_the_end/DIM1/ directory.
+
 ## [1.1.1] - 2022.01.27
 
 ### Added
