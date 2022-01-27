@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Added automatic fetching of the system username for use in CronTab so that we do not
-have to ask the user for it and allow for automatic cron job scheduling.
 
 ### Changed
 
@@ -24,6 +22,17 @@ data for the /region directory. Now, we remove region data for all
 subdirectories in the /server/world_the_end/DIM1/ directory.
 
 ### Security
+
+## [1.1.2] - 2022.01.27
+
+### Fixed
+- An issue with the Emailer preventing it from sending emails as expected
+
+## [1.1.1] - 2022.01.27
+
+### Added
+- Added automatic fetching of the system username for use in CronTab so that we do not
+have to ask the user for it and allow for automatic cron job scheduling.
 
 ## [1.1.0] - 2021.12.27
 
