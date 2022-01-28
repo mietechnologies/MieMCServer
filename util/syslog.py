@@ -1,6 +1,9 @@
 from .emailer import Emailer
 import os, sys, traceback
+import textwrap
 from .date import Date
+from .configuration import Messaging
+from discord import Webhook, RequestsWebhookAdapter
 
 sys.excepthook = lambda type, value, tb: handleUncaughtException(type, value, tb)
 
@@ -28,6 +31,9 @@ def handleUncaughtException(type, exception, tb):
         "\n\nThansk,\nMinePi"
             .format(error, trace))
 
+    messageDiscord('It looks like I just encountered an unhandled error. The ' \
+        'server might be down for a little while, but someone will get to it ' \
+        'as soon as they can. Please be patient.')
     email_log(subject, body)
 
 def log(message, silently=False, display_date=False):
@@ -56,3 +62,11 @@ def email_log(subject, body):
     mailer = Emailer(subject, body)
     mailer.attach(__log_file)
     mailer.send()
+
+def messageDiscord(message: str):
+    '''A helper function to send a message to the Discord server if 
+       this setting is enabled.'''
+
+    if Messaging.discord:
+        webhook = Webhook.from_url(Messaging.discord, adapter=RequestsWebhookAdapter())
+        webhook.send(textwrap.dedent(message))

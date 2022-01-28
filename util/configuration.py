@@ -24,6 +24,7 @@ class File:
     def generate(cls):
         Minecraft.reset()
         Email.reset()
+        Messaging.reset()
         Maintenance.reset()
 
         if os.path.exists(cls.__file_dir):
@@ -31,6 +32,7 @@ class File:
         
         Minecraft.update()
         Email.update()
+        Messaging.update()
         Maintenance.update()
 
     @classmethod
@@ -51,6 +53,7 @@ class File:
             Temperature.build()
 
         Email.build()
+        Messaging.build()
         Minecraft.build_object()
         Maintenance.build()
 
@@ -130,8 +133,8 @@ class Email:
     def build(cls):
         email_address = ci.email_input("What is the gmail address you would " \
             "like me to use to send you reports?", provider="gmail")
-        password = ci.confirm_input("What is the password to the account you " \
-            "just enetered? ")
+        password = ci.password_input("What is the password to the account you" \
+            " just entered?")
         recipients = ci.email_input("What email address(es) would you like " \
             "to recieve the logs and reports?", multiples=True)
         cls.address = email_address
@@ -232,6 +235,31 @@ class Maintenance:
         cls.update_schedule = "0 3 * * 0"
         cls.update_allow_major_update = False
 
+class Messaging:
+    __data = File.data.get('Messaging', {})
+    discord = __data.get('discord', None)
+
+    @classmethod
+    def build(cls):
+        if ci.bool_input('If you\'d like, I can post important updates (like '\
+            'server shut downs and restarts) to a Discord server. Would you like '\
+            'to use this service?', False):
+            print('Alright, the only information I need to setup discord is a '\
+                'webhook URL. You can find out how to get that information at '\
+                'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-'\
+                'Webhooks.')
+            cls.discord = ci.url_input('So, what is that webhook URL?')
+            cls.update()
+
+    @classmethod
+    def update(cls):
+        cls.__data['discord'] = cls.discord
+        File.update('Messaging', cls.__data)
+
+    @classmethod
+    def reset(cls):
+        cls.discord = None
+
 class RCON:
     enabled = False
     password = None
@@ -239,11 +267,16 @@ class RCON:
 
     @classmethod
     def build(cls):
-        print('RCON is a protocol that allows server administrators to remotely execute Minecraft commands.')
-        print('Mie-MCServer uses RCON to run clean up commands to automatically maintain your server.')
-        print('Please take a moment to set up RCON by answering the following questions.')
-        cls.port = ci.int_input('What internet port would you like to use for RCON?', 25575)
-        cls.password = ci.confirm_input('What password would you like to use for issuing commands via RCON? ')
+        print('RCON is a protocol that allows server administrators to ' \
+            'remotely execute Minecraft commands.')
+        print('Mie-MCServer uses RCON to run clean up commands to ' \
+            'automatically maintain your server.')
+        print('Please take a moment to set up RCON by answering the ' \
+            'following questions.')
+        cls.port = ci.int_input('What internet port would you like to use ' \
+            'for RCON?', 25575)
+        cls.password = ci.password_input('What password would you like to ' \
+            'use for issuing commands via RCON?', pattern=r'^[a-zA-Z0-9_]+$')
         cls.enabled = True
         cls.update()
 
@@ -297,7 +330,7 @@ class Temperature:
 
     @classmethod
     def exists(cls):
-        return cls.__data is not {}
+        return cls.__data != {}
 
     @classmethod
     def is_overheating(cls, current_temp: float) -> bool:

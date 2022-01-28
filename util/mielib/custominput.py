@@ -1,4 +1,5 @@
 from .responseoption import ResponseOption, option, optionList
+import getpass
 import sys, re
 sys.path.append("..")
 from util.cron import CronDate, CronFrequency
@@ -179,6 +180,27 @@ def time_input(output, default=None):
     else:
         return user_response
 
+def url_input(output) -> str:
+    '''
+    Asks for and confirms input of valid url from the user in the
+    https://www.example.com format.
+
+    Returns:
+    A valid user-input url
+    '''
+    regex = r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)'
+    ammendment = '[http://www.example.com]'
+    message = '{} {} '.format(output, ammendment)
+    user_response = None
+    valid_input = False
+
+    while(not valid_input):
+        user_response = input(message)
+        if re.fullmatch(regex, user_response):
+            valid_input = True
+    else:
+        return user_response
+
 def version_input(output):
     regex = r'\d+\.\d+(.\d+)?'
     ammendment = "[#.##.#/#.##]"
@@ -217,3 +239,43 @@ def cron_date_input(output):
 
     cron_date = CronDate(freq, week_day, month_day, time)
     return cron_date.convertToCronTime()
+
+def password_input(output:str, pattern:str=None) -> str:
+    '''
+    Asks user for password input and to confirm
+
+    Parameters:
+    output (str): The message displayed to the user
+    pattern (str): The optional RegEx pattern to match when confirming
+        user input
+    
+    Returns:
+    str: The final confirmed user-input password
+    '''
+    ammendment = '(Passwords are saved locally to your system)'
+    message = '{} {} '.format(output, ammendment)
+    user_response = None
+    valid_response = False
+    
+    while (not valid_response):
+        user_response = getpass.getpass(message)
+        if pattern is not None:
+            if re.fullmatch(pattern, user_response):
+                valid_response = True
+            else:
+                message = 'That password is invalid, please try again. '
+        elif user_response != '':
+            valid_response = True
+    else:
+        valid_response = False
+        message = 'Please confirm your password '
+
+        while (not valid_response):
+            confirmed = getpass.getpass(message)
+            if user_response == confirmed:
+                valid_response = True
+            else:
+                message = 'Those passwords don\'t match. Please try ' \
+                    'again '
+        else: 
+            return user_response
