@@ -283,23 +283,32 @@ def password_input(output:str, pattern:str=None) -> str:
 
 def server_address_input(output: str) -> str:
     '''
+    A user input method to ask the user for a server address. This method
+    handles both IP address and URL inputs.
+
+    - Parameters:
+        - output (str): The message to display to the user when asking for
+        input.
+
+    - Returns:
+        - (str): The user's valid input.
     '''
     ip_format = '192.168.1.107'
     url_format = 'someserver.net'
     ammendment = f'[{ ip_format } / { url_format }]'
     message = f'{ output } { ammendment } '
-    
+
     ip_pattern = r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$'
     user_response = None
     valid_response = False
 
-    while (not valid_response):
+    while not valid_response:
         user_response = input(message)
         if re.fullmatch(ip_pattern, user_response):
             valid_response = True
         elif re.fullmatch(url_pattern, user_response):
             valid_response = True
-        else: 
+        else:
             message = 'That server address is invalid, please try again. '
     else:
         return user_response
