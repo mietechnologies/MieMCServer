@@ -4,6 +4,8 @@ import sys, re
 sys.path.append("..")
 from util.cron import CronDate, CronFrequency
 
+url_pattern = r'(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)'
+
 def int_input(output, default=None):
     message = "{} ".format(output)
     if default:
@@ -188,7 +190,6 @@ def url_input(output) -> str:
     Returns:
     A valid user-input url
     '''
-    regex = r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)'
     ammendment = '[http://www.example.com]'
     message = '{} {} '.format(output, ammendment)
     user_response = None
@@ -196,7 +197,7 @@ def url_input(output) -> str:
 
     while(not valid_input):
         user_response = input(message)
-        if re.fullmatch(regex, user_response):
+        if re.fullmatch(url_pattern, user_response):
             valid_input = True
     else:
         return user_response
@@ -279,3 +280,26 @@ def password_input(output:str, pattern:str=None) -> str:
                     'again '
         else: 
             return user_response
+
+def server_address_input(output: str) -> str:
+    '''
+    '''
+    ip_format = '192.168.1.107'
+    url_format = 'someserver.net'
+    ammendment = f'[{ ip_format } / { url_format }]'
+    message = f'{ output } { ammendment } '
+    
+    ip_pattern = r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$'
+    user_response = None
+    valid_response = False
+
+    while (not valid_response):
+        user_response = input(message)
+        if re.fullmatch(ip_pattern, user_response):
+            valid_response = True
+        elif re.fullmatch(url_pattern, user_response):
+            valid_response = True
+        else: 
+            message = 'That server address is invalid, please try again. '
+    else:
+        return user_response
