@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - We now ask for and store the server address during configuration to use in conjuction with RCON and other services (in the future).
 
 ### Changed
+- The reboot process now issues a statement to the players on the server 
+informing them that the server will be saved and stopped in 30 seconds for the
+server to restart. After the server is stopped, the system will wait for 60
+seconds before rebooting.
 
 ### Deprecated
 
