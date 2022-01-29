@@ -54,6 +54,7 @@ class File:
 
         Email.build()
         Messaging.build()
+        Server.build()
         Minecraft.build_object()
         Maintenance.build()
 
@@ -314,6 +315,43 @@ class RCON:
                         line = 'rcon.password={}\n'.format(cls.password)
                     
                     fileOut.write(line)
+
+class Server:
+    '''
+    Any data we need to store in relation to the server that can't be stored
+    in the server.properties file should be stored here. At the time of writing,
+    this is just the ip/url used to connect to the server, but could turn into
+    other things in the future.
+    '''
+    __data = File.data.get('Server', {})
+    url = __data.get('url', None)
+
+    @classmethod
+    def build(cls):
+        '''
+        Constructs the `Server` section of the user's `config.yml` file based
+        upon the user's input.
+        '''
+        print('Hosting a Minecraft server requires a url to connect to. This ' \
+            'url can be an IP address or a url to a private server-space ' \
+            'hosted on this device.')
+        print('If you are hosting a local server, it\'s fine to use an IP ' \
+            'address for your server, but I recommend using a url if you are ' \
+            'hosting a public server.')
+        print('If you need to create a public-facing url to allow users to ' \
+            'connect to your server, I recommend using a service called no-ip' \
+            'to generate a dynamic url that always points to your IP, ' \
+            'regardless of how it might change.')
+        print('You can find more information on no-ip at https://www.noip.com.')
+        cls.url = ci.server_address_input('What url would you like to use to' \
+            'host your Minecraft server?')
+        cls.update()
+
+    @classmethod
+    def update(cls):
+        '''Updates the `Server` section of the user's `config.yml` file.'''
+        cls.__data['url'] = cls.url
+        File.update('Server', cls.__data)
 
 class Temperature:
     __data = File.data.get("Temperature", {})

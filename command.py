@@ -1,4 +1,5 @@
 from util.configuration import RCON
+from util.configuration import Server
 from util.syslog import log
 from rcon import Client
 
@@ -10,7 +11,7 @@ def runCommand(command: str):
     '''
     RCON.read()
     if RCON.enabled and RCON.password != "":
-        with Client("mieserver.ddns.net",
+        with Client(Server.url,
                     RCON.port,
                     passwd=RCON.password) as client:
 
@@ -30,7 +31,7 @@ def runTerminal(commands: list[str] = None):
     '''
     RCON.read()
     if RCON.enabled and RCON.password != "":
-        with Client("mieserver.ddns.net",
+        with Client(Server.url,
                     RCON.port,
                     passwd=RCON.password) as client:
             
