@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Unhandled exceptions. When the system runs into an unhandled error it will now post a message to your configured Discord server.
 - Password input is now hidden during setup
 - Command Terminal. You can now open a command terminal with '-c' with no additional arguments.
+- We now ask for the server address during configuration and store it in the config to use in conjuction with RCON and other services (in the future).
 
 ### Changed
 
