@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added first draft of the README
 - Password input is now hidden during setup
 - Command Terminal. You can now open a command terminal with '-c' with no additional arguments.
-- We now ask for the server address during configuration and store it in the config to use in conjuction with RCON and other services (in the future).
+- We now ask for and store the server address during configuration to use in conjuction with RCON and other services (in the future).
 
 ### Changed
 
