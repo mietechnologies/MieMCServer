@@ -85,7 +85,7 @@ def parse(args):
 
     if restart:
         running_log.append('-q')
-        runCommand("say Saving and stopping server in 30 seconds for system " \
+        cmd.runCommand("say Saving and stopping server in 30 seconds for system " \
             "restart.")
         sleep(30)
         stopServer()
