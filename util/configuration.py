@@ -1,7 +1,8 @@
 from .mielib import custominput as ci
 from .extension import cleanString
-import yaml, os
 import base64
+import yaml
+import os
 
 class File:
     __util_dir = os.path.dirname(__file__)
