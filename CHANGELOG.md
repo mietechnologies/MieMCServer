@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 informing them that the server will be saved and stopped in 30 seconds for the
 server to restart. After the server is stopped, the system will wait for 60
 seconds before rebooting.
+- How the password is stored and retrieved for the Email settings collection. When the user creates their configuration the password will now be encrypted before being stored.
+  - In association with this change I added a means to which a user can update a setting collection from the CLI. It is not recommended that the user update their password manually via the config file.
 
 ### Deprecated
 
