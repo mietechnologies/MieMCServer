@@ -27,6 +27,7 @@ def parse(args):
     clean = args.clean
     stop = args.stop
     restart = args.restart
+    update_config = args.update_config
     if c.Temperature.exists():
         critical_events = args.critical_events
 
@@ -99,6 +100,10 @@ def parse(args):
     if c.Temperature.exists() and critical_events:
         running_log.append('-ce')
         PiTemp.execute()
+
+    if update_config:
+        running_log.append('-uc')
+        updateConfig(update_config)
 
     if not running_log:
         run()
@@ -301,6 +306,27 @@ def generateConfig(method):
         print("'{}' is not a valid input. Please consult the help ['-h'] " \
             " menu to learn more. ".format(method))
 
+def updateConfig(collection):
+    
+    if collection.lower() == "minecraft":
+        c.Minecraft.reset()
+        c.Minecraft.build()
+    elif collection.lower() == "email":
+        c.Email.reset()
+        c.Email.build()
+    elif collection.lower() == "maintenance":
+        c.Maintenance.reset()
+        c.Maintenance.build()
+    elif collection.lower() == "messaging":
+        c.Messaging.reset()
+        c.Messaging.build()
+    elif collection.lower() == "rcon":
+        c.RCON.build()
+    elif collection.lower() == "server":
+        c.Server.build()
+    elif collection.lower() == "temperature":
+        c.Temperature.build()
+
 def updateServer(override):
     if not c.File.data:
         log("Cancelling... You haven't setup a config.yml file yet. You can " \
@@ -384,6 +410,12 @@ def main():
         'implemented in the runDebug method of main.py. WARN: This command ' \
         'will ignore any and all other commands!', dest='debug', 
         action='store_true', required=False)
+        
+    parser.add_argument('-uc', '--update-config', help="This command enables " \
+        "the user to update a configuration collection by passing the " \
+        "desired collection's name in as a parameter. (i.e. Email, Minecraft, " \
+        "etc. [not case sensitive])", nargs='?', dest="update_config", 
+        type=str, required=False)
 
     if c.Temperature.exists():
         parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
