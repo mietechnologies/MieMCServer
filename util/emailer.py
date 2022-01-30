@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 from .configuration import Email
 from os.path import basename
 import smtplib
+import base64
 
 
 class Emailer:
