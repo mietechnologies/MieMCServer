@@ -1,6 +1,8 @@
 from .mielib import custominput as ci
 from .extension import cleanString
-import yaml, os
+import base64
+import yaml
+import os
 
 class File:
     __util_dir = os.path.dirname(__file__)
@@ -125,7 +127,11 @@ class Email:
     SECTION_NAME = "Email"
     __data = File.data.get("Email", {})
     address = __data.get("address", "<your.email@gmail.com>")
-    password = __data.get("password", "<your password>")
+    password = ""
+    try:
+        password = base64.b64decode(__data.get("password")).decode('utf-8')
+    except:
+        password = "<your password>"
     server = __data.get("server", "smtp.gmail.com")
     port = __data.get("port", 587)
     recipients = __data.get("recipients", [])
@@ -135,11 +141,11 @@ class Email:
         email_address = ci.email_input("What is the gmail address you would " \
             "like me to use to send you reports?", provider="gmail")
         password = ci.password_input("What is the password to the account you" \
-            " just entered?")
+            " just entered?").encode('utf-8')
         recipients = ci.email_input("What email address(es) would you like " \
             "to recieve the logs and reports?", multiples=True)
         cls.address = email_address
-        cls.password = password
+        cls.password = base64.b64encode(password)
         cls.recipients = recipients
         cls.update()
 
