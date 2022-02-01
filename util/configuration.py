@@ -176,6 +176,7 @@ class Maintenance:
     backup_schedule = __backup.get("schedule", "0 3 * * *")
     backup_path = __backup.get("path", "~/MC_Backups")
     backup_number = __backup.get("number", 1)
+    maintenance_running = __data.get('scheduled_running', False)
     update_schedule = __update.get("schedule", "0 3 * * 0")
     update_allow_major_update = __update.get("allow_major_update", False)
 
@@ -230,6 +231,7 @@ class Maintenance:
         cls.__data["schedule"] = cls.schedule
         cls.__data["backup"] = cls.__backup
         cls.__data["update"] = cls.__update
+        cls.__data['scheduled_running'] = cls.maintenance_running
         File.update(cls.SECTION_NAME, cls.__data)
 
     @classmethod

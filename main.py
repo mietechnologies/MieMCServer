@@ -1,5 +1,28 @@
+# ****************************** Developer Notes ******************************
+# Goal: This script will run and maintain a Minecraft Server, utilizing crontab
+# jobs to handle maintenance, and allowing for custom commands to be run from
+# the terminal. 
+# 1. Setup the basic argument system
+#    - No Args: This will be the initial call. It will start everything,
+#      from the ground up. It will generate the config file, setup all the
+#      needed cron jobs, and start the Minecraft server.
+#    - '-mcv', '--mc-version': This will return the currently used Minecraft
+#      Server Version.
+#    - '-v', '--version': This will return the version of this software.
+#    - '-c', '--command': This will accept a string (which will need rapped in
+#      quotations) that will run a command on the server (as long as its running)
+#    - '-u', '--update': Checks for a Minecraft Server update, and updates if
+#      newer version exists.
+#    - '-bu', '--backup': This will backup the Minecraft Server
+# *****************************************************************************
+
+from re import sub
+from util.backup import Backup
+from util.date import Date
+from util import configuration as c
 from requests.api import delete
 from minecraft.version import Versioner, UpdateType
+from util.maintenance import Maintenance
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
 from util.cron import CronScheduler
@@ -27,11 +50,20 @@ def parse(args):
     clean = args.clean
     stop = args.stop
     restart = args.restart
+    maintenance_action = args.maintenance
+    debug = args.debug
     update_config = args.update_config
     if c.Temperature.exists():
         critical_events = args.critical_events
 
+    if c.Temperature.exists():
+        critical_events = args.critical_events
+
     running_log = []
+
+    if debug is not False:
+        runDebug()
+        return
 
     # Done
     if mc_version is not False:
@@ -92,6 +124,15 @@ def parse(args):
         sleep(60)
         reboot.run()
 
+    if maintenance_action is not None:
+        running_log.append(f'-m {maintenance_action}')
+        if maintenance_action == 'schedule':
+            Maintenance.schedule()
+        elif maintenance_action == 'start':
+            Maintenance.start()
+        else:
+            Maintenance.end()
+
     if c.Temperature.exists() and critical_events:
         running_log.append('-ce')
         PiTemp.execute()
@@ -100,7 +141,19 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
-    if not running_log:
+    if schedule_maintenance:
+        running_log.append('-m')
+        Maintenance.schedule()
+
+    if start_maintenance:
+        running_log.append('-sm')
+        Maintenance.start()
+
+    if end_maintenance:
+        running_log.append('-em')
+        Maintenance.end()
+
+    if not running_log and not c.Maintenance.is_running():
         run()
 
 def maintenance():
@@ -379,11 +432,27 @@ def main():
         dest="generate_config", nargs="?" ,const="auto", type=str,
         required=False)
 
+    parser.add_argument(
+        '-m',
+        '--maintenance',
+        help='Schedule, start, or end maintenance for your Minecraft server ' \
+            'or hosting system.',
+        const='schedule',
+        type=str,
+        nargs='?',
+        choices=('schedule', 'start', 'end')
+    )
+
     parser.add_argument('-uc', '--update-config', help="This command enables " \
         "the user to update a configuration collection by passing the " \
         "desired collection's name in as a parameter. (i.e. Email, Minecraft, " \
         "etc. [not case sensitive])", nargs='?', dest="update_config", 
         type=str, required=False)
+
+    parser.add_argument('-D', '--debug', help='This will run any processes ' \
+        'implemented in the runDebug method of main.py. WARN: This command ' \
+        'will ignore any and all other commands!', dest='debug', 
+        action='store_true', required=False)
 
     if c.Temperature.exists():
         parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \

@@ -1,10 +1,14 @@
 from __future__ import annotations
+
+from util.date import Date
+from util.extension import stringContainsAnyCase
 from .mielib.responseoption import ResponseOption
+from .mielib.system import username
 from crontab import CronTab
 from enum import IntEnum
 
 class CronScheduler:
-    cron = CronTab(user='pi')
+    cron = CronTab(user=username())
 
     def createRecurringJob(self, time, command, comment):
         for job in self.cron:
@@ -19,18 +23,47 @@ class CronScheduler:
             this_job.setall(time)
             self.cron.write()
 
+    def create_job_if_needed(self, time: str, command: str, comment: str):
+        '''
+        Creates a new cron job to fire at the specified cron time if the
+        desired job doesn't already exist.
+
+        Parameters:
+        time (str): A cron string representing when and how this cron 
+            job should fire.
+        command (str): The command to execute when running this job.
+        comment (str): A designation used mostly to identify this job.
+        '''
+        if not self.job_exists(comment):
+            job = self.cron.new(command, comment)
+            job.setall(time)
+            self.cron.write()
+
+    def job_exists(self, comment: str) -> bool:
+        '''
+        Determines if a job already exists in CronTab by looping through the
+        already existing jobs in CronTab.
+
+        Parameters:
+        comment (str): The designation of the job to search for.
+        '''
+        for job in self.cron:
+            if job.comment == comment:
+                return True
+        return False
+
     def removeJob(self, comment):
         for job in self.cron:
             if job.comment == comment:
                 self.cron.remove(job)
-
+        self.cron.write()
 
 class CronFrequency(IntEnum):
     DAILY = 0
     WEEKLY = 1
     MONTHLY = 2
     REBOOT = 3
-
+    ONCE = 4
 
 class WeekDay(IntEnum):
     SUNDAY = 0
@@ -64,19 +97,29 @@ class CronDate:
     frequency = None
     day_of_week = None
     day_of_month = None
+    month = 0
     hour = 0
     minute = 0
 
-    def __init__(self, frequency: CronFrequency,
-                       week_day,
-                       month_day,
-                       time):
-        self.frequency = frequency
-        self.day_of_week = week_day
-        self.day_of_month = month_day
-        hour, minute = self.__convertTime(time)
-        self.hour = hour
-        self.minute = minute
+    def __init__(self, frequency: CronFrequency=None,
+                       week_day=None,
+                       month_day=None,
+                       time=None,
+                       date: str = None):
+        if date is None:
+            self.frequency = frequency
+            self.day_of_week = week_day
+            self.day_of_month = month_day
+            datetime = Date.date_from_string(time)
+            self.hour = datetime.hour
+            self.minute = datetime.minute
+        else:
+            self.frequency = CronFrequency.ONCE
+            datetime = Date.date_from_string(date)
+            self.day_of_month = datetime.day
+            self.hour = datetime.hour
+            self.minute = datetime.minute
+            self.month = datetime.month
 
     def convertToCronTime(self):
         if self.frequency == CronFrequency.DAILY:
@@ -89,6 +132,8 @@ class CronDate:
             return "{} {} {} * *".format(self.minute,
                                          self.hour,
                                          self.day_of_month)
+        elif self.frequency == CronFrequency.ONCE:
+            return f'{self.minute} {self.hour} {self.day_of_month} {self.month} *'
         elif self.frequency == CronFrequency.REBOOT:
             return "@reboot"
 
@@ -124,45 +169,3 @@ class CronDate:
                                 week_day, 
                                 month_day, 
                                 "{}:{} 24".format(hours, minutes))
-
-
-    @staticmethod
-    def validTime(check):
-        time_style = check[1]
-        time = [int(t) for t in check[0].split(":")]
-
-        for index in range(0, 2):
-            if index == 0:
-                if time_style == "a" or time_style == "p":
-                    if time[0] > 12:
-                        return False
-                elif time_style == "24":
-                    if time[0] > 23:
-                        return False
-            elif index == 1:
-                if time[index] > 59:
-                    return False
-        else:
-            return True
-
-
-    def __convertTime(self, time):
-        if time == None:
-            return (None, None)
-
-        time, type = time.split(" ")
-        time_split = time.split(":")
-        hour_split = int(time_split[0])
-        minute_split = int(time_split[1])
-        if type == "p":
-            if hour_split > 12:
-                hour_split += 12
-
-            return (hour_split, minute_split)
-        else:
-            if type == "a" and hour_split == 12:
-                return (0, minute_split)
-            else:
-                return (hour_split, minute_split)
-            
-
