@@ -5,7 +5,7 @@ from .date import Date
 from .configuration import Messaging
 from discord import Webhook, RequestsWebhookAdapter
 
-sys.excepthook = lambda type, value, tb: handleUncaughtException(type, value, tb)
+sys.excepthook = lambda type, value, tb: __handleUncaughtException(type, value, tb)
 
 __util_dir = os.path.dirname(__file__)
 __root_dir = os.path.join(__util_dir, "..")
@@ -16,7 +16,7 @@ def create_log_directory():
     if not os.path.exists(__log_dir):
         os.mkdir(__log_dir)
 
-def handleUncaughtException(type, exception, tb):
+def __handleUncaughtException(type, exception, tb):
     error = repr(exception)
     trace = "".join(traceback.format_tb(tb))
     log("{}\nTraceback (most recent call last):\n{}".format(error, trace))
