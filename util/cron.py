@@ -11,6 +11,16 @@ class CronScheduler:
     cron = CronTab(user=username())
 
     def createRecurringJob(self, time, command, comment):
+        '''
+        Creates a recurring crontab job for a given time, with a given comment.
+
+        Parameters:
+        time (str): A cron string represntation, of when the given command 
+        should fire.
+        command (str): The command to execute when running this job.
+        comment (str): A desgination used to identify this command for future
+        modification or deletion.
+        '''
         for job in self.cron:
             if job.comment == comment:
                 self.cron.remove(job)
@@ -122,6 +132,9 @@ class CronDate:
             self.month = datetime.month
 
     def convertToCronTime(self):
+        '''
+        Converts this object into a cron string.
+        '''
         if self.frequency == CronFrequency.DAILY:
             return "{} {} * * *".format(self.minute, self.hour)
         elif self.frequency == CronFrequency.WEEKLY:
@@ -139,6 +152,9 @@ class CronDate:
 
     @staticmethod
     def convertFromCronTime(cron_string) -> CronDate:
+        '''
+        Converts a cron string into a CronDate object.
+        '''
         cron_split = cron_string.split(" ")
         length = len(cron_split)
         minutes = None
