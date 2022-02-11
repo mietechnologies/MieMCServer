@@ -12,6 +12,7 @@ def string_contains(haystack: str, needle_pattern: str) -> bool:
     return len(re.findall(needle_pattern, haystack)) >= 1
 
 def stringContainsAnyCase(haystack: str, needles: list[str]) -> bool:
+    '''Searches a given str for a match from a list of str'''
     lower = haystack.lower()
     for needle in needles:
         if needle.lower() in lower:

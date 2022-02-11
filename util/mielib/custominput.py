@@ -7,6 +7,16 @@ from util.cron import CronDate, CronFrequency
 url_pattern = r'(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)'
 
 def int_input(output, default=None):
+    '''
+    A custom input option that gets an int input from the user. This method will
+    validate the user's input to ensure that it is an int type, returning their
+    input as an int.
+
+    Parameters:
+    output (str): The output message displayed to the user.
+    default (int): An optional default value, if a value is passed and the user
+    doesn't give an input this function will return the default.
+    '''
     message = "{} ".format(output)
     if default:
         message += "[{}] ".format(default)
@@ -23,6 +33,14 @@ def int_input(output, default=None):
                 print("I'm sorry, I didn't understand that input.")
 
 def confirm_input(output):
+    '''
+    A custom input method. This input option requires that a user inputs the
+    same input twice confirming their initial input. An example of its use is
+    validating passwords.
+
+    Parameters:
+    output (str): The output message displayed to the user.
+    '''
     valid_password = False
 
     while (not valid_password):
@@ -39,6 +57,16 @@ def confirm_input(output):
             return first_password
 
 def email_input(output, provider=None, multiples=False):
+    '''
+    A custom input method. This method collects and validates a user's input
+    for an email address.
+
+    Parameters:
+    output (str): The output message displayed to the user.
+    provider (str): An optional value to validate against. (i.e. 'gmail')
+    multiples (bool): A boolean value indicating whether this method should
+    collect and validate multiple email addresses.
+    '''
     message = "{} ".format(output)
     if multiples:
         message += "(To enter multiple addresses, seperate each with ', ') "
@@ -128,7 +156,18 @@ def bool_input(output, default=None, abrv=True):
         print("I'm sorry, I didn't understand that input.")
 
 def choice_input(output, options, default=None, abrv=True):
-    ''''''
+    '''
+    A custom input method. This input method allows a user to select from a 
+    list of options.
+
+    Parameters:
+    output (str): The output message displayed to the user.
+    options (list[ResponseOption]): The options that a user can choose from.
+    default (ResponseOption): The default ResponseOption for this input, if no
+    input is submitted this will be the option returned.
+    abrv (bool): A boolean to determine whether to display the abbreviated 
+    version of the give ResposneOptions.
+    '''
     option_list = optionList(options, default, abrv)
     message = "{} {} ".format(output, option_list)
     valid_input = False
@@ -145,7 +184,17 @@ def choice_input(output, options, default=None, abrv=True):
             return possible_option.response
 
 def range_input(output, lower, upper, default=None):
-    ''''''
+    '''
+    A custom input method. This input method collects an int for the user, and
+    validates it to make sure it falls within the lower and upper bounds given.
+
+    Parameters:
+    output (str): The output message displayed to the user.
+    lower (int): The lowest accepted number that can be an input.
+    upper (int): The upper most accepted number that can be inputted.
+    default (int): An optional int that is returned if a user doesn't give an
+    input.
+    '''
     message = "{} [{}-{}] ".format(output, lower, upper)
     user_input = None
     valid_input = False
@@ -170,6 +219,13 @@ def range_input(output, lower, upper, default=None):
             print("I'm sorry, I didn't understand that input.")
 
 def time_input(output, default=None):
+    '''
+    A custom input method. This input method collects a time from the user and
+    validates it against a regex.
+
+    Parameters:
+    output (str): The output message displayed to the user.
+    '''
     regex = r'^([012])?\d:[0-5][0-9] ?(p|a|P|a)?(m|M)?$'
     message = "{} ".format(output)
     user_response = ""
@@ -202,6 +258,13 @@ def url_input(output) -> str:
         return user_response
 
 def version_input(output):
+    '''
+    A custom input method. This method collects a version number from the user,
+    validating it against the semantic versioning scheme.
+
+    Parameters:
+    output (str): The output message displayed to the user.
+    '''
     regex = r'\d+\.\d+(.\d+)?'
     ammendment = "[#.##.#/#.##]"
     message = "{} {} ".format(output, ammendment)
@@ -216,6 +279,13 @@ def version_input(output):
         return user_response
 
 def cron_date_input(output):
+    '''
+    A custom input method. This method collects a cron formatted string from
+    the user.
+
+    Parameters:
+    output (str): The output message displayed to the user.
+    '''
     freq_output = "How frequently would you like your server to " \
         "{}?".format(output)
     week_day_output = "What day of the week would you like your server to " \
@@ -313,6 +383,13 @@ def server_address_input(output: str) -> str:
         return user_response
 
 def calendar_date_input(output) -> str:
+    '''
+    A custom input method. This method collects a date from the user in the
+    format of 'MM/DD/YYYY' and validates it against a regex.
+
+    Parameters:
+    output (str): The output message displayed to the user.
+    '''
     regex = r'^[0|1][0-9]\/[0-3][0-9]\/2\d{3}$'
     ammendment = '[MM/DD/YYYY]'
     message = '{} {} '.format(output, ammendment)
@@ -326,6 +403,16 @@ def calendar_date_input(output) -> str:
         return user_response
 
 def date_time_input(date_output: str, time_output: str) -> str:
+    '''
+    A custom input method that combines two input methods into one. This input
+    method collects both the date and the time from the user.
+
+    Parameters:
+    date_output (str): The output message displayed to the user when collecting
+    the date.
+    time_output (str): The output message displayed to the user when collecting
+    the time.
+    '''
     date = calendar_date_input(date_output)
     time = time_input(time_output)
     return '{} {}'.format(date, time)
