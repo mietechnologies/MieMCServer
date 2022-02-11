@@ -28,6 +28,11 @@ class Date:
     @staticmethod
     def format(date, format_str: str) -> str:
         '''
+        This is a conveinence method to get a formatted date string.
+
+        Parameters:
+        date (datetime): The date to format.
+        format_str (str): The formula for the date to me formatted into.
         '''
         if isinstance(date, datetime):
             return date.strftime(format_str)
@@ -36,17 +41,29 @@ class Date:
 
     @staticmethod
     def timestamp():
+        '''
+        Returns a formatted date string using the format of: 
+        MM/DD/YYYY HH:mm:SS, i.e. 01/01/2022 12:00:12
+        '''
         date_format = '%m/%d/%Y %H:%M:%S.%f'
         now = datetime.now()
         return now.strftime(date_format)
 
     @staticmethod
     def timeFromDate(dateString, format_str:str=None):
+        '''
+        Returns a datetime object from a string. If no format_str is specified
+        the default format is '%m/%d/%Y %H:%M:%S'
+        '''
         date_format = '%m/%d/%Y %H:%M:%S.%f' if format_str is None else format_str
         return datetime.strptime(dateString, date_format)
 
     @staticmethod
     def elapsedTime(firstDate, secondDate):
+        '''
+        Calculates and returns the time elapsed between to datetime obejcts, in
+        seconds.
+        '''
         return abs(firstDate - secondDate.total_seconds())
 
     @staticmethod
@@ -66,5 +83,8 @@ class Date:
 
     @staticmethod 
     def strippedTimestamp():
+        '''
+        Removes all of the special characters form a date string.
+        '''
         timestamp = Date.timestamp()
         return timestamp.replace('/', '-').replace(' ', '_').replace(':', '-')
