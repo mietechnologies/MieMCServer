@@ -141,18 +141,6 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
-    # if schedule_maintenance:
-    #     running_log.append('-m')
-    #     Maintenance.schedule()
-
-    # if start_maintenance:
-    #     running_log.append('-sm')
-    #     Maintenance.start()
-
-    # if end_maintenance:
-    #     running_log.append('-em')
-    #     Maintenance.end()
-
     if not running_log and not c.Maintenance.is_running():
         run()
 
@@ -292,7 +280,11 @@ def run_debug():
     print(f'SYSTEM USERNAME: {sys.username()}')
 
     maintenance()
-    
+
+    print('WARNING: If this crashes, please confirm that your machine is ' \
+        'using python3 as it\'s default or update this call to use python3!!')
+    os.system('python main.py -m')
+
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
     print('\n***** DEBUGGING FINISHED ******\n')
