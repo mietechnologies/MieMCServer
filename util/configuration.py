@@ -192,12 +192,15 @@ class Maintenance:
     backup_schedule = __backup.get("schedule", "0 3 * * *")
     backup_path = __backup.get("path", "~/MC_Backups")
     backup_number = __backup.get("number", 1)
+    backup_file_server = __backup.get("file_server", {})
+    backup_external_drive = __backup.get("external_drive", {})
     maintenance_running = __data.get('scheduled_running', False)
     update_schedule = __update.get("schedule", "0 3 * * 0")
     update_allow_major_update = __update.get("allow_major_update", False)
 
     @classmethod
     def build(cls):
+        # TODO: Add external storage setup
         print("Warning: A system restart is good practice to clear out any " \
             "residual problems that might still be in RAM. Also, in order to " \
             "run the commands file a server restart is required.")

@@ -27,7 +27,6 @@ from util.mielib.custominput import bool_input
 from minecraft.install import Installer
 from util.cron import CronScheduler
 from util import configuration as c
-from util.backup import Backup
 from util.temp import PiTemp
 from util.syslog import log
 from util.date import Date
