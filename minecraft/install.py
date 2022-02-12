@@ -52,6 +52,14 @@ class Installer:
 
     @classmethod
     def install(cls, override_settings = False):
+        '''
+        A method to download and install the most up to date version the user
+        will allow.
+
+        Parameters:
+        override_settings (bool): This will override the user's saved setting
+        in the configuration on where to limit the update version.
+        '''
         should_install, version = cls.__shouldInstall(override_settings)
         if should_install:
             version_str = Versioner.versionString(version)

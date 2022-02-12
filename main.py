@@ -16,25 +16,28 @@
 #    - '-bu', '--backup': This will backup the Minecraft Server
 # *****************************************************************************
 
+from re import sub
 from util.backup import Backup
 from util.date import Date
 from util import configuration as c
+from requests.api import delete
 from minecraft.version import Versioner, UpdateType
+from util.maintenance import Maintenance
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
-from util.syslog import log, clear_log
-from util.emailer import Emailer
 from util.cron import CronScheduler
-from scripts import reboot
-import argparse, sys, os
-from rcon import Client
-import asyncio
-import zipfile
-from time import sleep
-
+from util import configuration as c
+from util.backup import Backup
 from util.temp import PiTemp
+from util.syslog import log
+from util.date import Date
+from scripts import reboot
+from time import sleep
+import command as cmd
+import argparse
+import os
 
-VERSION = "1.1.2"
+VERSION = "1.2.0"
 
 def parse(args):
     mc_version = args.minecraft_version
@@ -47,14 +50,19 @@ def parse(args):
     clean = args.clean
     stop = args.stop
     restart = args.restart
-    critical_events = args.critical_events
+    maintenance_action = args.maintenance
     debug = args.debug
+    update_config = args.update_config
+    if c.Temperature.exists():
+        critical_events = args.critical_events
+
+    if c.Temperature.exists():
+        critical_events = args.critical_events
 
     running_log = []
 
     if debug is not False:
-        run_debug()
-        print('******* DEBUG EXECUTION FINISHED ******\n')
+        runDebug()
         return
 
     # Done
@@ -70,10 +78,12 @@ def parse(args):
         running_log.append('-v')
         log("minePi Version v{}".format(VERSION))
 
-    # Done
     if command is not None:
         running_log.append('-c {}'.format(command))
-        runCommand(command)
+        if command == "":
+            cmd.runTerminal()
+        else:
+            cmd.runCommand(command)
         
     if update is not None:
         running_log.append('-u')
@@ -81,7 +91,7 @@ def parse(args):
 
     if backup:
         running_log.append('-bu {}'.format(c.Maintenance.backup_path))
-        runCommand("say System is backing up Minecraft world.")
+        cmd.runCommand("say System is backing up Minecraft world.")
         filename = 'world.{}.zip'.format(Date.strippedTimestamp())
         Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
@@ -91,7 +101,7 @@ def parse(args):
 
     if clean:
         running_log.append('-k')
-        runCommand("say System maintenance scripts are being ran.")
+        cmd.runCommand("say System maintenance scripts are being ran.")
         maintenance()
 
     if commands:
@@ -100,41 +110,75 @@ def parse(args):
 
     if stop:
         running_log.append('-q')
-        runCommand("say The server is being saved, and then stopped in 60 " \
-            "seconds.")
+        cmd.runCommand("say The server is being saved, and then stopped " \
+            "in 60 seconds.")
         sleep(60)
         stopServer()
 
     if restart:
         running_log.append('-q')
-        runCommand("say The server is being restarted in 60 seconds.")
+        cmd.runCommand("say Saving and stopping server in 30 seconds for system " \
+            "restart.")
+        sleep(30)
+        stopServer()
         sleep(60)
         reboot.run()
 
-    if critical_events:
+    if maintenance_action is not None:
+        running_log.append(f'-m {maintenance_action}')
+        if maintenance_action == 'schedule':
+            Maintenance.schedule()
+        elif maintenance_action == 'start':
+            Maintenance.start()
+        else:
+            Maintenance.end()
+
+    if c.Temperature.exists() and critical_events:
         running_log.append('-ce')
         PiTemp.execute()
 
-    if not running_log:
+    if update_config:
+        running_log.append('-uc')
+        updateConfig(update_config)
+
+    if schedule_maintenance:
+        running_log.append('-m')
+        Maintenance.schedule()
+
+    if start_maintenance:
+        running_log.append('-sm')
+        Maintenance.start()
+
+    if end_maintenance:
+        running_log.append('-em')
+        Maintenance.end()
+
+    if not running_log and not c.Maintenance.is_running():
         run()
 
 def maintenance():
     executeCleanCommands()
-    trim_end_regions()
+    trimEnd()
+    executeCustomShellScript()
 
 def executeCleanCommands():
     log('Running clean up commands...')
     dir = os.path.dirname(__file__)
     cleanCommandFile = os.path.join(dir, 'clean-commands.txt')
-    for command in linesFromFile(cleanCommandFile):
-        runCommand(command)
+    cmd.runTerminal(linesFromFile(cleanCommandFile))
 
 def executeCommandList():
     log('Running custom commands...')
     dir = os.path.dirname(__file__)
     custom_command_file = os.path.join(dir, 'commands.txt')
-    for command in linesFromFile(custom_command_file, deleteFetched=True):
-        runCommand(command)
+    cmd.runTerminal(linesFromFile(custom_command_file, deleteFetched=True))
+
+def executeCustomShellScript():
+    log('Running custom shell script...')
+    dir = os.path.dirname(__file__)
+    custom_script = os.path.join(dir, 'scripts/custom-command.sh')
+    os.chmod(custom_script, 0o755)
+    os.system(custom_script)
 
 def linesFromFile(file: str, deleteFetched: bool = False):
     lines = []
@@ -212,11 +256,26 @@ def run():
         generateConfig("manual")
         setupCrontab()
         Installer.install(override_settings = True)
-        startServer()
-        c.RCON.build()
-        
 
-    log("Server started!")
+        # This is presumably the first run so the EULA has not yet been
+        # accepted, meaning that starting the server WILL fail
+        startServer()
+
+        c.RCON.build()
+        root_dir = os.path.dirname(__file__)
+        eula = os.path.join(root_dir, 'server/eula.txt')
+        if c.Minecraft.accept_eula():
+            lines = linesFromFile(eula, False)
+            with open(eula, 'w') as eula_out:
+                for line in lines:
+                    eula_out.write(line.replace('eula=false', 'eula=true'))
+            log('User has accepted Minecraft\'s EULA!')
+            startServer()
+            log("Server started!")
+        else:
+            log('User has declined Minecraft\'s EULA!')
+            log('Gefore running the Minecraft server, you MUST accept ' \
+                f'Minecraft\'s EULA by updating the { eula } file!')
 
 def startMonitorsIfNeeded():
     dir = os.path.dirname(__file__)
@@ -251,7 +310,7 @@ def startServer():
 
 def stopServer():
     stopMonitors()
-    runCommand('stop')
+    cmd.runCommand('stop')
 
 def setupCrontab():
     dir = os.path.dirname(__file__)
@@ -310,6 +369,27 @@ def generateConfig(method):
         print("'{}' is not a valid input. Please consult the help ['-h'] " \
             " menu to learn more. ".format(method))
 
+def updateConfig(collection):
+    
+    if collection.lower() == "minecraft":
+        c.Minecraft.reset()
+        c.Minecraft.build()
+    elif collection.lower() == "email":
+        c.Email.reset()
+        c.Email.build()
+    elif collection.lower() == "maintenance":
+        c.Maintenance.reset()
+        c.Maintenance.build()
+    elif collection.lower() == "messaging":
+        c.Messaging.reset()
+        c.Messaging.build()
+    elif collection.lower() == "rcon":
+        c.RCON.build()
+    elif collection.lower() == "server":
+        c.Server.build()
+    elif collection.lower() == "temperature":
+        c.Temperature.build()
+
 def updateServer(override):
     if not c.File.data:
         log("Cancelling... You haven't setup a config.yml file yet. You can " \
@@ -339,48 +419,6 @@ def updateServer(override):
             if should_update:
                 Installer.install(override_settings=should_update)
 
-def runCommand(command):
-    c.RCON.read()
-    if c.RCON.enabled and c.RCON.password != '':
-        with Client('mieserver.ddns.net', c.RCON.port, passwd=c.RCON.password) as client:
-            response = client.run(command)
-            # Sqizzle any known errors so we can log them
-            if 'Unknown command' in response:
-                log('Could not execute command [{}]: {}'.format(command, response))
-            elif 'Expected whitespace' in response:
-                log('Could not execute command [{}]: {}'.format(command, response))
-            elif 'Invalid or unknown' in response:
-                log('Could not execute command [{}]: {}'.format(command, response))
-            elif response == '': 
-                log('Issued server command [{}]'.format(command))
-            else: 
-                log(response)
-    else: 
-        log('ERR: RCON has not been correctly initialized!')
-
-def run_debug():
-    '''
-    A helper method to make debugging and testing the application and 
-    implementations easier.
-    '''
-
-    # DO NOT DELETE THE LINE BELOW!
-    print('\n\n***** EXECUTING DEBUG METHODS ******') 
-
-    print('Copying files from the server; your input may be required...')
-    root_dir = os.path.dirname(__file__)
-    remote_dir = 'bachapin@mieserver.ddns.net:/home/bachapin/MIE-MCServer/' \
-        'server/world_the_end/DIM1'
-    local_dir = os.path.join(root_dir, 'server/world_the_end')
-    os.system(f'scp -r {remote_dir} {local_dir}')
-
-    trim_end_regions()
-    print('\n****** NOTE: The console above should state that several regions ' \
-        'were deleted! *******')
-    trim_end_regions()
-    print('\n****** NOTE: The console above should state that 0 regions were ' \
-        'deleted! ******')
-
 def main():
 
     parser = argparse.ArgumentParser(description="This program is your " \
@@ -393,8 +431,12 @@ def main():
     parser.add_argument('-v', '--version', help="The version of this software.",
         dest="version", action="store_true", required=False)
 
-    parser.add_argument('-c', '--command', help="This will run a command on " \
-        "the Minecraft Server", dest="command", type=str, required=False)
+    parser.add_argument('-c', '--command', help="If ran by itself, without " \
+        "the addition of an argument, this will start a terminal which you " \
+        "can enter multiple commands in sequence. If an argument is passed " \
+        "it will run that command only. In order to stop the terminal you " \
+        "can enter '!exit' and it will safely end the terminal session.", 
+        dest="command", nargs="?", const="", type=str, required=False)
 
     parser.add_argument('-u', '--update', help="Checks to see if there is a " \
         "newer version of Minecraft Server. If there is, it will install the " \
@@ -426,6 +468,23 @@ def main():
         " may manually edit or re-generate your config at any time.", 
         dest="generate_config", nargs="?" ,const="auto", type=str,
         required=False)
+
+    parser.add_argument(
+        '-m',
+        '--maintenance',
+        help='Schedule, start, or end maintenance for your Minecraft server ' \
+            'or hosting system.',
+        const='schedule',
+        type=str,
+        nargs='?',
+        choices=('schedule', 'start', 'end')
+    )
+
+    parser.add_argument('-uc', '--update-config', help="This command enables " \
+        "the user to update a configuration collection by passing the " \
+        "desired collection's name in as a parameter. (i.e. Email, Minecraft, " \
+        "etc. [not case sensitive])", nargs='?', dest="update_config", 
+        type=str, required=False)
 
     parser.add_argument('-D', '--debug', help='This will run any processes ' \
         'implemented in the runDebug method of main.py. WARN: This command ' \

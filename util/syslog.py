@@ -1,8 +1,11 @@
 from .emailer import Emailer
 import os, sys, traceback
+import textwrap
 from .date import Date
+from .configuration import Messaging
+from discord import Webhook, RequestsWebhookAdapter
 
-sys.excepthook = lambda type, value, tb: handleUncaughtException(type, value, tb)
+sys.excepthook = lambda type, value, tb: __handleUncaughtException(type, value, tb)
 
 __util_dir = os.path.dirname(__file__)
 __root_dir = os.path.join(__util_dir, "..")
@@ -13,7 +16,7 @@ def create_log_directory():
     if not os.path.exists(__log_dir):
         os.mkdir(__log_dir)
 
-def handleUncaughtException(type, exception, tb):
+def __handleUncaughtException(type, exception, tb):
     error = repr(exception)
     trace = "".join(traceback.format_tb(tb))
     log("{}\nTraceback (most recent call last):\n{}".format(error, trace))
@@ -30,6 +33,9 @@ def handleUncaughtException(type, exception, tb):
         "https://github.com/mietechnologies/MIE-MCServer/issues"
             .format(error, trace))
 
+    messageDiscord('It looks like I just encountered an unhandled error. The ' \
+        'server might be down for a little while, but someone will get to it ' \
+        'as soon as they can. Please be patient.')
     email_log(subject, body)
 
 def log(message, silently=False, display_date=False):
@@ -58,3 +64,11 @@ def email_log(subject, body):
     mailer = Emailer(subject, body)
     mailer.attach(__log_file)
     mailer.send()
+
+def messageDiscord(message: str):
+    '''A helper function to send a message to the Discord server if 
+       this setting is enabled.'''
+
+    if Messaging.discord:
+        webhook = Webhook.from_url(Messaging.discord, adapter=RequestsWebhookAdapter())
+        webhook.send(textwrap.dedent(message))

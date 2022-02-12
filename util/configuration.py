@@ -1,6 +1,8 @@
 from .mielib import custominput as ci
 from .extension import cleanString
-import yaml, os
+import base64
+import yaml
+import os
 
 class File:
     __util_dir = os.path.dirname(__file__)
@@ -24,6 +26,7 @@ class File:
     def generate(cls):
         Minecraft.reset()
         Email.reset()
+        Messaging.reset()
         Maintenance.reset()
 
         if os.path.exists(cls.__file_dir):
@@ -31,6 +34,7 @@ class File:
         
         Minecraft.update()
         Email.update()
+        Messaging.update()
         Maintenance.update()
 
     @classmethod
@@ -51,6 +55,8 @@ class File:
             Temperature.build()
 
         Email.build()
+        Messaging.build()
+        Server.build()
         Minecraft.build_object()
         Maintenance.build()
 
@@ -67,6 +73,22 @@ class Minecraft:
     build = __version.get("build", None)
     install_date = __version.get("install_date", "")
     version_group = __version.get("version_group", None)
+
+    @classmethod
+    def accept_eula(cls) -> bool:
+        '''
+        Prompts the user to accept or decline Minecraft's EULA.
+        
+        Returns:
+            A boolean indicating whether or not the user accepted the EULA.
+        '''
+        print('\n\n****** WARNING ******')
+        print('Hosting a Minecraft server requires you to accept Minecraft\'s \
+            EULA.')
+        print('You can find more information about Minecraft\'s EULA at \
+            https://account.mojang.com/documents/minecraft_eula')
+        return ci.bool_input('If you like, I can accept the terms of the EULA \
+            for you now. Would you like me to do that?', default=True)
 
     @classmethod
     def version_str(cls):
@@ -121,7 +143,11 @@ class Email:
     SECTION_NAME = "Email"
     __data = File.data.get("Email", {})
     address = __data.get("address", "<your.email@gmail.com>")
-    password = __data.get("password", "<your password>")
+    password = ""
+    try:
+        password = base64.b64decode(__data.get("password")).decode('utf-8')
+    except:
+        password = "<your password>"
     server = __data.get("server", "smtp.gmail.com")
     port = __data.get("port", 587)
     recipients = __data.get("recipients", [])
@@ -130,12 +156,12 @@ class Email:
     def build(cls):
         email_address = ci.email_input("What is the gmail address you would " \
             "like me to use to send you reports?", provider="gmail")
-        password = ci.confirm_input("What is the password to the account you " \
-            "just enetered? ")
+        password = ci.password_input("What is the password to the account you" \
+            " just entered?").encode('utf-8')
         recipients = ci.email_input("What email address(es) would you like " \
             "to recieve the logs and reports?", multiples=True)
         cls.address = email_address
-        cls.password = password
+        cls.password = base64.b64encode(password)
         cls.recipients = recipients
         cls.update()
 
@@ -166,6 +192,7 @@ class Maintenance:
     backup_schedule = __backup.get("schedule", "0 3 * * *")
     backup_path = __backup.get("path", "~/MC_Backups")
     backup_number = __backup.get("number", 1)
+    maintenance_running = __data.get('scheduled_running', False)
     update_schedule = __update.get("schedule", "0 3 * * 0")
     update_allow_major_update = __update.get("allow_major_update", False)
 
@@ -220,6 +247,7 @@ class Maintenance:
         cls.__data["schedule"] = cls.schedule
         cls.__data["backup"] = cls.__backup
         cls.__data["update"] = cls.__update
+        cls.__data['scheduled_running'] = cls.maintenance_running
         File.update(cls.SECTION_NAME, cls.__data)
 
     @classmethod
@@ -232,6 +260,31 @@ class Maintenance:
         cls.update_schedule = "0 3 * * 0"
         cls.update_allow_major_update = False
 
+class Messaging:
+    __data = File.data.get('Messaging', {})
+    discord = __data.get('discord', None)
+
+    @classmethod
+    def build(cls):
+        if ci.bool_input('If you\'d like, I can post important updates (like '\
+            'server shut downs and restarts) to a Discord server. Would you like '\
+            'to use this service?', False):
+            print('Alright, the only information I need to setup discord is a '\
+                'webhook URL. You can find out how to get that information at '\
+                'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-'\
+                'Webhooks.')
+            cls.discord = ci.url_input('So, what is that webhook URL?')
+            cls.update()
+
+    @classmethod
+    def update(cls):
+        cls.__data['discord'] = cls.discord
+        File.update('Messaging', cls.__data)
+
+    @classmethod
+    def reset(cls):
+        cls.discord = None
+
 class RCON:
     enabled = False
     password = None
@@ -239,11 +292,16 @@ class RCON:
 
     @classmethod
     def build(cls):
-        print('RCON is a protocol that allows server administrators to remotely execute Minecraft commands.')
-        print('Mie-MCServer uses RCON to run clean up commands to automatically maintain your server.')
-        print('Please take a moment to set up RCON by answering the following questions.')
-        cls.port = ci.int_input('What internet port would you like to use for RCON?', 25575)
-        cls.password = ci.confirm_input('What password would you like to use for issuing commands via RCON? ')
+        print('RCON is a protocol that allows server administrators to ' \
+            'remotely execute Minecraft commands.')
+        print('Mie-MCServer uses RCON to run clean up commands to ' \
+            'automatically maintain your server.')
+        print('Please take a moment to set up RCON by answering the ' \
+            'following questions.')
+        cls.port = ci.int_input('What internet port would you like to use ' \
+            'for RCON?', 25575)
+        cls.password = ci.password_input('What password would you like to ' \
+            'use for issuing commands via RCON?', pattern=r'^[a-zA-Z0-9_]+$')
         cls.enabled = True
         cls.update()
 
@@ -281,6 +339,46 @@ class RCON:
                         line = 'rcon.password={}\n'.format(cls.password)
                     
                     fileOut.write(line)
+        else:
+            from .syslog import log
+            log('ERR: No server.properties file found!')
+
+class Server:
+    '''
+    Any data we need to store in relation to the server that can't be stored
+    in the server.properties file should be stored here. At the time of writing,
+    this is just the ip/url used to connect to the server, but could turn into
+    other things in the future.
+    '''
+    __data = File.data.get('Server', {})
+    url = __data.get('url', None)
+
+    @classmethod
+    def build(cls):
+        '''
+        Constructs the `Server` section of the user's `config.yml` file based
+        upon the user's input.
+        '''
+        print('Hosting a Minecraft server requires a url to connect to. This ' \
+            'url can be an IP address or a url to a private server-space ' \
+            'hosted on this device.')
+        print('If you are hosting a local server, it\'s fine to use an IP ' \
+            'address for your server, but I recommend using a url if you are ' \
+            'hosting a public server.')
+        print('If you need to create a public-facing url to allow users to ' \
+            'connect to your server, I recommend using a service called no-ip' \
+            'to generate a dynamic url that always points to your IP, ' \
+            'regardless of how it might change.')
+        print('You can find more information on no-ip at https://www.noip.com.')
+        cls.url = ci.server_address_input('What url would you like to use to' \
+            'host your Minecraft server?')
+        cls.update()
+
+    @classmethod
+    def update(cls):
+        '''Updates the `Server` section of the user's `config.yml` file.'''
+        cls.__data['url'] = cls.url
+        File.update('Server', cls.__data)
 
 class Temperature:
     __data = File.data.get("Temperature", {})
@@ -297,7 +395,7 @@ class Temperature:
 
     @classmethod
     def exists(cls):
-        return cls.__data is not {}
+        return cls.__data != {}
 
     @classmethod
     def is_overheating(cls, current_temp: float) -> bool:

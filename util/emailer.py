@@ -4,9 +4,11 @@ from email.mime.text import MIMEText
 from .configuration import Email
 from os.path import basename, normpath
 import smtplib
+import base64
 
 
 class Emailer:
+    '''A simple object to send text emails with or without attachment files.'''
 
     attachments = []
 
@@ -15,9 +17,13 @@ class Emailer:
         self.body = body
 
     def attach(self, file):
+        '''Attaches a file to the email. This can be called multiple times to
+        attach multiple files. file is representative of a file path'''
         self.attachments.append(file)
 
     def send(self):
+        '''Compiles the optional attachments and creates an email then uses
+        the user's configuration to send the email along with its attachments'''
         msg = MIMEMultipart()
         msg["From"] = Email.address
         msg["To"] = ", ".join(Email.recipients)
