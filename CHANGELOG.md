@@ -7,34 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Added automatic fetching of the system username for use in CronTab so that we do not
-have to ask the user for it and allow for automatic cron job scheduling.
-- Added functionality that allows user to schedule, start, or stop maintenance on their Minecraft server or hosting system.
-- The ability to run a user's own custom shell scripts placed in `./scripts/custom-command.sh`
-- Discord Integration. The user now has the ability to configure settings to post messages into their Discord server.
-  - Unhandled exceptions. When the system runs into an unhandled error it will now post a message to your configured Discord server.
-- Password input is now hidden during setup
-- Command Terminal. You can now open a command terminal with '-c' with no additional arguments.
-- We now ask for and store the server address during configuration to use in conjuction with RCON and other services (in the future).
-- Added functionality to automatically sign Minecraft's EULA upon user acceptance.
 
 ### Changed
-- The reboot process now issues a statement to the players on the server 
-informing them that the server will be saved and stopped in 30 seconds for the
-server to restart. After the server is stopped, the system will wait for 60
-seconds before rebooting.
-- How the password is stored and retrieved for the Email settings collection. When the user creates their configuration the password will now be encrypted before being stored.
-  - In association with this change I added a means to which a user can update a setting collection from the CLI. It is not recommended that the user update their password manually via the config file.
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
-- The temperature monitor was starting even when it hadn't been configured.
-- An issue with the Emailer preventing it from sending emails as expected
 
 ### Security
+
+## [1.2.0] - 2022.02.11
+
+### Added
+- The project now fetches the system username to use for scheduling cron jobs.
+- Functionality that allows user to schedule, start, or stop maintenance on their Minecraft server or hosting system.
+- The ability to run the user's own custom shell scripts placed in `./scripts/custom-command.sh`.
+- The user now has the ability to configure settings to post messages into their Discord server.
+  - When the system runs into an unhandled error it will now post a message to a Discord server if configured.
+- The user can now open a command-line-like session with '-c' (with no argument) to issue a series of server commands.
+- The project now asks for and stores the server address during configuration to use in conjuction with RCON.
+- Functionality to automatically sign Minecraft's EULA upon user acceptance.
+- The user can now update a setting collection with '-uc'.
+
+### Changed
+- The reboot process now issues a statement to the players on the server informing them that the server will be saved and stopped in 30 seconds for the server to restart. After the server is stopped, the system will wait for 60 seconds before rebooting.
+
+### Fixed
+- When restarting the server, the project would start as if running on a RaspberryPi and start services specific to that system that were causing system errors and generating an egregious number of emails.
+- An issue with the Emailer preventing it from sending emails as expected.
+
+### Security
+- Any passwords stored within the config are now encrypted.
+  - **It is not recommended that the user update any password manually via the config file.**
+- Password input is now hidden during setup.
 
 ## [1.1.0] - 2021.12.27
 
