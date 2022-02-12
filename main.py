@@ -37,7 +37,7 @@ import command as cmd
 import argparse
 import os
 
-VERSION = "1.1.2"
+VERSION = "1.2.0"
 
 def parse(args):
     mc_version = args.minecraft_version
