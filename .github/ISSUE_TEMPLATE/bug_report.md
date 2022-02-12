@@ -11,17 +11,22 @@ Please ensure the following prerequisites are met:
 ### Subject
 Describe your issue here.
 
+
 ### Your environment
 - Operating System and Version: 
 
 ### Steps to reproduce
 Tell us how to reproduce this issue.
 
+
 ### Expected Behavior
 Tell us what should happen.
+
 
 ### Actual Behavior
 Tell us what happens, instead.
 
+
 ### Logs (Optional)
 Please provide a link to a GIST to a section of your logs surrounding when the issue occured.
+
