@@ -2,17 +2,14 @@
 Handles all functionality related to backing up the user's Minecraft server
 (off-site and local).
 '''
-    
+
 from base64 import decodebytes
 import os
+from typing import Tuple
+from zipfile import ZipFile, ZIP_DEFLATED
 import paramiko
 import pysftp
-import re
-import shutil
 
-from zipfile import ZipFile, ZIP_DEFLATED
-
-from .. import command as cmd
 from .configuration import Maintenance
 from .syslog import log
 
@@ -23,9 +20,8 @@ class Backup:
         The public-facing method that starts the backup process.
         '''
 
-        cmd.runCommand('say Backing up the current world...')
-        log('Backing up the current world...')
         cls.__local_backup(source, path, file)
+        cls.__offsite_backup(path, file)
 
     ###### Local backups ######
     @classmethod
@@ -98,79 +94,105 @@ class Backup:
 
     ###### Offsite backups ######
     @classmethod
-    def __offsite_bcakup(cls, path: str, file: str):
+    def __connect(cls) -> Tuple[pysftp.Connection, str]:
+        '''
+        '''
+        server = Maintenance.backup_file_server
+        external_domain = server.get('domain')
+        external_key = server.get('key')
+        external_password = server.get('password')
+        external_path = server.get('path')
+        external_username = server.get('username')
+        if external_domain is None:
+            log('ERROR: File server domain is missing!')
+            return None
+        if external_key is None:
+            log('ERROR: File server key is missing!')
+            return None
+        if external_password is None:
+            log('ERROR: File server password is missing!')
+            return None
+        if external_path is None:
+            log('ERROR: File server path is missing!')
+            return None
+        if external_username is None:
+            log('ERROR: File server username is missing!')
+            return None
+
+        keydata = f'{external_key}'.encode('utf-8')
+        key = paramiko.RSAKey(data=decodebytes(keydata))
+        cnopts = pysftp.CnOpts()
+        cnopts.hostkeys.add(external_domain, 'ssh-rsa', key)
+
+        return (
+            pysftp.Connection(
+                host=external_domain,
+                username=external_username,
+                password=external_password,
+                cnopts=cnopts
+            ),
+            external_path)
+
+    @classmethod
+    def __offsite_backup(cls, path: str, file: str):
         '''
         Handles uploading files to either an external harddrive attached to the
         system or a separate file server.
         '''
 
-        # offsite_path = Maintenance.backup_external_path
-        # if re.fullmatch(r'[a-zA-Z]+@.+:.+', offsite_path):
-        #     # External path is a file server
-        #     # Like: bachapin@mieserver.ddns.net:~/backups
-        #     # Like: pi@192.168.1.3:~/backups
-        #     print('file server')
-        # elif re.fullmatch(r'^(?:\/[\d\s\w]+){1,}', offsite_path):
-        #     # External path is an attached hard drive
-        #     # Like: /Volumes/storage/dev
-        #     print('attached drive')
-        # else:
-        #     # Invalid external path
-        #     print('invalid path')
+        # I had originally considered also allowing the user to back up their
+        # data to an additional external hard drive, but that now seems very 
+        # redundant. If the user wishes to use an external HD, they can simply
+        # use the Maintenance.backup.path config item.
+        (sftp, external_path) = cls.__connect()
+        if sftp is not None and external_path is not None:
+            # Create the path to the file on the file server
+            normalized_path = sftp.normalize(external_path.replace('~', '.'))
+            cls.__create_server_dir_if_needed(sftp, external_path)
+            external_file_path = f'{normalized_path}/{file}'
 
-        if Maintenance.backup_external_drive != {}:
-            print('backup to external file server')
-            external_path = Maintenance.backup_external_drive.get('path')
-            if external_path is None:
-                log('ERROR: External drive backups not properly configured!')
-                return
+            # Create the path to the local file
+            expanded_path = os.path.expanduser(path)
+            file_path = f'{expanded_path}/{file}'
 
-        if Maintenance.backup_file_server != {}:
-            print('backup to external file server')
-            external_domain = Maintenance.backup_file_server.get('domain')
-            external_key = Maintenance.backup_file_server.get('key')
-            external_password = Maintenance.backup_file_server.get('password')
-            external_path = Maintenance.backup_file_server.get('path')
-            external_username = Maintenance.backup_file_server.get('username')
-            if external_domain is None:
-                log('ERROR: File server domain is missing!')
-                return
-            if external_key is None:
-                log('ERROR: File server key is missing!')
-                return
-            if external_password is None:
-                log('ERROR: File server password is missing!')
-                return
-            if external_path is None:
-                log('ERROR: File server path is missing!')
-                return
-            if external_username is None:
-                log('ERROR: File server username is missing!')
-                return
-
-            log('Uploading to file server...')
-            server_dir = os.path.expanduser(external_path)
-            
-            keydata = f'{external_key}'.encode('utf-8')
-            key = paramiko.RSAKey(data=decodebytes(keydata))
-            cnopts = pysftp.CnOpts()
-            cnopts.hostkeys.add(external_domain, 'ssh-rsa', key)
-
-            with pysftp.Connection(
-                external_domain,
-                external_username,
-                key,
-                external_password) as sftp:
-                cls.__create_server_dir_if_needed(sftp, external_path)
-                external_file_path = f'{external_path}/{file}'
-                file_path = f'{path}/{file}'
-                sftp.put(file_path, external_file_path)
-                cls.__server_clean(sftp, server_dir)
+            # Upload and clean
+            sftp.put(file_path, external_file_path)
+            cls.__server_clean(sftp, normalized_path)
+            sftp.close()
 
     @classmethod
-    def __server_clean(cls, sftp, path):
-        print('')
+    def __server_clean(cls, sftp: pysftp.Connection, path: str):
+        '''
+        Removes extraneous files from the server based upon the user's stored
+        config value.
+        '''
+
+        existing = [x.filename for x in sorted(sftp.listdir_attr(path), key = lambda f: f.st_mtime)]
+        if len(existing) > Maintenance.backup_number:
+            log('Cleaning up file server storage...')
+            to_delete = []
+
+            while len(existing) > Maintenance.backup_number:
+                to_delete.append(existing.pop(0))
+
+            for file in to_delete:
+                sftp.remove(f'{path}/{file}')
+
+            log(f'Deleted {len(to_delete)} files from file server storage!')
 
     @classmethod
-    def __create_server_dir_if_needed(cls, sftp, path):
-        print('')
+    def __create_server_dir_if_needed(cls, sftp: pysftp.Connection, path: str):
+        '''
+        Creates a directory at the passed path if it doesn't exist.
+        '''
+
+        # Pysftp doesn't handle home path notation correctly (even when using
+        # .normalize(path)), so we're replacing any instance of '~/' with the
+        # current working directory (which should always be the user's home path
+        # (as we never change it)).
+        if '~/' in path:
+            path = path.replace('~/', f'{sftp.pwd}/')
+
+        if not sftp.exists(path):
+            log(f'Backup directory {path} does not exist! Creating...')
+            sftp.makedirs(path)

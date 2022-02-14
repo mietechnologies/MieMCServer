@@ -89,9 +89,10 @@ def parse(args):
         updateServer(update)
 
     if backup:
-        running_log.append('-bu {}'.format(c.Maintenance.backup_path))
+        running_log.append(f'-bu {c.Maintenance.backup_path}')
         cmd.runCommand("say System is backing up Minecraft world.")
-        filename = 'world.{}.zip'.format(Date.strippedTimestamp())
+        log('Backing up the current world...')
+        filename = f'world.{Date.strippedTimestamp()}.zip'
         Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
     if method is not None:
@@ -275,14 +276,13 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    from util.mielib import system as sys
-    print(f'SYSTEM USERNAME: {sys.username()}')
+    print('Backing up the current world...')
+    filename = f'world.{Date.strippedTimestamp()}.zip'
+    Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
-    maintenance()
-
-    print('WARNING: If this crashes, please confirm that your machine is ' \
-        'using python3 as it\'s default or update this call to use python3!!')
-    os.system('python main.py -m')
+    print('Backing up the current world again...')
+    filename = f'world.{Date.strippedTimestamp()}.zip'
+    Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
