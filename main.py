@@ -274,8 +274,14 @@ def run_debug():
     # Shut off calling server commands for debugging purposes
     cmd.DEBUG = True
 
+    # Do NOT delete either of the DEBUGGING print statements!
     print('\n****** DEBUGGING STARTED ******\n')
+
     # Implement any debug functionality below:
+    print('Configuring Maintenance... When asked to setup storage on a file ' \
+        'server, please answer yes to test.')
+    c.Maintenance.build()
+
     print('Backing up the current world...')
     filename = f'world.{Date.strippedTimestamp()}.zip'
     Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
@@ -284,8 +290,6 @@ def run_debug():
     filename = f'world.{Date.strippedTimestamp()}.zip'
     Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
-    # DO NOT DELETE THE BELOW LINE
-    # Deleting this line WILL cause build errors!!
     print('\n***** DEBUGGING FINISHED ******\n')
 
 def startMonitorsIfNeeded():

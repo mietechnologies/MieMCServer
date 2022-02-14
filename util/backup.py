@@ -42,8 +42,8 @@ class Backup:
             os.mkdir(path)
 
         # Archive all files in the source directory
-        # TODO: I'm not sure if this actually compresses the file or just zips 
-        # them but we should check into it in the future. For now, it gets the 
+        # TODO: I'm not sure if this actually compresses the file or just zips
+        # them but we should check into it in the future. For now, it gets the
         # job done.
         with ZipFile(zipfile, 'w', ZIP_DEFLATED) as zip:
             for root, _, files in os.walk(source):
@@ -54,7 +54,6 @@ class Backup:
                         os.path.join(source, '..')))
 
         log("Finished creating local backup!")
-        # Clean up, if needed
         cls.__local_clean(path)
 
     @classmethod

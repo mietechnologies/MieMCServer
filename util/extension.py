@@ -1,3 +1,4 @@
+import base64
 import re
 
 def cleanString(haystack: str, needles: list[str]) -> str:
@@ -18,3 +19,14 @@ def stringContainsAnyCase(haystack: str, needles: list[str]) -> bool:
         if needle.lower() in lower:
             return True
     return False
+
+def decode(string: str) -> str:
+    '''Decodes a given str with utf-8 encoding'''
+    try:
+        return base64.b64decode(string.encode('utf-8'))
+    except Exception as err:
+        raise err
+
+def encode(string: str) -> str:
+    '''Encodes a given str with utf-8 encoding'''
+    return base64.b64encode(string.encode('utf-8'))
