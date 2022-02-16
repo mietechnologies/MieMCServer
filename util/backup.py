@@ -10,6 +10,8 @@ from zipfile import ZipFile, ZIP_DEFLATED
 import paramiko
 import pysftp
 
+from util.extension import decode
+
 from .configuration import Maintenance
 from .syslog import log
 
@@ -95,11 +97,14 @@ class Backup:
     @classmethod
     def __connect(cls) -> Tuple[pysftp.Connection, str]:
         '''
+        Handles connections to a file server using the information stored in the
+        user's config.
         '''
+
         server = Maintenance.backup_file_server
         external_domain = server.get('domain')
         external_key = server.get('key')
-        external_password = server.get('password')
+        external_password = decode(server.get('password'))
         external_path = server.get('path')
         external_username = server.get('username')
         if external_domain is None:
@@ -118,7 +123,7 @@ class Backup:
             log('ERROR: File server username is missing!')
             return None
 
-        keydata = f'{external_key}'.encode('utf-8')
+        keydata = decode(external_key)
         key = paramiko.RSAKey(data=decodebytes(keydata))
         cnopts = pysftp.CnOpts()
         cnopts.hostkeys.add(external_domain, 'ssh-rsa', key)

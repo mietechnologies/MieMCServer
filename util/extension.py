@@ -20,13 +20,10 @@ def stringContainsAnyCase(haystack: str, needles: list[str]) -> bool:
             return True
     return False
 
-def decode(string: str) -> str:
+def decode(value: bytes or str) -> str:
     '''Decodes a given str with utf-8 encoding'''
-    try:
-        return base64.b64decode(string.encode('utf-8'))
-    except Exception as err:
-        raise err
+    return base64.b64decode(value.decode())
 
 def encode(string: str) -> str:
     '''Encodes a given str with utf-8 encoding'''
-    return base64.b64encode(string.encode('utf-8'))
+    return base64.b64encode(string.encode())

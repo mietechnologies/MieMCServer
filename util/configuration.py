@@ -274,6 +274,7 @@ class Maintenance:
 
     @classmethod
     def update(cls):
+        cls.__backup['file_server'] = cls.backup_file_server
         cls.__backup["schedule"] = cls.backup_schedule
         cls.__backup["path"] = cls.backup_path
         cls.__backup["number"] = cls.backup_number
