@@ -277,6 +277,11 @@ def run_debug():
     # Do NOT delete either of the DEBUGGING print statements!
     print('\n****** DEBUGGING STARTED ******\n')
 
+    # Implement any debug functionality below:
+    print('Configuring Maintenance... When asked to setup storage on a file ' \
+        'server, please answer yes and enter incorrect information to test.')
+    c.Maintenance.build()
+
     print('Backing up the current world...')
     filename = f'world.{Date.strippedTimestamp()}.zip'
     Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
