@@ -23,7 +23,6 @@ def install_datapack(path: str):
         contents = os.listdir(path)
         for file in contents:
             if '.mcmeta' in file:
-                print('uncompressed datapack; should move')
                 install_path = f'{install_dir}/{last_path_component}'
 
                 shutil.copytree(path, install_path)
@@ -42,8 +41,9 @@ def install_datapack(path: str):
             return
     if os.path.isfile(path) and path.endswith('.zip'):
         print('possible compressed datapack; extract and confirm contents before moving')
-        dir_name = os.path.basename(os.path.normpath(path)).replace('.zip', '')
-        dir_path = f'{path}/{dir_name}'
+        unzip_path = path.replace(f'/{last_path_component}', '')
+        dir_name = last_path_component.replace('.zip', '')
+        dir_path = f'{unzip_path}/{dir_name}'
 
         __extract(path, dir_path)
         install_datapack(dir_path)
