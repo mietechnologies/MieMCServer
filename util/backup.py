@@ -8,11 +8,12 @@ import os
 from typing import Tuple
 from zipfile import ZipFile, ZIP_DEFLATED
 import paramiko
+from paramiko import SSHException
 import pysftp
 
-from util.extension import decode
-
 from .configuration import Maintenance
+from .emailer import Emailer
+from .extension import decode
 from .syslog import log
 
 class Backup:
@@ -101,6 +102,7 @@ class Backup:
         user's config.
         '''
 
+        exception = None
         server = Maintenance.backup_file_server
         external_domain = server.get('domain')
         external_key = server.get('key')
@@ -108,34 +110,45 @@ class Backup:
         external_path = server.get('path')
         external_username = server.get('username')
         if external_domain is None:
-            log('ERROR: File server domain is missing!')
-            return None
+            exception = 'File server domain is missing!'
         if external_key is None:
-            log('ERROR: File server key is missing!')
-            return None
+            exception = 'File server key is missing!'
         if external_password is None:
-            log('ERROR: File server password is missing!')
-            return None
+            exception = 'File server password is missing!'
         if external_path is None:
-            log('ERROR: File server path is missing!')
-            return None
+            exception = 'File server path is missing!'
         if external_username is None:
-            log('ERROR: File server username is missing!')
-            return None
+            exception = 'File server username is missing!'
 
-        keydata = decode(external_key)
-        key = paramiko.RSAKey(data=decodebytes(keydata))
-        cnopts = pysftp.CnOpts()
-        cnopts.hostkeys.add(external_domain, 'ssh-rsa', key)
+        if exception:
+            log(f'ERROR: { exception }')
+            return (None, None)
 
-        return (
-            pysftp.Connection(
-                host=external_domain,
-                username=external_username,
-                password=external_password,
-                cnopts=cnopts
-            ),
-            external_path)
+        try:
+            keydata = decode(external_key)
+            key = paramiko.RSAKey(data=decodebytes(keydata))
+            cnopts = pysftp.CnOpts()
+            cnopts.hostkeys.add(external_domain, 'ssh-rsa', key)
+            try:
+                connection = pysftp.Connection(
+                    host=external_domain,
+                    username=external_username,
+                    password=external_password,
+                    cnopts=cnopts
+                )
+                return (connection, external_path)
+            except SSHException as exc:
+                exception = exc
+        except SSHException as exc:
+            exception = exc
+
+        # If an exception was encountered, send the admins an email
+        if exception:
+            message = 'Hey, there! I was unable to connect to your file ' \
+                f'server: { exception }\n\nThanks,\nMIE-MCServer'
+            Emailer('Unable to connect to your file server', message).send()
+
+        return (None, None)
 
     @classmethod
     def __offsite_backup(cls, path: str, file: str):
@@ -150,19 +163,23 @@ class Backup:
         # use the Maintenance.backup.path config item.
         (sftp, external_path) = cls.__connect()
         if sftp is not None and external_path is not None:
+            log('Uploading to offsite storage...')
             # Create the path to the file on the file server
             normalized_path = sftp.normalize(external_path.replace('~', '.'))
-            cls.__create_server_dir_if_needed(sftp, external_path)
-            external_file_path = f'{normalized_path}/{file}'
+            if cls.__create_server_dir_if_needed(sftp, external_path):
+                external_file_path = f'{normalized_path}/{file}'
 
-            # Create the path to the local file
-            expanded_path = os.path.expanduser(path)
-            file_path = f'{expanded_path}/{file}'
+                # Create the path to the local file
+                expanded_path = os.path.expanduser(path)
+                file_path = f'{expanded_path}/{file}'
 
-            # Upload and clean
-            sftp.put(file_path, external_file_path)
-            cls.__server_clean(sftp, normalized_path)
-            sftp.close()
+                # Upload and clean
+                # Because we are creating the path on the server directly before
+                # attempting to upload the file, there is no way this can throw an
+                # exception!
+                sftp.put(file_path, external_file_path)
+                cls.__server_clean(sftp, normalized_path)
+                sftp.close()
 
     @classmethod
     def __server_clean(cls, sftp: pysftp.Connection, path: str):
@@ -179,10 +196,22 @@ class Backup:
             while len(existing) > Maintenance.backup_number:
                 to_delete.append(existing.pop(0))
 
+            errors = []
             for file in to_delete:
-                sftp.remove(f'{path}/{file}')
+                try:
+                    sftp.remove(f'{path}/{file}')
+                except IOError as err:
+                    errors.append(f'Unable to delete {file}: {err}')
 
             log(f'Deleted {len(to_delete)} files from file server storage!')
+
+            # Send any encountered errors to the admins in an email
+            if len(errors) > 0:
+                joined_errors = '\n'.join(errors)
+                err_msg = 'Hey, there!\n\nI was unable to delete some old ' \
+                    'backups on your file server! More info below:\n' \
+                    f'{ joined_errors }\n\nThanks,\nMIE-MCServer'
+                Emailer('Unable to clean up server backups', err_msg).send()
 
     @classmethod
     def __create_server_dir_if_needed(cls, sftp: pysftp.Connection, path: str):
@@ -199,4 +228,12 @@ class Backup:
 
         if not sftp.exists(path):
             log(f'Backup directory {path} does not exist! Creating...')
-            sftp.makedirs(path)
+            try:
+                sftp.makedirs(path)
+            except OSError as err:
+                message = 'Hey, there!\n\nI was unable to find or create the ' \
+                    'directory you want to save your backups to on your file ' \
+                    f'server: { err }\n\nThanks,\nMIE-MCServer'
+                Emailer('Unable to save backup to server', message).send()
+                return False
+        return True

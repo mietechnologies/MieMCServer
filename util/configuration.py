@@ -199,43 +199,45 @@ class Maintenance:
 
     @classmethod
     def build(cls):
-        print("Warning: A system restart is good practice to clear out any " \
-            "residual problems that might still be in RAM. Also, in order to " \
-            "run the commands file a server restart is required.")
-        restart_cron = ci.cron_date_input("restart")
+        # print("Warning: A system restart is good practice to clear out any " \
+        #     "residual problems that might still be in RAM. Also, in order to " \
+        #     "run the commands file a server restart is required.")
+        # restart_cron = ci.cron_date_input("restart")
 
-        print("Warning: It is good practice to backup your server so if any" \
-            "thing were to happen, you would be able to revert back to your " \
-            "previous backup.")
-        backup_cron = ci.cron_date_input("backup Minecraft")
-        backup_path = input("Where would you like your backups to be stored? ")
-        backup_limit = ci.int_input("How many backups would you like to be " \
-            "stored before removing old backups?")
-        cls.backup_file_server = cls.__build_external_storage()
+        # print("Warning: It is good practice to backup your server so if any" \
+        #     "thing were to happen, you would be able to revert back to your " \
+        #     "previous backup.")
+        # backup_cron = ci.cron_date_input("backup Minecraft")
+        # backup_path = input("Where would you like your backups to be stored? ")
+        # backup_limit = ci.int_input("How many backups would you like to be " \
+        #     "stored before removing old backups?")
+        file_server = cls.__build_external_storage()
+        print(file_server)
 
-        print("Warning: It is wise to check for updates on a regular basis so " \
-            "any bugs the developers might find and fix will be applied to " \
-            "your server. We can understand your concern for larger updates, " \
-            "so we will ask your permission on if you want us to do bigger " \
-            "updates automatically. If not, we will email you and alert you " \
-            "of any major updates.")
-        update_cron = ci.cron_date_input("check for updates")
-        major_updates = ci.bool_input("Would you like me to update to " \
-            "major releases?", default=False)
+        # print("Warning: It is wise to check for updates on a regular basis so " \
+        #     "any bugs the developers might find and fix will be applied to " \
+        #     "your server. We can understand your concern for larger updates, " \
+        #     "so we will ask your permission on if you want us to do bigger " \
+        #     "updates automatically. If not, we will email you and alert you " \
+        #     "of any major updates.")
+        # update_cron = ci.cron_date_input("check for updates")
+        # major_updates = ci.bool_input("Would you like me to update to " \
+        #     "major releases?", default=False)
             
-        print("Warning: I have ben preprogrammed with some useful maintenance " \
-            "scripts to help keep your server up and running smoothly. It is " \
-            "always good to run these scripts so your players experience as " \
-            "little server lag as possible.")
-        maintenance_cron = ci.cron_date_input("run maintenance scripts")
+        # print("Warning: I have ben preprogrammed with some useful maintenance " \
+        #     "scripts to help keep your server up and running smoothly. It is " \
+        #     "always good to run these scripts so your players experience as " \
+        #     "little server lag as possible.")
+        # maintenance_cron = ci.cron_date_input("run maintenance scripts")
 
-        cls.complete_shutdown = restart_cron
-        cls.schedule = maintenance_cron
-        cls.backup_schedule = backup_cron
-        cls.backup_path = backup_path
-        cls.backup_number = backup_limit
-        cls.update_schedule = update_cron
-        cls.update_allow_major_update = major_updates
+        # cls.complete_shutdown = restart_cron
+        # cls.schedule = maintenance_cron
+        cls.backup_file_server = file_server
+        # cls.backup_schedule = backup_cron
+        # cls.backup_path = backup_path
+        # cls.backup_number = backup_limit
+        # cls.update_schedule = update_cron
+        # cls.update_allow_major_update = major_updates
         cls.update()
 
     @classmethod
@@ -278,6 +280,7 @@ class Maintenance:
         cls.__backup["schedule"] = cls.backup_schedule
         cls.__backup["path"] = cls.backup_path
         cls.__backup["number"] = cls.backup_number
+        cls.__backup["file_server"] = cls.backup_file_server
         cls.__update["schedule"] = cls.update_schedule
         cls.__update["allow_major_update"] = cls.update_allow_major_update
         cls.__data["complete_shutdown"] = cls.complete_shutdown
@@ -296,6 +299,7 @@ class Maintenance:
         cls.backup_number = 1
         cls.update_schedule = "0 3 * * 0"
         cls.update_allow_major_update = False
+        cls.update()
 
 class Messaging:
     __data = File.data.get('Messaging', {})
