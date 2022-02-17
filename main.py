@@ -254,6 +254,7 @@ def run():
         startServer()
     else:
         log("Did not find config.yml")
+        __project_preinstalls()
         generateConfig("manual")
         setupCrontab()
         Installer.install(override_settings = True)
@@ -289,8 +290,7 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    c.Minecraft.configure()
-    print(c.Minecraft.version_str)
+    __project_preinstalls()
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
@@ -330,6 +330,20 @@ def startServer():
 def stopServer():
     stopMonitors()
     cmd.runCommand('stop')
+
+def __project_preinstalls():
+    print('Pre-installing needed dependencies to run this command; your ' \
+        'input may be required!')
+
+    this_dir = os.path.dirname(__file__)
+    logs_dir = os.path.join(this_dir, 'logs')
+    requirements = os.path.join(logs_dir, 'requirements.txt')
+
+    os.system('apt-get install python3-pip')
+    os.system('pip install pipreqs')
+    os.system(f'pipreqs {logs_dir}')
+    os.system(f'pip install -r {requirements}')
+    os.remove(requirements)
 
 def setupCrontab():
     dir = os.path.dirname(__file__)
