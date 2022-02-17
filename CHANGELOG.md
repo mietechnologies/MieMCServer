@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- During configuration, the project now fetches the system's total available RAM to intelligently decide what warnings it should display to the user and suggest an appropriate amount of allocated RAM.
 
 ### Deprecated
 

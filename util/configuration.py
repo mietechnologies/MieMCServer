@@ -1,8 +1,9 @@
+import base64
+import os
+import yaml
+import psutil
 from .mielib import custominput as ci
 from .extension import cleanString
-import base64
-import yaml
-import os
 
 class File:
     __util_dir = os.path.dirname(__file__)
@@ -57,12 +58,16 @@ class File:
         Email.build()
         Messaging.build()
         Server.build()
-        Minecraft.build_object()
+        Minecraft.configure()
         Maintenance.build()
 
         return True
 
 class Minecraft:
+    '''
+    The section of the config that stores and handles all properties relating to
+    actually running the Minecraft server.
+    '''
     SECTION_NAME = "Minecraft"
     __data = File.data.get("Minecraft", {})
     __version = __data.get("version", {})
@@ -78,7 +83,7 @@ class Minecraft:
     def accept_eula(cls) -> bool:
         '''
         Prompts the user to accept or decline Minecraft's EULA.
-        
+
         Returns:
             A boolean indicating whether or not the user accepted the EULA.
         '''
@@ -91,17 +96,22 @@ class Minecraft:
             for you now. Would you like me to do that?', default=True)
 
     @classmethod
-    def version_str(cls):
+    def version_str(cls) -> str:
+        '''
+        Assembles the long version string of the currently installed Minecraft
+        server.
+        '''
         if cls.patch is None:
-            return "{}.{}:{}".format(cls.major, cls.minor, cls.build)
-        else:
-            return "{}.{}.{}:{}".format(cls.major, cls.minor, cls.patch, cls.build)
+            return f'{cls.major}.{cls.minor}:{cls.build}'
+        return f'{cls.major}.{cls.minor}.{cls.patch}:{cls.build}'
 
     @classmethod
-    def build_object(cls):
+    def configure(cls):
+        '''
+        Guides the user through setup of this section of their config.
+        '''
         cls.reset()
-        ram = ci.int_input("How much RAM would you like to dedicate to your " \
-            "Minecraft Server? (your input will be Mbs)", default=1024)
+        cls.allocated_ram = cls.__configure_ram()
         version = ci.version_input("What version of Minecraft would you like " \
             "to install?")
         if version != "":
@@ -113,12 +123,34 @@ class Minecraft:
                 cls.major = version_split[0]
                 cls.minor = version_split[1]
                 cls.patch = version_split[2]
-            cls.version_group = "{}.{}".format(version_split[0], version_split[1])
+            cls.version_group = f'{cls.major}.{cls.minor}'
 
         cls.update()
 
     @classmethod
+    def __configure_ram(cls) -> int:
+        total_system_ram = int(psutil.virtual_memory().total / 1024 / 1024)
+        if total_system_ram <= 4096:
+            sixty_percent = int(total_system_ram * 0.6)
+            print(f'WARNING: Your system currently has {total_system_ram}MB ' \
+                'of RAM. It is recommended that you use no more than ~60% ' \
+                'of your total system RAM to run your Minecraft server ' \
+                f'(which is roughly {sixty_percent}MB).')
+            use_sixty = ci.bool_input('Would you like to use 60% of your RAM' \
+                'to use your Minecraft server?', default=True)
+            if use_sixty:
+                return sixty_percent
+        print(f'WARNING: Your system has {total_system_ram}MB of RAM. It is ' \
+            'recommended that you use no more than 4096MB of RAM to run your ' \
+            'server, regardless of your total system RAM.')
+        return ci.int_input('How much RAM would you like to use?', default=4096)
+
+
+    @classmethod
     def update(cls):
+        '''
+        Updates this section of the config with the stored values.
+        '''
         cls.__version["major"] = cls.major
         cls.__version["minor"] = cls.minor
         cls.__version["patch"] = cls.patch
@@ -131,6 +163,9 @@ class Minecraft:
 
     @classmethod
     def reset(cls):
+        '''
+        Resets this section of the config with default values.
+        '''
         cls.allocated_ram = 1024
         cls.major = None
         cls.minor = None
