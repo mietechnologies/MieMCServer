@@ -289,6 +289,7 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
+    c.Minecraft.configure()
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
