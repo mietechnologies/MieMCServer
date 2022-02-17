@@ -289,14 +289,6 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    from util.mielib import system as sys
-    print(f'SYSTEM USERNAME: {sys.username()}')
-
-    maintenance()
-
-    print('WARNING: If this crashes, please confirm that your machine is ' \
-        'using python3 as it\'s default or update this call to use python3!!')
-    os.system('python main.py -m')
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
