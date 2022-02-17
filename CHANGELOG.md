@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Automatic installation of pip3 and required pip packages to run project when running the project for the first time.
 
 ### Changed
 
