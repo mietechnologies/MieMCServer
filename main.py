@@ -529,7 +529,7 @@ def main():
 def __add_helper_methods(parser: argparse.ArgumentParser):
     parser.add_argument('-dp', '--install-datapack', help='This command ' \
         'installs a datapack (or collection of datapacks contained in one ' \
-        'directory when supplied with a file path.', nargs='?',
+        'directory) when supplied with a file path.', nargs='?',
         dest='install_datapack', type=str, required=False)
 
 if __name__ == "__main__":
