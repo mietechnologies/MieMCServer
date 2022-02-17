@@ -143,12 +143,12 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
-    running_log = __parse_helper_methods(args, running_log)
+    running_log = __parse_interaction_methods(args, running_log)
 
     if not running_log and not c.Maintenance.is_running():
         run()
 
-def __parse_helper_methods(args, running_log: List[str]) -> List[str]:
+def __parse_interaction_methods(args, running_log: List[str]) -> List[str]:
     datapack_path = args.install_datapack
 
     if datapack_path:

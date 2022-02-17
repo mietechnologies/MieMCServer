@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- The user can now install a datapack using the '-dp {path}' command where path is the absolute path to a zip or directory. 
+  - This functionality handles singular compressed (zip) datapacks, a directory with an uncompressed datapack, and a directory that contains multiple compressed datapacks.
 
 ### Changed
 
