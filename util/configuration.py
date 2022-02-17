@@ -143,8 +143,12 @@ class Minecraft:
         print(f'WARNING: Your system has {total_system_ram}MB of RAM. It is ' \
             'recommended that you use no more than 4096MB of RAM to run your ' \
             'server, regardless of your total system RAM.')
-        return ci.int_input('How much RAM would you like to use?', default=4096)
 
+        desired_ram = ci.int_input('How much RAM would you like to use?', default=4096)
+        while desired_ram == 0 or desired_ram > total_system_ram:
+            desired_ram = ci.int_input(f'{desired_ram}MB is an invalid amount ' \
+                'of RAM, please try again.', default=4096)
+        return desired_ram
 
     @classmethod
     def update(cls):
