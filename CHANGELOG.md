@@ -15,9 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
-- End trimming wasn't being properly called.
 
 ### Security
+## [1.2.1] - 2022.2.18
+
+### Fixed
+- End trimming wasn't being properly called.
+- System username was not being fetched correctly.
+- Extraneous maintenace arguments were removed.
 
 ## [1.2.0] - 2022.02.11
 
