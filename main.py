@@ -62,7 +62,7 @@ def parse(args):
     running_log = []
 
     if debug is not False:
-        runDebug()
+        run_debug()
         return
 
     # Done
@@ -72,7 +72,7 @@ def parse(args):
             log("Minecraft Server: {}".format(c.Minecraft.version_str()))
         else:
             log("Minecraft Server has not been installed yet.")
-    
+
     # Done
     if version is not False:
         running_log.append('-v')
@@ -84,7 +84,7 @@ def parse(args):
             cmd.runTerminal()
         else:
             cmd.runCommand(command)
-        
+
     if update is not None:
         running_log.append('-u')
         updateServer(update)
@@ -141,24 +141,12 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
-    if schedule_maintenance:
-        running_log.append('-m')
-        Maintenance.schedule()
-
-    if start_maintenance:
-        running_log.append('-sm')
-        Maintenance.start()
-
-    if end_maintenance:
-        running_log.append('-em')
-        Maintenance.end()
-
     if not running_log and not c.Maintenance.is_running():
         run()
 
 def maintenance():
     executeCleanCommands()
-    trimEnd()
+    trim_end_regions()
     executeCustomShellScript()
 
 def executeCleanCommands():
@@ -276,6 +264,30 @@ def run():
             log('User has declined Minecraft\'s EULA!')
             log('Gefore running the Minecraft server, you MUST accept ' \
                 f'Minecraft\'s EULA by updating the { eula } file!')
+
+def run_debug():
+    '''
+    A method for running any debug functionality. For PR verification purposes,
+    any methods and functionality called here should be left here for your PR to
+    allow your PR reviewer to easily pull down and test any changes you make.
+    '''
+    # Shut off calling server commands for debugging purposes
+    cmd.DEBUG = True
+
+    print('\n****** DEBUGGING STARTED ******\n')
+    # Implement any debug functionality below:
+    from util.mielib import system as sys
+    print(f'SYSTEM USERNAME: {sys.username()}')
+
+    maintenance()
+
+    print('WARNING: If this crashes, please confirm that your machine is ' \
+        'using python3 as it\'s default or update this call to use python3!!')
+    os.system('python main.py -m')
+
+    # DO NOT DELETE THE BELOW LINE
+    # Deleting this line WILL cause build errors!!
+    print('\n***** DEBUGGING FINISHED ******\n')
 
 def startMonitorsIfNeeded():
     dir = os.path.dirname(__file__)
