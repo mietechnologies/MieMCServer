@@ -3,12 +3,17 @@ from util.configuration import Server
 from util.syslog import log
 from rcon import Client
 
+DEBUG = False
+
 def runCommand(command: str):
     '''Runs a single command string on the Minecraft server via RCON.
 
     Parameters:
         command -- The command string you wish to issue to Minecraft.
     '''
+    if DEBUG:
+        return
+
     RCON.read()
     if RCON.enabled and RCON.password != "":
         with Client(Server.url,
@@ -29,6 +34,9 @@ def runTerminal(commands: list[str] = None):
         commands -- This value is None by default, and does not require a 
         value. But you can pass a list of strings.
     '''
+    if DEBUG:
+        return
+
     RCON.read()
     if RCON.enabled and RCON.password != "":
         with Client(Server.url,
