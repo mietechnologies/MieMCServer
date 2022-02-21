@@ -16,12 +16,11 @@
 #    - '-bu', '--backup': This will backup the Minecraft Server
 # *****************************************************************************
 
-from re import sub
 from util.backup import Backup
 from util.date import Date
-from util import configuration as c
-from requests.api import delete
+from util import configuration as c, scripting
 from minecraft.version import Versioner, UpdateType
+from util.extension import lines_from_file
 from util.maintenance import Maintenance
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
@@ -101,26 +100,25 @@ def parse(args):
 
     if clean:
         running_log.append('-k')
-        cmd.runCommand("say System maintenance scripts are being ran.")
-        maintenance()
+        scripting.maintenance()
 
     if commands:
         running_log.append('-rc')
-        executeCommandList()
+        scripting.run_user_commands()
 
     if stop:
         running_log.append('-q')
         cmd.runCommand("say The server is being saved, and then stopped " \
             "in 60 seconds.")
         sleep(60)
-        stopServer()
+        stop_server()
 
     if restart:
         running_log.append('-q')
         cmd.runCommand("say Saving and stopping server in 30 seconds for system " \
             "restart.")
         sleep(30)
-        stopServer()
+        stop_server()
         sleep(60)
         reboot.run()
 
@@ -141,96 +139,8 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
-    if not running_log and not c.Maintenance.is_running():
+    if not running_log:
         run()
-
-def maintenance():
-    executeCleanCommands()
-    trim_end_regions()
-    executeCustomShellScript()
-
-def executeCleanCommands():
-    log('Running clean up commands...')
-    dir = os.path.dirname(__file__)
-    cleanCommandFile = os.path.join(dir, 'clean-commands.txt')
-    cmd.runTerminal(linesFromFile(cleanCommandFile))
-
-def executeCommandList():
-    log('Running custom commands...')
-    dir = os.path.dirname(__file__)
-    custom_command_file = os.path.join(dir, 'commands.txt')
-    cmd.runTerminal(linesFromFile(custom_command_file, deleteFetched=True))
-
-def executeCustomShellScript():
-    log('Running custom shell script...')
-    dir = os.path.dirname(__file__)
-    custom_script = os.path.join(dir, 'scripts/custom-command.sh')
-    os.chmod(custom_script, 0o755)
-    os.system(custom_script)
-
-def linesFromFile(file: str, deleteFetched: bool = False):
-    lines = []
-    with open(file, 'r') as fileIn:
-        tmpLines = fileIn.readlines()
-        fileOut = open(file, 'w')
-        for line in tmpLines:
-            # Always preserve all comments and empty lines when fetching commands from a file:
-            if '#' in line:
-                fileOut.write(line)
-            elif line == '\n':
-                fileOut.write(line)
-            # If line is command and fetched commands should be kept:
-            elif not deleteFetched:
-                lines.append(line.replace('\n', ''))
-                fileOut.write(line)
-            # If line is command and fetched commands should be removed:
-            elif deleteFetched: 
-                lines.append(line.replace('\n', ''))
-            # Otherwise, the line is unhandled; log the line that was encountered and keep it in the file
-            else:
-                log('Line from {} not recognized [{}]'.format(file, line))
-                fileOut.write(line)
-    return lines
-
-def trim_end_regions():
-    '''
-    Cleans the subdirectories related to the end to serve two purposes:
-        1. Eliminates lag related to unused and loaded end chunks
-        2. Eliminates the need for players to travel very far to find resources
-           related to the end
-    '''
-
-    log('Trimming the end!')
-    log('To keep specific end regions, update the end-regions.txt file in ' \
-        'the project root with the regions you would like to keep.')
-    log('To determine what region files to keep, see Xisumavoid\'s video at ' \
-        'https://www.youtube.com/watch?v=fGlqDBcgmIc')
-    
-    # Fetch the end region root directory
-    root_dir = os.path.dirname(__file__)
-    end_dir = os.path.join(root_dir, 'server/world_the_end/DIM1')
-
-    # Fetch the regions the user would like to keep
-    end_region_log = os.path.join(root_dir, 'end-regions.txt')
-    regions_to_keep = linesFromFile(end_region_log)
-    filecount = 0
-
-    # Iterate through all subdirectories of the end region root directory
-    # and the files contained within each
-    for directory in os.listdir(end_dir):
-        path = os.path.join(end_dir, directory)
-        if os.path.isdir(path):
-            dir_count = 0
-            for file in os.listdir(path):
-                # If the file is not listed in the regions to keep, delete it
-                if file not in regions_to_keep:
-                    region = os.path.join(path, file)
-                    os.remove(region)
-                    dir_count += 1
-                    filecount += 1
-            if dir_count > 0:
-                log(f'Removed {dir_count} from {directory}!')
-    log(f'Finished trimming the end! Removed {filecount} region(s)!')
 
 def run():
     log("Checking config.yml...")
@@ -238,7 +148,7 @@ def run():
         log("Found config.yml")
         setupCrontab()
         Installer.install()
-        startServer()
+        start_server()
     else:
         log("Did not find config.yml")
         generateConfig("manual")
@@ -247,18 +157,18 @@ def run():
 
         # This is presumably the first run so the EULA has not yet been
         # accepted, meaning that starting the server WILL fail
-        startServer()
+        start_server()
 
         c.RCON.build()
         root_dir = os.path.dirname(__file__)
         eula = os.path.join(root_dir, 'server/eula.txt')
         if c.Minecraft.accept_eula():
-            lines = linesFromFile(eula, False)
+            lines = lines_from_file(eula, False)
             with open(eula, 'w') as eula_out:
                 for line in lines:
                     eula_out.write(line.replace('eula=false', 'eula=true'))
             log('User has accepted Minecraft\'s EULA!')
-            startServer()
+            start_server()
             log("Server started!")
         else:
             log('User has declined Minecraft\'s EULA!')
@@ -276,15 +186,15 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    from util.mielib import system as sys
-    print(f'SYSTEM USERNAME: {sys.username()}')
 
-    maintenance()
+    run()
 
-    print('WARNING: If this crashes, please confirm that your machine is ' \
-        'using python3 as it\'s default or update this call to use python3!!')
-    os.system('python main.py -m')
-
+    print('Waiting 2 minutes before continuing so server can start up properly')
+    sleep(120)
+    os.system('python3 main.py -rc')
+    os.system('python3 main.py -k')
+    os.system('python3 main.py -q')
+    
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
     print('\n***** DEBUGGING FINISHED ******\n')
@@ -306,22 +216,13 @@ def startMonitorsIfNeeded():
 def stopMonitors():
     CronScheduler().removeJob('detect_critical_events')
 
-def startServer():
+def start_server():
     startMonitorsIfNeeded()
-    log("Starting server...")
-    ram = "{}M".format(c.Minecraft.allocated_ram)
-    current_dir = os.path.dirname(__file__)
-    script_path = os.path.join(current_dir, "scripts/start-server.sh")
-    log("Setting up bootlog file...")
-    bootlog_path = os.path.join(current_dir, "logs/bootlog.txt")
-    server_dir = os.path.join(current_dir, "server")
-    os.popen("{} {} {} > {}".format(script_path,
-                                    ram,
-                                    server_dir,
-                                    bootlog_path))
+    scripting.start(c.Minecraft.allocated_ram)
 
-def stopServer():
+def stop_server():
     stopMonitors()
+    scripting.stop()
     cmd.runCommand('stop')
 
 def setupCrontab():
