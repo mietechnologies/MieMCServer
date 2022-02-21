@@ -16,14 +16,17 @@
 #    - '-bu', '--backup': This will backup the Minecraft Server
 # *****************************************************************************
 
+<<<<<<< HEAD
 from re import sub
 from typing import List
 from minecraft.interactions import install_datapack
+=======
+>>>>>>> 640750b (WIP almost done with refactoring custom commands)
 from util.backup import Backup
 from util.date import Date
-from util import configuration as c
-from requests.api import delete
+from util import configuration as c, scripting
 from minecraft.version import Versioner, UpdateType
+from util.extension import lines_from_file
 from util.maintenance import Maintenance
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
@@ -103,26 +106,25 @@ def parse(args):
 
     if clean:
         running_log.append('-k')
-        cmd.runCommand("say System maintenance scripts are being ran.")
-        maintenance()
+        scripting.maintenance()
 
     if commands:
         running_log.append('-rc')
-        executeCommandList()
+        scripting.run_user_commands()
 
     if stop:
         running_log.append('-q')
         cmd.runCommand("say The server is being saved, and then stopped " \
             "in 60 seconds.")
         sleep(60)
-        stopServer()
+        stop_server()
 
     if restart:
         running_log.append('-q')
         cmd.runCommand("say Saving and stopping server in 30 seconds for system " \
             "restart.")
         sleep(30)
-        stopServer()
+        stop_server()
         sleep(60)
         reboot.run()
 
@@ -143,6 +145,7 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
+<<<<<<< HEAD
     running_log = __parse_interaction_methods(args, running_log)
 
     if not running_log and not c.Maintenance.is_running():
@@ -245,13 +248,18 @@ def trim_end_regions():
                 log(f'Removed {dir_count} from {directory}!')
     log(f'Finished trimming the end! Removed {filecount} region(s)!')
 
+=======
+    if not running_log:
+        run()
+
+>>>>>>> 640750b (WIP almost done with refactoring custom commands)
 def run():
     log("Checking config.yml...")
     if c.File.exists:
         log("Found config.yml")
         setupCrontab()
         Installer.install()
-        startServer()
+        start_server()
     else:
         log("Did not find config.yml")
         __project_preinstalls()
@@ -261,18 +269,18 @@ def run():
 
         # This is presumably the first run so the EULA has not yet been
         # accepted, meaning that starting the server WILL fail
-        startServer()
+        start_server()
 
         c.RCON.build()
         root_dir = os.path.dirname(__file__)
         eula = os.path.join(root_dir, 'server/eula.txt')
         if c.Minecraft.accept_eula():
-            lines = linesFromFile(eula, False)
+            lines = lines_from_file(eula, False)
             with open(eula, 'w') as eula_out:
                 for line in lines:
                     eula_out.write(line.replace('eula=false', 'eula=true'))
             log('User has accepted Minecraft\'s EULA!')
-            startServer()
+            start_server()
             log("Server started!")
         else:
             log('User has declined Minecraft\'s EULA!')
@@ -290,8 +298,15 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    __project_preinstalls()
 
+    run()
+
+    print('Waiting 2 minutes before continuing so server can start up properly')
+    sleep(120)
+    os.system('python3 main.py -rc')
+    os.system('python3 main.py -k')
+    os.system('python3 main.py -q')
+    
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
     print('\n***** DEBUGGING FINISHED ******\n')
@@ -313,22 +328,13 @@ def startMonitorsIfNeeded():
 def stopMonitors():
     CronScheduler().removeJob('detect_critical_events')
 
-def startServer():
+def start_server():
     startMonitorsIfNeeded()
-    log("Starting server...")
-    ram = "{}M".format(c.Minecraft.allocated_ram)
-    current_dir = os.path.dirname(__file__)
-    script_path = os.path.join(current_dir, "scripts/start-server.sh")
-    log("Setting up bootlog file...")
-    bootlog_path = os.path.join(current_dir, "logs/bootlog.txt")
-    server_dir = os.path.join(current_dir, "server")
-    os.popen("{} {} {} > {}".format(script_path,
-                                    ram,
-                                    server_dir,
-                                    bootlog_path))
+    scripting.start(c.Minecraft.allocated_ram)
 
-def stopServer():
+def stop_server():
     stopMonitors()
+    scripting.stop()
     cmd.runCommand('stop')
 
 def __project_preinstalls():
