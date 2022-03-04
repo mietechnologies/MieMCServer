@@ -13,6 +13,9 @@ These are listed in order below for your convenience:
 - Create release for this version via GitHub.
   - Use this version for release tag and title (i.e, v1.3.0).
   - Write short description of changes and copy CHANGELOG for this version for body.
+  - **IMPORTANT:** If there are any breaking changes contained when installing this version from the last, please:
+    - Note these between the short description and CHANGELOG.
+    - If there are any known fixes that the user can do to overcome these breaking changes, note them.
   - Use latest commit for release target (**NOT latest main**).
 - Prune any dev and release branches related to this version.
 - Close the project board associated with the release version **PRIOR** to this version.
