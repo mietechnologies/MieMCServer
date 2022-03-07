@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- The user can now designate custom scripts to be ran at start, stop, or clean via `./scripts/custom-command.sh`.
 
 ### Changed
 
