@@ -298,8 +298,25 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
+    import util.monitor as monitor
+    mon = monitor.Monitor()
+    mon.DEBUG = True
+    # For the availability of testing, you can set the DEBUG_BOOTLOG to a file
+    # in another location than ./logs/
+    mon.DEBUG_BOOTLOG = None
+    mon.start()
+    print('This print exists solely to showcase the background threading of ' \
+        'the Monitor class. The following prints should show up somewhere ' \
+        'in-between the prints of the Monitor.')
 
-    run()
+    sleep(2)
+    print('One more print')
+
+    sleep(2)
+    print('And another')
+
+    sleep(7)
+    print('And one after 10 seconds since the timeout is 10 seconds')
 
     print('Waiting 2 minutes before continuing so server can start up properly')
     sleep(120)
