@@ -276,14 +276,25 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    from util.mielib import system as sys
-    print(f'SYSTEM USERNAME: {sys.username()}')
+    import util.monitor as monitor
+    mon = monitor.Monitor()
+    mon.DEBUG = True
+    # For the availability of testing, you can set the DEBUG_BOOTLOG to a file
+    # in another location than ./logs/
+    mon.DEBUG_BOOTLOG = None
+    mon.start()
+    print('This print exists solely to showcase the background threading of ' \
+        'the Monitor class. The following prints should show up somewhere ' \
+        'in-between the prints of the Monitor.')
 
-    maintenance()
+    sleep(2)
+    print('One more print')
 
-    print('WARNING: If this crashes, please confirm that your machine is ' \
-        'using python3 as it\'s default or update this call to use python3!!')
-    os.system('python main.py -m')
+    sleep(2)
+    print('And another')
+
+    sleep(7)
+    print('And one after 10 seconds since the timeout is 10 seconds')
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
