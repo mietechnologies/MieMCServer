@@ -82,6 +82,10 @@ def __trim_end_regions():
     regions_to_keep = lines_from_file(end_region_log)
     filecount = 0
 
+    if not os.path.isdir(end_dir):
+        log('End directory does not exist! Please run setup via `python main.py` first!')
+        return
+        
     # Iterate through all subdirectories of the end region root directory
     # and the files contained within each
     for directory in os.listdir(end_dir):
