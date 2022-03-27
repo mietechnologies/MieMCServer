@@ -2,6 +2,7 @@
 Handy custom functions for executing specific tasks.
 '''
 
+import base64
 import re
 
 def cleanString(haystack: str, needles: list[str]) -> str:
@@ -59,3 +60,11 @@ def lines_from_file(file: str, delete_fetched: bool = False) -> list[str]:
                 else:
                     file_out.write(line)
     return lines
+  
+def decode(value: bytes or str) -> str:
+    '''Decodes a given str with utf-8 encoding'''
+    return base64.b64decode(value.decode())
+
+def encode(string: str) -> str:
+    '''Encodes a given str with utf-8 encoding'''
+    return base64.b64encode(string.encode())
