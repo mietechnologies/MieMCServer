@@ -278,17 +278,8 @@ def run_debug():
     print('\n****** DEBUGGING STARTED ******\n')
 
     # Implement any debug functionality below:
-    print('Configuring Maintenance... When asked to setup storage on a file ' \
-        'server, please answer yes to test.')
-    c.Maintenance.build()
-
-    print('Backing up the current world...')
-    filename = f'world.{Date.strippedTimestamp()}.zip'
-    Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
-
-    print('Backing up the current world again...')
-    filename = f'world.{Date.strippedTimestamp()}.zip'
-    Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
+    c.Minecraft.configure()
+    print(c.Minecraft.version_str)
 
     print('\n***** DEBUGGING FINISHED ******\n')
 

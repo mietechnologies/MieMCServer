@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - This configuration exists under the Maintenance section of the config and can be updated by calling `python main.py -uc maintenance`.
 
 ### Changed
+- During configuration, the project now fetches the system's total available RAM to intelligently decide what warnings it should display to the user and suggest an appropriate amount of allocated RAM.
 
 ### Deprecated
 
