@@ -16,12 +16,8 @@
 #    - '-bu', '--backup': This will backup the Minecraft Server
 # *****************************************************************************
 
-<<<<<<< HEAD
-from re import sub
 from typing import List
 from minecraft.interactions import install_datapack
-=======
->>>>>>> 640750b (WIP almost done with refactoring custom commands)
 from util.backup import Backup
 from util.date import Date
 from util import configuration as c, scripting
@@ -146,10 +142,9 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
-<<<<<<< HEAD
     running_log = __parse_interaction_methods(args, running_log)
-
-    if not running_log and not c.Maintenance.is_running():
+    
+    if not running_log:
         run()
 
 def __parse_interaction_methods(args, running_log: List[str]) -> List[str]:
@@ -249,11 +244,6 @@ def trim_end_regions():
                 log(f'Removed {dir_count} from {directory}!')
     log(f'Finished trimming the end! Removed {filecount} region(s)!')
 
-=======
-    if not running_log:
-        run()
-
->>>>>>> 640750b (WIP almost done with refactoring custom commands)
 def run():
     log("Checking config.yml...")
     if c.File.exists:
@@ -299,33 +289,6 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    monitor = Monitor()
-    monitor.DEBUG = True
-    # For the availability of testing, you can set the DEBUG_BOOTLOG to a file
-    # in another location than ./logs/. Provide this file to confirm that other
-    # cases of this functionality are working correctly.
-    monitor.DEBUG_BOOTLOG = None
-    monitor.start_server_start_monitor(log=log)
-
-    print('This print exists solely to showcase the background threading of ' \
-        'the Monitor class. The following prints should show up somewhere ' \
-        'in-between the prints of the Monitor.')
-
-    sleep(2)
-    print('One more print')
-
-    sleep(2)
-    print('And another')
-
-    sleep(8)
-    print('And one after 11 seconds since the timeout is 10 seconds')
-
-    print('Waiting 2 minutes before continuing so server can start up properly')
-    sleep(120)
-    os.system('python3 main.py -rc')
-    os.system('python3 main.py -k')
-    os.system('python3 main.py -q')
-    
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
     print('\n***** DEBUGGING FINISHED ******\n')

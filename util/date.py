@@ -1,5 +1,5 @@
 from datetime import datetime
-from .extension import string_contains, stringContainsAnyCase
+from .extension import string_contains, string_contains_any_case
 
 class Date:
     @staticmethod
@@ -11,7 +11,7 @@ class Date:
         Parameters:
         date (str): The date-time or time string to convert.
         '''
-        if stringContainsAnyCase(date, ['a', 'am', 'p', 'pm']):
+        if string_contains_any_case(date, ['a', 'am', 'p', 'pm']):
             if '/' in date:
                 return Date.timeFromDate(date, '%m/%d/%Y %I:%M %p')
             return Date.timeFromDate(date, '%I:%M %p')
