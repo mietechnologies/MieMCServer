@@ -1,8 +1,8 @@
-from .mielib import custominput as ci
-from .extension import cleanString
-import base64
-import yaml
 import os
+import yaml
+
+from .mielib import custominput as ci
+from .extension import cleanString, decode, encode
 
 class File:
     __util_dir = os.path.dirname(__file__)
@@ -145,7 +145,7 @@ class Email:
     address = __data.get("address", "<your.email@gmail.com>")
     password = ""
     try:
-        password = base64.b64decode(__data.get("password")).decode('utf-8')
+        password = decode(__data.get("password"))
     except:
         password = "<your password>"
     server = __data.get("server", "smtp.gmail.com")
@@ -157,11 +157,11 @@ class Email:
         email_address = ci.email_input("What is the gmail address you would " \
             "like me to use to send you reports?", provider="gmail")
         password = ci.password_input("What is the password to the account you" \
-            " just entered?").encode('utf-8')
+            " just entered?")
         recipients = ci.email_input("What email address(es) would you like " \
             "to recieve the logs and reports?", multiples=True)
         cls.address = email_address
-        cls.password = base64.b64encode(password)
+        cls.password = password
         cls.recipients = recipients
         cls.update()
 
@@ -192,6 +192,7 @@ class Maintenance:
     backup_schedule = __backup.get("schedule", "0 3 * * *")
     backup_path = __backup.get("path", "~/MC_Backups")
     backup_number = __backup.get("number", 1)
+    backup_file_server = __backup.get("file_server", {})
     maintenance_running = __data.get('scheduled_running', False)
     update_schedule = __update.get("schedule", "0 3 * * 0")
     update_allow_major_update = __update.get("allow_major_update", False)
@@ -210,6 +211,7 @@ class Maintenance:
         backup_path = input("Where would you like your backups to be stored? ")
         backup_limit = ci.int_input("How many backups would you like to be " \
             "stored before removing old backups?")
+        cls.backup_file_server = cls.__build_external_storage()
 
         print("Warning: It is wise to check for updates on a regular basis so " \
             "any bugs the developers might find and fix will be applied to " \
@@ -237,7 +239,42 @@ class Maintenance:
         cls.update()
 
     @classmethod
+    def __build_external_storage(cls) -> object:
+        '''
+        Requests user input regarding their external file server where backups
+        will be stored.
+
+        Returns: An object containing all of the needed values for configuration.
+        '''
+        should_setup = ci.bool_input('For extra data security, I can also ' \
+            'store your backups on an external file security. Would you like ' \
+            'to set that up now? (Please ensure that this machine has ' \
+            'connected to your file server before!)')
+        if should_setup:
+            host = ci.server_address_input('What is the host address of your ' \
+                'file server?')
+            print(f'Collecting ssh key for {host}...')
+            key = os.popen(f'ssh-keyscan {host} | grep "ssh-rsa"').read()
+            key = key.replace(f'{host} ssh-rsa ', '')
+            encoded_key = encode(key)
+            username = ci.string_input('What is the username for your file ' \
+                'server?')
+            password = ci.password_input('What is the password used to ' \
+                'connect to your file server?')
+            path = ci.string_input('Where would you like to store backups on ' \
+                'your file server?', r'^~?(?:\/.+){1,}', '~/backups')
+            return {
+                'domain' : host,
+                'key' : encoded_key,
+                'username' : username,
+                'password' : password,
+                'path' : path
+            }
+        return {}
+
+    @classmethod
     def update(cls):
+        cls.__backup['file_server'] = cls.backup_file_server
         cls.__backup["schedule"] = cls.backup_schedule
         cls.__backup["path"] = cls.backup_path
         cls.__backup["number"] = cls.backup_number
