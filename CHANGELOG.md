@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - The user can now install a datapack using the '-dp {path}' command where path is the absolute path to a zip or directory. 
   - This functionality handles singular compressed (zip) datapacks, a directory with an uncompressed datapack, and a directory that contains multiple compressed datapacks.
+- The user can now add configuration for uploading server backups to an external file server.
+  - This configuration exists under the Maintenance section of the config and can be updated by calling `python main.py -uc maintenance`.
 
 ### Changed
 
