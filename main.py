@@ -27,7 +27,6 @@ from util.mielib.custominput import bool_input
 from minecraft.install import Installer
 from util.cron import CronScheduler
 from util import configuration as c
-from util.backup import Backup
 from util.temp import PiTemp
 from util.syslog import log
 from util.date import Date
@@ -90,9 +89,10 @@ def parse(args):
         updateServer(update)
 
     if backup:
-        running_log.append('-bu {}'.format(c.Maintenance.backup_path))
+        running_log.append(f'-bu {c.Maintenance.backup_path}')
         cmd.runCommand("say System is backing up Minecraft world.")
-        filename = 'world.{}.zip'.format(Date.strippedTimestamp())
+        log('Backing up the current world...')
+        filename = f'world.{Date.strippedTimestamp()}.zip'
         Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
     if method is not None:
@@ -274,13 +274,13 @@ def run_debug():
     # Shut off calling server commands for debugging purposes
     cmd.DEBUG = True
 
+    # Do NOT delete either of the DEBUGGING print statements!
     print('\n****** DEBUGGING STARTED ******\n')
+
     # Implement any debug functionality below:
     c.Minecraft.configure()
     print(c.Minecraft.version_str)
 
-    # DO NOT DELETE THE BELOW LINE
-    # Deleting this line WILL cause build errors!!
     print('\n***** DEBUGGING FINISHED ******\n')
 
 def startMonitorsIfNeeded():
