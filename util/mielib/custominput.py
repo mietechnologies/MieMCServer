@@ -1,9 +1,12 @@
-from .responseoption import ResponseOption, option, optionList
 import getpass
-import sys, re
-sys.path.append("..")
-from util.cron import CronDate, CronFrequency
+import re
+import sys
 
+from util.cron import CronDate, CronFrequency
+from util.extension import encode
+from .responseoption import option, optionList
+
+sys.path.append("..")
 url_pattern = r'(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)'
 
 def int_input(output, default=None):
@@ -183,6 +186,29 @@ def choice_input(output, options, default=None, abrv=True):
         else:
             return possible_option.response
 
+def string_input(output: str, pattern: str = None, example: str = None):
+    '''
+    A basic string input method. If a regex pattern is passed, this method will
+    not return user input unless it finds a match.
+
+    Parameters:
+    output (str): The message displayed to the user.
+    pattern (str|None): The regex pattern string to use to confirm the user's
+    input.
+    example (str|None): A textual example of accepted answer formats. If nothing
+    is supplied, examples will not display.
+    '''
+    message = f'{output} '
+    if example is not None:
+        message = f'{output} [{example}] '
+    valid_input = False
+
+    while not valid_input:
+        user_input = input(message)
+        if pattern is not None and re.fullmatch(pattern, user_input) or user_input != '':
+            return user_input
+        print('I\'m sorry, I didn\'t understand that input.')
+
 def range_input(output, lower, upper, default=None):
     '''
     A custom input method. This input method collects an int for the user, and
@@ -318,37 +344,37 @@ def password_input(output:str, pattern:str=None) -> str:
     output (str): The message displayed to the user
     pattern (str): The optional RegEx pattern to match when confirming
         user input
-    
+
     Returns:
     str: The final confirmed user-input password
     '''
     ammendment = '(Passwords are saved locally to your system)'
-    message = '{} {} '.format(output, ammendment)
+    message = f'{output} {ammendment} '
     user_response = None
     valid_response = False
-    
-    while (not valid_response):
+
+    while not valid_response:
         user_response = getpass.getpass(message)
         if pattern is not None:
             if re.fullmatch(pattern, user_response):
                 valid_response = True
-            else:
-                message = 'That password is invalid, please try again. '
+                break
         elif user_response != '':
             valid_response = True
-    else:
-        valid_response = False
-        message = 'Please confirm your password '
+            break
+        message = 'That password is invalid, please try again. '
+    # else:
+    valid_response = False
+    message = 'Please confirm your password '
 
-        while (not valid_response):
-            confirmed = getpass.getpass(message)
-            if user_response == confirmed:
-                valid_response = True
-            else:
-                message = 'Those passwords don\'t match. Please try ' \
-                    'again '
-        else: 
-            return user_response
+    while not valid_response:
+        confirmed = getpass.getpass(message)
+        if user_response == confirmed:
+            valid_response = True
+            break
+        message = 'Those passwords don\'t match. Please try again.'
+
+    return encode(user_response)
 
 def server_address_input(output: str) -> str:
     '''
