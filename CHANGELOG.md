@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- The user can now designate custom scripts to be ran at start, stop, or clean via `./scripts/custom-command.sh`.
 - The user can now add configuration for uploading server backups to an external file server.
   - This configuration exists under the Maintenance section of the config and can be updated by calling `python main.py -uc maintenance`.
 
