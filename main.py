@@ -17,6 +17,7 @@
 # *****************************************************************************
 
 from re import sub
+from util import backup
 from util.backup import Backup
 from util.date import Date
 from util import configuration as c
@@ -141,7 +142,7 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
-    if not running_log and not c.Maintenance.is_running():
+    if not running_log:
         run()
 
 def maintenance():
@@ -276,14 +277,7 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    from util.mielib import system as sys
-    print(f'SYSTEM USERNAME: {sys.username()}')
-
-    maintenance()
-
-    print('WARNING: If this crashes, please confirm that your machine is ' \
-        'using python3 as it\'s default or update this call to use python3!!')
-    os.system('python main.py -m')
+    os.system('python3 /Volumes/storage/dev/MieTech/MIE-MCServer/main.py --backup')
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+from enum import IntEnum
+from crontab import CronTab
 from util.date import Date
-from util.extension import stringContainsAnyCase
 from .mielib.responseoption import ResponseOption
 from .mielib.system import username
-from crontab import CronTab
-from enum import IntEnum
 
 class CronScheduler:
     cron = CronTab(user=username())
