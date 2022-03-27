@@ -24,13 +24,6 @@ def stringContainsAnyCase(haystack: str, needles: List[str]) -> bool:
             return True
     return False
 
-def strings_contain(haystacks: List[str], needle: str) -> bool:
-    '''Searches a set of str for a regex match'''
-    for wisp in haystacks:
-        if re.fullmatch(needle, wisp):
-            return True
-    return False
-
 def lines_from_file(file: str, delete_fetched: bool = False) -> list[str]:
     '''
     Fetches all lines from a specific file, ignoring any lines that are comments
