@@ -305,7 +305,7 @@ def run_debug():
     # in another location than ./logs/. Provide this file to confirm that other
     # cases of this functionality are working correctly.
     monitor.DEBUG_BOOTLOG = None
-    monitor.start_server_start_monitor()
+    monitor.start_server_start_monitor(log=log)
 
     print('This print exists solely to showcase the background threading of ' \
         'the Monitor class. The following prints should show up somewhere ' \
