@@ -165,3 +165,17 @@ class Monitor:
             else:
                 cls.__LOG('Startup successful!')
             cls.startup.stop()
+
+def startup_completed_successfully() -> bool:
+    '''
+    Determins if the server has started successfully by searching the
+    ./logs/log.txt file for "Startup successful!"
+    '''
+    this_dir = os.path.dirname(__file__)
+    root_dir = os.path.join(this_dir, '..')
+    logfile = os.path.join(root_dir, 'logs/log.txt')
+
+    with open(logfile, 'r') as file:
+        log_lines = file.read()
+        print(log_lines)
+        return 'Startup successful!' in log_lines
