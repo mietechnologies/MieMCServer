@@ -1,11 +1,15 @@
 # pylint: disable=not-callable
 
+
 '''
 A module for monitoring the data stream from the project.
 '''
 
-from asyncio import subprocess
+import os
 from threading import Event, Thread
+from time import sleep
+
+from pendulum import time
 
 from util.extension import lines_from_file, string_contains
 from util.files import bootlog
@@ -29,6 +33,12 @@ class RepeatingTimer(Thread):
         self.stop_event.set()
 
 class MonitorItem:
+    '''
+    A class representing a task that the system should monitor in the
+    background.
+
+    Examples are system startup, player logs, etc.
+    '''
     elapsed = 0
     timeout = 10
     finished = False
@@ -41,19 +51,44 @@ class MonitorItem:
         self.timer = timer
 
     def start(self):
+        '''
+        Starts the MonitorItem.
+        '''
         self.timer.start()
 
     def stop(self):
+        '''
+        Stops the MonitorItem from running.
+        '''
         self.timer.stop()
 
     def completed(self) -> bool:
+        '''
+        Determines if the MonitorItem has finished running.
+
+        NOTE: This method should only be used on time-sensitive monitors
+        (i.e., the server startup monitor). Other monitors will run
+        indefinitely.
+        '''
         if self.finished:
             return self.finished
         if self.timedout():
             self.stop()
             return self.timedout()
+        return False
+
+    def is_running(self) -> bool:
+        '''
+        Determines if the MonitorItem is running by checking to see if it hasn't
+        completed or if the elapsed time is less that it's timeout value.
+        '''
+        return not self.completed() or self.elapsed < self.timeout
 
     def timedout(self) -> bool:
+        '''
+        Determines if the MonitorItem's elapsed time is greater that it's
+        timeout value.
+        '''
         return self.elapsed >= self.timeout
 
 class Monitor:
@@ -67,7 +102,7 @@ class Monitor:
 
     __LOG = None
 
-    __STARTUP: MonitorItem
+    startup: MonitorItem
 
     @classmethod
     def start_server_start_monitor(cls, timeout: int = 10, log = None):
@@ -86,16 +121,19 @@ class Monitor:
           - log (void): A reference to the method for logging information.
         '''
         cls.__LOG = log
-        cls.__STARTUP = MonitorItem(RepeatingTimer(1, cls.__check_startup), timeout)
-        cls.__STARTUP.start()
+        cls.startup = MonitorItem(RepeatingTimer(1, cls.__check_startup), timeout)
+        cls.startup.start()
 
     @classmethod
     def stop_all_monitors(cls):
-        cls.__STARTUP.stop()
+        '''
+        Stops all currently running MonitorItem's that are running.
+        '''
+        cls.startup.stop()
 
     @classmethod
     def __check_startup(cls):
-        cls.__STARTUP.elapsed += 1
+        cls.startup.elapsed += 1
 
         # Decide file to use.
         # If we're in DEBUG and a debuggable bootlog file has been provided, use
@@ -110,10 +148,20 @@ class Monitor:
                 cls.STARTUP_SUCCESSFUL = True
                 break
 
-        if cls.__STARTUP.completed():
-            if cls.__STARTUP.timedout():
+        if cls.startup.completed():
+            if cls.startup.timedout():
                 cls.__LOG('Could not start the server in a reasonable amount of ' \
                 'time! Is something wrong?')
+
+                # This technically shouldn't be needed and should actually cause
+                # an error, but in case the server has started up (after
+                # timeout), we're going to call the quit command so that we're
+                # absolutely sure that the server isn't running anymore.
+                sleep(10)
+                this_dir = os.path.dirname(__file__)
+                root_dir = os.path.join(this_dir, '..')
+                os.system(f'python3 { root_dir }/main.py -q')
+
             else:
                 cls.__LOG('Startup successful!')
-            cls.__STARTUP.stop()
+            cls.startup.stop()

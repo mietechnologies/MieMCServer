@@ -195,6 +195,7 @@ class Maintenance:
     maintenance_running = __data.get('scheduled_running', False)
     update_schedule = __update.get("schedule", "0 3 * * 0")
     update_allow_major_update = __update.get("allow_major_update", False)
+    startup_timeout = __data.get('startup_timeout', 10)
 
     @classmethod
     def build(cls):
@@ -234,6 +235,7 @@ class Maintenance:
         cls.backup_number = backup_limit
         cls.update_schedule = update_cron
         cls.update_allow_major_update = major_updates
+        cls.startup_timeout = 10
         cls.update()
 
     @classmethod
@@ -248,6 +250,7 @@ class Maintenance:
         cls.__data["backup"] = cls.__backup
         cls.__data["update"] = cls.__update
         cls.__data['scheduled_running'] = cls.maintenance_running
+        cls.__data['startup_timeout'] = cls.startup_timeout
         File.update(cls.SECTION_NAME, cls.__data)
 
     @classmethod
@@ -259,6 +262,7 @@ class Maintenance:
         cls.backup_number = 1
         cls.update_schedule = "0 3 * * 0"
         cls.update_allow_major_update = False
+        cls.startup_timeout = 10
 
 class Messaging:
     __data = File.data.get('Messaging', {})
