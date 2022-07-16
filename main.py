@@ -27,6 +27,7 @@ from util.mielib.custominput import bool_input
 from minecraft.install import Installer
 from util.cron import CronScheduler
 from util import configuration as c
+from util.backup import Backup
 from util.temp import PiTemp
 from util.syslog import log
 from util.date import Date
@@ -36,7 +37,7 @@ import command as cmd
 import argparse
 import os
 
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 
 def parse(args):
     mc_version = args.minecraft_version
@@ -89,10 +90,9 @@ def parse(args):
         updateServer(update)
 
     if backup:
-        running_log.append(f'-bu {c.Maintenance.backup_path}')
+        running_log.append('-bu {}'.format(c.Maintenance.backup_path))
         cmd.runCommand("say System is backing up Minecraft world.")
-        log('Backing up the current world...')
-        filename = f'world.{Date.strippedTimestamp()}.zip'
+        filename = 'world.{}.zip'.format(Date.strippedTimestamp())
         Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
     if method is not None:
@@ -274,22 +274,19 @@ def run_debug():
     # Shut off calling server commands for debugging purposes
     cmd.DEBUG = True
 
-    # Do NOT delete either of the DEBUGGING print statements!
     print('\n****** DEBUGGING STARTED ******\n')
-
     # Implement any debug functionality below:
-    print('Configuring Maintenance... When asked to setup storage on a file ' \
-        'server, please answer yes to test.')
-    c.Maintenance.build()
+    from util.mielib import system as sys
+    print(f'SYSTEM USERNAME: {sys.username()}')
 
-    print('Backing up the current world...')
-    filename = f'world.{Date.strippedTimestamp()}.zip'
-    Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
+    maintenance()
 
-    print('Backing up the current world again...')
-    filename = f'world.{Date.strippedTimestamp()}.zip'
-    Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
+    print('WARNING: If this crashes, please confirm that your machine is ' \
+        'using python3 as it\'s default or update this call to use python3!!')
+    os.system('python main.py -m')
 
+    # DO NOT DELETE THE BELOW LINE
+    # Deleting this line WILL cause build errors!!
     print('\n***** DEBUGGING FINISHED ******\n')
 
 def startMonitorsIfNeeded():

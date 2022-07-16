@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- The user can now add configuration for uploading server backups to an external file server.
-  - This configuration exists under the Maintenance section of the config and can be updated by calling `python main.py -uc maintenance`.
 
 ### Changed
 
@@ -17,9 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
-- End trimming wasn't being properly called.
 
 ### Security
+## [1.2.1] - 2022.2.18
+
+### Fixed
+- End trimming wasn't being properly called.
+- System username was not being fetched correctly.
+- Extraneous maintenace arguments were removed.
 
 ## [1.2.0] - 2022.02.11
 
