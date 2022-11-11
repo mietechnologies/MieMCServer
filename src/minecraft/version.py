@@ -1,10 +1,16 @@
+import os
+import sys
 from datetime import MINYEAR
-import sys, os, requests
+
+import requests
+
 sys.path.append("..")
-from util.configuration import Minecraft, Maintenance
-from util.syslog import log
-from util.date import Date
 from enum import Enum
+
+from util.date import Date
+from util.logger import log
+from configuration import config
+
 
 class UpdateType(Enum):
     NONE = 0
@@ -26,6 +32,8 @@ class UpdateType(Enum):
 class Versioner:
     VERSION_MANIFEST_URL = "https://papermc.io/api/v2/projects/paper/{}"
     BUILDS_MANIFEST_URL = "https://papermc.io/api/v2/projects/paper/version_group/{}/builds"
+
+    config_file = config.File()
 
     dir = os.path.dirname(__file__)
     server_root = os.path.join(dir, 'server')
@@ -108,15 +116,15 @@ class Versioner:
         '''Checks to see if a version has been set in the configuration. If it 
         has it will return the version information, otherwise it will return
         None'''
-        if Minecraft.minor is None:
+        if cls.config_file.minecraft.minor is None:
             return None
         else:
             return {
-                "major" : Minecraft.major,
-                "minor" : Minecraft.minor,
-                "patch" : Minecraft.patch,
-                "build" : Minecraft.build,
-                "version_group" : Minecraft.version_group
+                "major" : cls.config_file.minecraft.major,
+                "minor" : cls.config_file.minecraft.minor,
+                "patch" : cls.config_file.minecraft.patch,
+                "build" : cls.config_file.minecraft.build,
+                "version_group" : cls.config_file.minecraft.version_group
             }
 
     @classmethod
@@ -125,14 +133,14 @@ class Versioner:
         has specified whether they want to update minor builds will determine 
         how far this function will look'''
 
-        if Minecraft.version_group is None or Maintenance.update_allow_major_update:
+        if cls.config_file.minecraft.version_group is None or cls.config_file.maintenance.allows_major_udpates():
             version_request = requests.get(cls.VERSION_MANIFEST_URL.format(""))
             data = cls.__extractAbsoluteVersion(version_request.json())
             build_data = cls.__getLatestBuild(data["version_group"])
             return cls.__version(data, build_data)
         else:
             version_request = requests.get(cls.VERSION_MANIFEST_URL
-                .format("version_group/" + Minecraft.version_group))
+                .format("version_group/" + cls.config_file.minecraft.version_group))
             data = cls.__extractVersionGroup(version_request.json())
             build_data = cls.__getLatestBuild(data["version_group"])
             return cls.__version(data, build_data)
@@ -209,18 +217,18 @@ class Versioner:
             return True
 
     @classmethod
-    def updateInstalledVersion(cls, version):
+    def updateInstalledVersion(cls, version) -> dict:
         """Update all appropriate files of a new server install
         
         Parameters:
             version -- A dictionary containing the keys: major, minor, patch, build, and version_group.
         """
-        Minecraft.install_date = Date.timestamp()
-        Minecraft.major = int(version.get("major", Minecraft.major))
-        Minecraft.minor = int(version.get("minor", Minecraft.minor))
-        Minecraft.patch = int(version.get("patch", Minecraft.patch))
-        Minecraft.build = int(version.get("build", Minecraft.build))
-        Minecraft.version_group = version.get("version_group",
-                                              Minecraft.version_group)
-        Minecraft.update()
+        cls.config_file.minecraft.install_date = Date.timestamp()
+        cls.config_file.minecraft.major = int(version.get("major", cls.config_file.minecraft.major))
+        cls.config_file.minecraft.minor = int(version.get("minor", cls.config_file.minecraft.minor))
+        cls.config_file.minecraft.patch = int(version.get("patch", cls.config_file.minecraft.patch))
+        cls.config_file.minecraft.build = int(version.get("build", cls.config_file.minecraft.build))
+        cls.config_file.minecraft.version_group = version.get("version_group",
+                                              cls.config_file.minecraft.version_group)
+        return cls.config_file.minecraft.update()
         

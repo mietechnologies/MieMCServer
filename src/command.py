@@ -1,6 +1,5 @@
-from util.configuration import RCON
-from util.configuration import Server
-from util.syslog import log
+from configuration import config
+from util.logger import log
 from rcon import Client
 
 DEBUG = False
@@ -15,11 +14,12 @@ def runCommand(command: str):
         print(f'Not running {command}; project in DEBUG')
         return
 
-    RCON.read()
-    if RCON.enabled and RCON.password != "":
-        with Client(Server.url,
-                    RCON.port,
-                    passwd=RCON.password) as client:
+    config_file = config.File()
+    config_file.rcon.read()
+    if config_file.rcon.enabled and config_file.rcon.password != "":
+        with Client(config_file.server.url,
+                    config_file.rcon.port,
+                    passwd=config_file.rcon.password) as client:
 
             response = client.run(command)
             __handleResponse(response, command)
@@ -39,11 +39,12 @@ def runTerminal(commands: list[str] = None):
         print(f'Not running {commands}; project in DEBUG')
         return
 
-    RCON.read()
-    if RCON.enabled and RCON.password != "":
-        with Client(Server.url,
-                    RCON.port,
-                    passwd=RCON.password) as client:
+    config_file = config.File()
+    config_file.rcon.read()
+    if config_file.rcon.enabled and config_file.rcon.password != "":
+        with Client(config_file.server.url,
+                    config_file.rcon.port,
+                    passwd=config_file.rcon.password) as client:
             
             if commands:
                 for command in commands:

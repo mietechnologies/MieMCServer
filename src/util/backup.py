@@ -1,10 +1,12 @@
 import os, shutil
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from .configuration import Maintenance
-from .syslog import log
+from configuration import config
+from util.logger import log
 
 class Backup:
+    config_file = config.File()
+
     @classmethod 
     def put(cls, source: str, path: str, file: str):
         log('Backing up the current world...')
@@ -51,7 +53,7 @@ class Backup:
         # List the contents of the directory and compare to settings. If number of files in the directory is
         # greater than what is in the settings, delete oldest files. If lesser than or eqaul, do nothing.
         existingRelative = os.listdir(path)
-        if len(existingRelative) > Maintenance.backup_number:
+        if len(existingRelative) > cls.config_file.maintenance.backup_limit():
             log('Cleaning up local storage...')
             existing = []
             toDelete = []
@@ -65,7 +67,7 @@ class Backup:
             existing.sort(key=os.path.getctime)
 
             # Iterate through files popping the oldest to the toDelete array
-            while len(existing) > Maintenance.backup_number:
+            while len(existing) > cls.config_file.maintenance.backup_limit():
                 toDelete.append(existing.pop(0))
 
             # Delete any files in the toDelete array
