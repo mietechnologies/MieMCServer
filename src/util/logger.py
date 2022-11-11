@@ -1,9 +1,9 @@
-from .emailer import Emailer
+from .emailer import Mailer
 import os, sys, traceback
 import textwrap
 from .date import Date
-from .configuration import Messaging
-from discord import Webhook, RequestsWebhookAdapter
+from configuration import config
+from discord import SyncWebhook
 
 sys.excepthook = lambda type, value, tb: __handleUncaughtException(type, value, tb)
 
@@ -61,7 +61,7 @@ def clear_log():
 def email_log(subject, body):
     '''A helper method to email the current log file along with a subject and 
     body'''
-    mailer = Emailer(subject, body)
+    mailer = Mailer(subject, body)
     mailer.attach(__log_file)
     mailer.send()
 
@@ -69,6 +69,8 @@ def messageDiscord(message: str):
     '''A helper function to send a message to the Discord server if 
        this setting is enabled.'''
 
-    if Messaging.discord:
-        webhook = Webhook.from_url(Messaging.discord, adapter=RequestsWebhookAdapter())
+    config_file = config.File()
+
+    if config_file.messaging.discord:
+        webhook = SyncWebhook.from_url(config_file.messaging.discord)
         webhook.send(textwrap.dedent(message))

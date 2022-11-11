@@ -2,8 +2,8 @@ import os
 
 from util.date import Date
 
-from .configuration import Temperature
-from .syslog import log
+from configuration import config
+from util.logger import log
 
 # dev imports
 import random
@@ -11,6 +11,8 @@ import random
 class PiTemp:
     __dir = os.path.dirname(__file__)
     __root = os.path.join(__dir, '..')
+
+    config_file = config.File()
 
     @classmethod
     def measure(cls):
@@ -32,16 +34,16 @@ class PiTemp:
         system should restart or not.
         '''
         current = cls.measure()
-        if Temperature.is_overheating(current) and Temperature.elapsed > 0:
-            Temperature.elapsed += 1
+        if cls.config_file.temperature.is_overheating(current) and Temperature.elapsed > 0:
+            cls.config_file.temperature.elapsed += 1
             log("[PiTemp] - WARN: Temperature is still too high [{}]".format(current))
-            if Temperature.elapsed > Temperature.minutes:
+            if cls.config_file.temperature.elapsed > cls.config_file.temperature.minutes:
                 log("[PiTemp] - ERR: Temperature was too hot for too long - rebooting")
                 os.popen('sudo reboot')
-        elif Temperature.is_overheating(current):
+        elif cls.config_file.temperature.is_overheating(current):
             log("[PiTemp] - WARN: Temp is too high [{}]".format(current))
-            Temperature.elapsed += 1
+            cls.config_file.temperature.elapsed += 1
         else:
-            Temperature.elapsed = 0
+            cls.config_file.temperature.elapsed = 0
 
-        Temperature.update()
+        cls.config_file.temperature.update()

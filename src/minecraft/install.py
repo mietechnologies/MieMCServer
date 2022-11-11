@@ -1,10 +1,12 @@
-import os, sys, requests
-from re import sub
+import os
+import sys
+import requests
 from .version import UpdateType, Versioner
 sys.path.append("..")
-from util.configuration import Email, Minecraft, Maintenance
-from util.emailer import Emailer
-from util.syslog import log
+from configuration import config
+from util.download import get
+from util.emailer import Mailer
+from util.logger import log
 from util.date import Date
 
 class Installer:
@@ -15,6 +17,8 @@ class Installer:
     server_dir = os.path.join(dir, '../server')
     server_jar = os.path.join(server_dir, 'paper.jar')
     temp_jar = os.path.join(dir, 'paper.jar')
+    
+    config_file = config.File()
 
     @classmethod
     def __shouldInstall(cls, override):
@@ -28,7 +32,7 @@ class Installer:
         elif type is UpdateType.MAJOR:
             if not Versioner.serverExists():
                 return (True, version)
-            elif Maintenance.update_allow_major_update:
+            elif cls.config_file.maintenance.allows_major_udpates():
                 return (True, version)
             else:
                 cls.__adminUpdateAlert(version)
@@ -47,7 +51,7 @@ class Installer:
             "to do this manually you can run the command: 'python3 " \
             "main.py -u'\nThen follow the prompt and it will install the " \
             "latest version.\n\nThanks,\nMinePi".format(version_str)
-        email = Emailer(subject, body)
+        email = Mailer(subject, body)
         email.send()
 
     @classmethod
@@ -85,15 +89,4 @@ class Installer:
 
         filename = "paper-{}-{}.jar".format(version_str, version["build"])
         url = cls.DOWNLOAD_URL.format(version_str, version["build"], filename)
-        with requests.get(url, stream=True) as request:
-            request.raise_for_status()
-            with open(cls.temp_jar, 'wb') as file:
-                for chunk in request.iter_content(chunk_size=8192):
-                    if chunk:
-                        file.write(chunk)
-                    else:
-                        log("Error: Unable to download file!")
-                        return None
-
-        log("Download Complete!")
-        return cls.temp_jar
+        return get(url, cls.temp_jar)

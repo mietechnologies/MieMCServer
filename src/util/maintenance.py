@@ -1,15 +1,16 @@
 import os
 
-from . import configuration as c
-from .cron import CronDate, CronScheduler
-from .date import Date
-from .mielib import custominput as ci
-from .syslog import messageDiscord, log
+from configuration import config
+from util.cron import CronDate, CronScheduler
+from util.date import Date
+from util.mielib import custominput as ci
+from util.logger import messageDiscord, log
 
 class Maintenance:
     dir = os.path.dirname(__file__)
     root_dir = os.path.join(dir, '..')
     scheduler = CronScheduler()
+    config_file = config.File()
 
     @classmethod
     def end(cls):
@@ -24,8 +25,8 @@ class Maintenance:
 
         cls.scheduler.removeJob('maintenance.end')
         cls.scheduler.removeJob('maintenance.start')
-        c.Maintenance.maintenance_running = False
-        c.Maintenance.update()
+        cls.config_file.maintenance.maintenance_running = False
+        cls.config_file.maintenance.update()
 
         os.system(f'python {cls.root_dir}/main.py')
 
@@ -128,7 +129,7 @@ class Maintenance:
         cls.scheduler.removeJob('maintenance.backup')
         cls.scheduler.removeJob('maintenance.scripts')
         cls.scheduler.removeJob('maintenance.update')
-        c.Maintenance.maintenance_running = True
-        c.Maintenance.update()
+        cls.config_file.maintenance.maintenance_running = True
+        cls.config_file.maintenance.update()
 
         os.system(f'python {cls.root_dir}/main.py -q')

@@ -16,30 +16,32 @@
 #    - '-bu', '--backup': This will backup the Minecraft Server
 # *****************************************************************************
 
-from re import sub
+import argparse
+import command as cmd
+import subprocess
+import os
+from time import sleep
+
 from util.backup import Backup
 from util.date import Date
-from util import configuration as c
-from requests.api import delete
+from configuration import config
 from minecraft.version import Versioner, UpdateType
 from util.maintenance import Maintenance
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
 from util.cron import CronScheduler
-from util import configuration as c
 from util.backup import Backup
+from util.path import project_path
 from util.temp import PiTemp
-from util.syslog import log
+from util.logger import log
 from util.date import Date
 from scripts import reboot
-from time import sleep
-import command as cmd
-import argparse
-import os
 
 VERSION = "1.2.1"
 
 def parse(args):
+    config_file = config.File()
+
     mc_version = args.minecraft_version
     version = args.version
     command = args.command
@@ -53,10 +55,10 @@ def parse(args):
     maintenance_action = args.maintenance
     debug = args.debug
     update_config = args.update_config
-    if c.Temperature.exists():
+    if config_file.temperature.exists():
         critical_events = args.critical_events
 
-    if c.Temperature.exists():
+    if config_file.temperature.exists():
         critical_events = args.critical_events
 
     running_log = []
@@ -68,8 +70,8 @@ def parse(args):
     # Done
     if mc_version is not False:
         running_log.append('-mcv')
-        if c.Minecraft.build is not None:
-            log("Minecraft Server: {}".format(c.Minecraft.version_str()))
+        if config_file.minecraft.build is not None:
+            log("Minecraft Server: {}".format(config_file.Minecraft.version_str()))
         else:
             log("Minecraft Server has not been installed yet.")
 
@@ -90,10 +92,10 @@ def parse(args):
         updateServer(update)
 
     if backup:
-        running_log.append('-bu {}'.format(c.Maintenance.backup_path))
+        running_log.append('-bu {}'.format(config_file.maintenance.path()))
         cmd.runCommand("say System is backing up Minecraft world.")
         filename = 'world.{}.zip'.format(Date.strippedTimestamp())
-        Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
+        Backup.put(Installer.server_dir, config_file.maintenance.path(), filename)
 
     if method is not None:
         running_log.append('-gc {}'.format(method))
@@ -133,7 +135,7 @@ def parse(args):
         else:
             Maintenance.end()
 
-    if c.Temperature.exists() and critical_events:
+    if config_file.temperature.exists() and critical_events:
         running_log.append('-ce')
         PiTemp.execute()
 
@@ -141,7 +143,7 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
-    if not running_log and not c.Maintenance.is_running():
+    if not running_log and not config_file.maintenance.is_running():
         run()
 
 def maintenance():
@@ -234,7 +236,9 @@ def trim_end_regions():
 
 def run():
     log("Checking config.yml...")
-    if c.File.exists:
+    config_file = config.File()
+
+    if config_file.exists:
         log("Found config.yml")
         setupCrontab()
         Installer.install()
@@ -249,10 +253,10 @@ def run():
         # accepted, meaning that starting the server WILL fail
         startServer()
 
-        c.RCON.build()
+        config_file.build_rcon()
         root_dir = os.path.dirname(__file__)
         eula = os.path.join(root_dir, 'server/eula.txt')
-        if c.Minecraft.accept_eula():
+        if config_file.minecraft.accept_eula():
             lines = linesFromFile(eula, False)
             with open(eula, 'w') as eula_out:
                 for line in lines:
@@ -276,26 +280,20 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    from util.mielib import system as sys
-    print(f'SYSTEM USERNAME: {sys.username()}')
+    from configuration.modded import Modded
+    data = Modded({}).build()
+    print(data)
 
-    maintenance()
-
-    print('WARNING: If this crashes, please confirm that your machine is ' \
-        'using python3 as it\'s default or update this call to use python3!!')
-    os.system('python main.py -m')
-
-    # DO NOT DELETE THE BELOW LINE
-    # Deleting this line WILL cause build errors!!
     print('\n***** DEBUGGING FINISHED ******\n')
 
 def startMonitorsIfNeeded():
     dir = os.path.dirname(__file__)
     prog = os.path.join(dir, 'main.py')
     scheduler = CronScheduler()
+    config_file = config.File()
 
     # Temp if on RasPi
-    if c.Temperature.exists():
+    if config_file.temperature.exists():
         log('Start monitor of CPU temp...')
         critical_events_command = 'python {} --critical-events'.format(prog)
         scheduler.createRecurringJob(
@@ -307,9 +305,11 @@ def stopMonitors():
     CronScheduler().removeJob('detect_critical_events')
 
 def startServer():
+    config_file = config.File()
+
     startMonitorsIfNeeded()
     log("Starting server...")
-    ram = "{}M".format(c.Minecraft.allocated_ram)
+    ram = "{}M".format(config_file.minecraft.allocated_ram)
     current_dir = os.path.dirname(__file__)
     script_path = os.path.join(current_dir, "scripts/start-server.sh")
     log("Setting up bootlog file...")
@@ -328,27 +328,28 @@ def setupCrontab():
     dir = os.path.dirname(__file__)
     prog = os.path.join(dir, 'main.py')
     scheduler = CronScheduler()
+    config_file = config.File()
     
     restart_command = "python3 {} --run-commands --stop --restart".format(prog)
-    scheduler.createRecurringJob(c.Maintenance.complete_shutdown,
+    scheduler.createRecurringJob(config_file.maintenance.complete_shutdown,
                                  restart_command,
                                  "maintenance.restart")
     log("Scheduling crontab job 'maintenance.restart'")
     # Backup
     backup_command = "python3 {} --backup".format(prog)
-    scheduler.createRecurringJob(c.Maintenance.backup_schedule,
+    scheduler.createRecurringJob(config_file.maintenance.backup_schedule(),
                                  backup_command,
                                  "maintenance.backup")
     log("Scheduling crontab job 'maintenance.backup'")
     # Maintenance
     maintenance_command = "python3 {} --clean".format(prog)
-    scheduler.createRecurringJob(c.Maintenance.schedule,
+    scheduler.createRecurringJob(config_file.maintenance.schedule,
                                  maintenance_command,
                                  "maintenance.scripts")
     log("Scheduling crontab job 'maintenance.scripts'")
     # Updates
     update_command = "python3 {} --update".format(prog)
-    scheduler.createRecurringJob(c.Maintenance.update_schedule,
+    scheduler.createRecurringJob(config_file.maintenance.update_schedule(),
                                  update_command,
                                  "maintenance.update")
     log("Scheduling crontab job 'maintenance.update'")
@@ -360,19 +361,20 @@ def setupCrontab():
     log("Scheduling crontab job 'reboot'")
 
 def generateConfig(method):
+    config_file = config.File()
     
     if method.lower() == "auto":
         user_response = bool_input("This will override your current " \
         "config.yml, are you sure you want to do that?", default=False)
         if user_response:
             log("Automatically generating a default config.yml")
-            c.File.generate()
+            config_file.generate()
             log("config.yml generated!")
         else:
             log("Generate config cancelled")
     elif method.lower() == "manual":
         log("Generating user-interactive config.yml", silently=True)
-        built = c.File.build()
+        built = config_file.build()
         if not built:
             log("Generate config cancelled")
         else:
@@ -382,28 +384,31 @@ def generateConfig(method):
             " menu to learn more. ".format(method))
 
 def updateConfig(collection):
+    config_file = config.File()
     
     if collection.lower() == "minecraft":
-        c.Minecraft.reset()
-        c.Minecraft.build()
+        config_file.minecraft.reset()
+        config_file.minecraft.build()
     elif collection.lower() == "email":
-        c.Email.reset()
-        c.Email.build()
+        config_file.email.reset()
+        config_file.email.build()
     elif collection.lower() == "maintenance":
-        c.Maintenance.reset()
-        c.Maintenance.build()
+        config_file.maintenance.reset()
+        config_file.maintenance.build()
     elif collection.lower() == "messaging":
-        c.Messaging.reset()
-        c.Messaging.build()
+        config_file.messaging.reset()
+        config_file.messaging.build()
     elif collection.lower() == "rcon":
-        c.RCON.build()
+        config_file.rcon.build()
     elif collection.lower() == "server":
-        c.Server.build()
+        config_file.server.build()
     elif collection.lower() == "temperature":
-        c.Temperature.build()
+        config_file.temperature.build()
 
 def updateServer(override):
-    if not c.File.data:
+    config_file = config.File()
+
+    if not config_file.exists:
         log("Cancelling... You haven't setup a config.yml file yet. You can " \
             "generate a config file by running the command 'python3 main.py -" \
             "gc'")
@@ -421,7 +426,7 @@ def updateServer(override):
             if update is UpdateType.MAJOR:
                 if override.lower() in ["y", "yes", "true"]:
                     should_update = True
-                elif not c.Maintenance.update_allow_major_update:
+                elif not config_file.maintenance.allows_major_udpates():
                     log("Did not update due to your settings. Please update " \
                         "manually.")
                     should_update = False
@@ -431,7 +436,17 @@ def updateServer(override):
             if should_update:
                 Installer.install(override_settings=should_update)
 
+def installRequirements():
+    requirements = project_path('', 'requirements.txt')
+    with subprocess.Popen('pip install pipreqs') as process:
+        process.communicate()
+    with subprocess.Popen('pipreqs') as process:
+        process.communicate()
+    with subprocess.Popen(f'pip install -r {requirements}') as process:
+        process.communicate()
+
 def main():
+    # installRequirements()
 
     parser = argparse.ArgumentParser(description="This program is your " \
         "one-stop shop for running and maintaining a Minecraft Server.")
@@ -495,7 +510,7 @@ def main():
     parser.add_argument('-uc', '--update-config', help="This command enables " \
         "the user to update a configuration collection by passing the " \
         "desired collection's name in as a parameter. (i.e. Email, Minecraft, " \
-        "etc. [not case sensitive])", nargs='?', dest="update_config", 
+        "etconfig_file. [not case sensitive])", nargs='?', dest="update_config", 
         type=str, required=False)
 
     parser.add_argument('-D', '--debug', help='This will run any processes ' \
@@ -503,7 +518,8 @@ def main():
         'will ignore any and all other commands!', dest='debug', 
         action='store_true', required=False)
 
-    if c.Temperature.exists():
+    config_file = config.File()
+    if config_file.temperature.exists():
         parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
             'events that may be occuring on your Raspberry Pi.', dest='critical_events', action='store_true', required=False)
 
