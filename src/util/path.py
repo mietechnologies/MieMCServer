@@ -18,7 +18,7 @@ import shutil
 import sys
 sys.path.append('..')
 
-def project_path(to_dir: str, filename: str = None, create: bool = True) -> str:
+def project_path(to_dir: str = None, filename: str = None, create: bool = True) -> str:
     """
     Creates a path to the designated directory in the project's root. By default, if the
     directory does not exist, this method will create it automatically.
@@ -39,7 +39,10 @@ def project_path(to_dir: str, filename: str = None, create: bool = True) -> str:
     # Construct the path to the directory.
     root = os.path.dirname(__file__)
     project = os.path.join(root, '..')
-    directory = os.path.join(project, to_dir)
+    if to_dir is not None:
+        directory = os.path.join(project, to_dir)
+    else:
+        directory = project
 
     # Create the directory if it doesn't already exist.
     if create and not os.path.exists(directory):
@@ -85,14 +88,15 @@ def isfile(directory: str) -> bool:
     """
     return os.path.isfile(directory)
 
-def remove(project_directory: str = None, system_directory: str = None) -> bool:
+def remove(project_directory: str = None, system_directory: str = None, file: str = None) -> bool:
     """
-    Deletes an entire directory, if possible.
+    Deletes an entire directory, if possible. Alternatively, you can remove a
+    single file from this directory by designating a specific file to delete.
 
     Warning
     -------
-    This method is designed to be very unforgiving. Only use this if you are **absolutely**
-    certain you no longer need the supplied directory.
+    This method is designed to be very unforgiving. Only use this if you are
+    **absolutely** certain you no longer need the supplied directory.
 
     Parameters
     ----------
@@ -107,11 +111,55 @@ def remove(project_directory: str = None, system_directory: str = None) -> bool:
         A bool indicating if the process was successful.
     """
 
-    if project_directory:
-        path = project_path(project_directory, create=False)
-        shutil.rmtree(path)
-    if system_directory:
-        path = system_path(system_directory)
-        shutil.rmtree(path)
-
+    if project_directory is not None and file is not None:
+        project_file_path = project_path(project_directory, file)
+        os.remove(project_file_path)
+        return True
+    if project_directory is not None:
+        project_directory_path = project_path(project_directory)
+        shutil.rmtree(project_directory_path)
+        return True
+    if system_directory is not None and file is not None:
+        system_file_path = system_path(system_directory, file)
+        os.remove(system_file_path)
+        return True
+    if system_directory is not None:
+        system_directory_path = system_path(system_directory)
+        shutil.rmtree(system_directory_path)
+        return True
     return False
+
+# def move(from_dir: str, to_dir: str) -> bool:
+#     """
+#     Moves the contents of a directory to a new location. This method only moves
+#     directories inside the project directory.
+
+#     Parameters
+#     ----------
+#     project_directory: str | None
+#         The path relative to the project you wish to remove.
+#     system_directory: str | None
+#         The path relative to the system you wish to remove.
+
+#     Returns
+#     -------
+#     bool
+#         A bool indicating if the process was successful.
+#     """
+
+#     source = project_path(from_dir)
+#     destination = project_path(to_dir)
+#     shutil.move(source, destination)
+    
+def move(from_dir: str, to_dir: str, file: str = None):
+    """
+    """
+
+    if file:
+        source = project_path(from_dir, file)
+        destination = project_path(to_dir, file)
+        shutil.move(source, destination)
+    else:
+        source = project_path(from_dir)
+        destination = project_path(to_dir)
+        shutil.move(source, destination)

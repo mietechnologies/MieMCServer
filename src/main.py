@@ -281,8 +281,10 @@ def run_debug():
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
     from configuration.modded import Modded
-    data = Modded({}).build()
-    print(data)
+    modded = Modded({})
+    if modded.query():
+        data = modded.build()
+        print(data)
 
     print('\n***** DEBUGGING FINISHED ******\n')
 
