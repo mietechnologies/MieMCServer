@@ -9,11 +9,12 @@ __pycache__/
 **/__pycache__/
 *.pyc
 
-# Do not include any archives or achives SHA's
+# Do not include any archives, achives SHA's, or installers
 *.tar.gz
 *.tgz
 *.gz
 $.sha256
+*.jar
 
 # Do not include any logs
 *.txt
@@ -26,6 +27,9 @@ collect-libraries.sh
 install-libraries.sh
 delete-server.sh
 test.py
+
+# Do not include temporary files
+tmp/
 
 # Include all scripting files
 !clean-commands.txt

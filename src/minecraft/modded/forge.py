@@ -64,6 +64,7 @@ def cleanup():
     Cleans up any temporary files created by the process of installing Forge.
     """
 
-    # download_dir = path.project_path('tmp/forge', create=False)
-    path.remove('tmp/forge')
-    path.remove('tmp/forge_installer')
+    path.remove(path.project_path('tmp'))
+    path.remove(path.project_path('server'), file='installer.jar')
+    path.remove(path.project_path('server'), file='run.bat')
+    path.remove(path.project_path(), file='installer.jar.log')

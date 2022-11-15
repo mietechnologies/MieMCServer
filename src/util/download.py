@@ -27,8 +27,6 @@ def get(url: str, save_to: str) -> str:
     str | None
         The path to where the download was saved or None if an error occured.
     """
-
-    print(save_to)
     
     with requests.get(url, stream=True) as request:
         request.raise_for_status()
