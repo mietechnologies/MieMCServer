@@ -30,7 +30,7 @@ class Server:
             'to generate a dynamic url that always points to your IP, ' \
             'regardless of how it might change.')
         print('You can find more information on no-ip at https://www.noip.com.')
-        self.url = ci.server_address_input('What url would you like to use to' \
+        self.url = ci.server_address_input('What url would you like to use to ' \
             'host your Minecraft server?')
         return self.update()
 

@@ -134,6 +134,10 @@ class Modded:
                 f'EULA located at {eula_file}.')
 
         log('Installation complete!')
+
+        # TODO: Set level-seed in server.properties
+        # TODO: Whitelist setup
+
         print('Please start the server using the command `python3 main.py -D`')
 
         return self.update()
