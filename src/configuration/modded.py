@@ -1,8 +1,8 @@
 from minecraft.modded import forge
 from util import files
 from util import path
+from util.data import extract_zip
 from util.download import get
-from util.files import update
 from util.logger import log
 from util.mielib import custominput as ci
 from util.shell import run
@@ -18,6 +18,7 @@ class Modded:
     modpack_id: str = None
     minecraft_version: str = None
     forge_version: str = None
+    uses_args_file: bool = False
 
     def __init__(self, data: dict) -> None:
         self.data = data
@@ -25,6 +26,7 @@ class Modded:
         self.modpack_id = self.data.get('modpack_id', None)
         self.minecraft_version = self.data.get('minecraft_version', None)
         self.forge_version = self.data.get('forge_version', None)
+        self.uses_args_file = self.data.get('uses_args_file', False)
 
     @classmethod
     def query(cls) -> bool:
@@ -49,15 +51,36 @@ class Modded:
         # will also give us the correct version of Minecraft to later download
         # the correct version of the Forge Installer.
 
-        # Will be found dynamically depending on the CurseForge API. For now, we're supplying
-        # a magic value to make it work.
-        modpack_version = '1.18.2'
+        # Because the Eternals API team is being SO SLOW in getting back to us, we're going
+        # to take a slightly different path for install... For now, we're going to ask the user
+        # to designate the Minecraft version and supply a zip for the modpack files to install
+        # on the server.
+        modpack_version = ci.version_input('The Eternals API has not allowed me access to ' \
+            'their API, so I have to take a slightly different approach to installing ' \
+            'the modpack on your server. For now, what version of Minecraft will your ' \
+            'server target?')
 
-        # This is where this method is going to get complicated. Since Forge
-        # doesn't have an API, we're going to host a JSON file on a separate
-        # GitHub repo and use it to figure out what version of the Forge
-        # Installer to download and install. This will allow us the flexibility
-        # of updating this JSON file whenever is necessary so that we can keep
+        mod_files = None
+        message = 'Alright, now I need to know where I can find the zip file containing the ' \
+            'modpack files you want to install.'
+
+        while mod_files is None:
+            modpack_location = ci.path_input(message)
+            mods = forge.extract_mods(modpack_location)
+
+            if mods is None:
+                message = 'Sorry, that is not a valid zip file. Please tell me where I can ' \
+                    'find your zip file.'
+            else:
+                mod_files = mods
+                break
+
+        log('Modpack verified...')
+
+        # This is where this method is going to get complicated. Since Forge doesn't have an
+        # API, we're going to host a JSON file on a separate GitHub repo and use it to figure
+        # out what version of the Forge Installer to download and install. This will allow us
+        # the flexibility of updating this JSON file whenever is necessary so that we can keep
         # versions of the launcher up-to-date.
         #
         # The process will be as follows:
@@ -71,6 +94,7 @@ class Modded:
         forge_version: dict = forge_versions[modpack_version]
         self.minecraft_version: str = forge_version['minecraftVersion']
         self.forge_version: str = forge_version['forgeVersion']
+        self.uses_args_file: bool = forge_version['usesArgsFile']
 
         download_url = forge.construct_forge_installer_url(
             self.minecraft_version,
@@ -86,12 +110,14 @@ class Modded:
         command = f'java -jar {installer} --installServer={server}'
         run(command)
 
+        # Copy the mod files for the modpack to be installed to the server directory
+        log('Installing modpack files...')
+        print(mod_files)
+        path.move(mod_files, server)
+
         # Clean up all temporary files
         log('Cleaning up temporary files from installing Forge server...')
-        forge.cleanup()
-
-        # TODO: Copy the mod files for the modpack to be installed to the server directory
-        log('Installing modpack files...')
+        forge.cleanup(self.uses_args_file)
 
         # Now that we have installed the Forge server files, we need to ask the user to
         # designate an amount of RAM to dedicate to the running the server.
@@ -105,15 +131,21 @@ class Modded:
         # Even though we will have the allocated RAM stored in `config.yml`, we also need
         # to update the `/server/user_jvm_args.txt` file with this info to allow the Forge
         # server to work correctly.
-        args_file = path.project_path('server', 'user_jvm_args.txt')
-        files.add([f'-Xms4G -Xmx{self.allocated_ram}G'], args_file)
+        # Annoyingly, versions preceding 1.17.1 don't use the user_jvm_args.txt file nor do
+        # they launch in the same way...
+        if self.uses_args_file:
+            args_file = path.project_path('server', 'user_jvm_args.txt')
+            files.add([f'-Xms4G -Xmx{self.allocated_ram}G'], args_file)
 
-        old_command = 'java @user_jvm_args.txt @libraries/net/minecraftforge/forge/' \
-            '1.18.2-40.1.0/unix_args.txt "$@"'
-        new_command = 'java @user_jvm_args.txt @libraries/net/minecraftforge/forge/' \
-            '1.18.2-40.1.0/unix_args.txt nogui "$@"'
-        run_file = path.project_path('server', 'run.sh')
-        files.update(run_file, old_command, new_command)
+            old_command = 'java @user_jvm_args.txt @libraries/net/minecraftforge/forge/' \
+                '1.18.2-40.1.0/unix_args.txt "$@"'
+            new_command = 'java @user_jvm_args.txt @libraries/net/minecraftforge/forge/' \
+                '1.18.2-40.1.0/unix_args.txt nogui "$@"'
+            run_file = path.project_path('server', 'run.sh')
+            files.update(run_file, old_command, new_command)
+        else:
+            # TODO: Research how to set args and run under this method
+            print('modded server doesn\'t use args file')
 
         # Now that we know RAM allocation, we need to run the server to generate the EULA
         # and offer to automatically sign it for the user.
@@ -138,7 +170,7 @@ class Modded:
         # TODO: Set level-seed in server.properties
         # TODO: Whitelist setup
 
-        print('Please start the server using the command `python3 main.py -D`')
+        print('Please start the server using the command `python3 main.py`')
 
         return self.update()
 

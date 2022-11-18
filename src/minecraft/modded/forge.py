@@ -59,12 +59,21 @@ def construct_forge_installer_url(mc_version: str, forge_version: str) -> str:
     download = f'{mc_version}-{forge_version}/forge-{mc_version}-{forge_version}-installer.jar'
     return root + download
 
-def cleanup():
+def extract_mods(from_file: str) -> str:
+    '''
+    '''
+
+    temp = path.project_path('tmp/mods')
+    return data.extract_zip(from_file, temp)
+
+def cleanup(uses_args_file: bool):
     """
     Cleans up any temporary files created by the process of installing Forge.
     """
 
     path.remove(path.project_path('tmp'))
     path.remove(path.project_path('server'), file='installer.jar')
-    path.remove(path.project_path('server'), file='run.bat')
     path.remove(path.project_path(), file='installer.jar.log')
+
+    if uses_args_file:
+        path.remove(path.project_path('server'), file='run.bat')
