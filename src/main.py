@@ -279,6 +279,11 @@ def run_debug():
     # DO NOT DELETE EITHER OF THE DEBUGGING LINES
     # These are here to give you and testers clear start and stop lines for debugging.
     print('\n****** DEBUGGING STARTED ******\n')
+    
+    from configuration import config
+    modded = config.File().modded
+    modded.build()
+
     print('\n***** DEBUGGING FINISHED ******\n')
 
 def startMonitorsIfNeeded():

@@ -113,7 +113,8 @@ def remove(project_directory: str = None, system_directory: str = None, file: st
 
     if project_directory is not None and file is not None:
         project_file_path = project_path(project_directory, file)
-        os.remove(project_file_path)
+        if isfile(project_file_path):
+            os.remove(project_file_path)
         return True
     if project_directory is not None:
         project_directory_path = project_path(project_directory)
@@ -121,7 +122,8 @@ def remove(project_directory: str = None, system_directory: str = None, file: st
         return True
     if system_directory is not None and file is not None:
         system_file_path = system_path(system_directory, file)
-        os.remove(system_file_path)
+        if isfile(system_file_path):
+            os.remove(system_file_path)
         return True
     if system_directory is not None:
         system_directory_path = system_path(system_directory)
@@ -129,31 +131,10 @@ def remove(project_directory: str = None, system_directory: str = None, file: st
         return True
     # If only file is given, assume it is an absolute path
     if file is not None:
-        os.remove(file)
+        if isfile(file):
+            os.remove(file)
         return True
     return False
-
-# def move(from_dir: str, to_dir: str) -> bool:
-#     """
-#     Moves the contents of a directory to a new location. This method only moves
-#     directories inside the project directory.
-
-#     Parameters
-#     ----------
-#     project_directory: str | None
-#         The path relative to the project you wish to remove.
-#     system_directory: str | None
-#         The path relative to the system you wish to remove.
-
-#     Returns
-#     -------
-#     bool
-#         A bool indicating if the process was successful.
-#     """
-
-#     source = project_path(from_dir)
-#     destination = project_path(to_dir)
-#     shutil.move(source, destination)
     
 def move(from_dir: str, to_dir: str, file: str = None):
     """
@@ -167,3 +148,24 @@ def move(from_dir: str, to_dir: str, file: str = None):
         source = project_path(from_dir)
         destination = project_path(to_dir)
         shutil.move(source, destination)
+
+def list_dir(directory: str) -> list:
+    '''
+    Returns a list of file paths in a given directory.
+
+    Parameters
+    ----------
+    directory: str
+        The directory to list.
+
+    Returns
+    -------
+    list(str)
+        A list of file paths in the given directory.
+    '''
+
+    contents = []
+    for filename in os.listdir(directory):
+        file = f'{directory}{filename}'
+        contents.append(file)
+    return contents

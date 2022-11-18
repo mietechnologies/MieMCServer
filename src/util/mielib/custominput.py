@@ -416,3 +416,23 @@ def date_time_input(date_output: str, time_output: str) -> str:
     date = calendar_date_input(date_output)
     time = time_input(time_output)
     return '{} {}'.format(date, time)
+
+def path_input(output: str) -> str:
+    '''
+    A custom input method that confirms the user's input as a path to a file.
+
+    Parameters
+    ----------
+    output: str
+        The text to display to the user.
+
+    Returns
+    -------
+    str
+        The text the user inputs in response to this method.
+    '''
+
+    text = input(f'{output} ')
+    if re.fullmatch(r'^(\/.+)+', text):
+        return text
+    return path_input('I\'m sorry, that\'s an invalid input, please try again.')

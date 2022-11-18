@@ -7,7 +7,8 @@ Methods
 
 import json
 import yaml
-from util.path import isfile
+import zipfile
+from util import path
 
 def parse_json(file: str) -> dict:
     """
@@ -45,7 +46,7 @@ def parse_yaml(file: str) -> dict:
         Returns a dict representing the yaml file if the file exists or None.
     """
 
-    if isfile(file):
+    if path.isfile(file):
         with open(file, 'r', encoding='utf8') as yaml_file:
             return yaml.load(yaml_file, yaml.Loader)
     return None
@@ -72,3 +73,29 @@ def write_yaml(data: dict, to_file: str) -> dict:
     with open(to_file, 'w', encoding='utf8') as yaml_file:
         yaml.dump(data, yaml_file, default_flow_style=False)
         return parse_yaml(to_file)
+
+def extract_zip(file: str, to_dir: str) -> str:
+    '''
+    Extracts the contents of a zip file to a given directory.
+
+    Parameters
+    ----------
+    file: str
+        The file to extract.
+
+    to_dir: str
+        The directory to extract to
+
+    Returns
+    -------
+    str | None
+        Returns the path that the zip file was extracted to or None if the operation
+        wasn't successful.
+    '''
+
+    file = file.strip()
+    if path.isfile(file):
+        with zipfile.ZipFile(file, 'r') as zip_ref:
+            zip_ref.extractall(to_dir)
+            return to_dir
+    return None
