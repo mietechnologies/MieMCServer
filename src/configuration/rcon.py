@@ -1,3 +1,4 @@
+from util.logger import log
 from util.mielib import custominput as ci
 from util.path import isfile, project_path
 from util.extension import cleanString
@@ -37,7 +38,7 @@ class RCON:
             log('ERR: No server.properties file found!')
 
     def update(self):
-        properties = project_path(dir, 'server/server.properties')
+        properties = project_path('server', 'server.properties')
         if isfile(properties):
             with open(properties, 'r', encoding='utf8') as file_in:
                 lines = file_in.readlines()
@@ -52,6 +53,5 @@ class RCON:
                         
                         file_out.write(line)
         else:
-            from ..util.logger import log
             log('ERR: No server.properties file found!')
 

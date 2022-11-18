@@ -27,6 +27,7 @@ import subprocess
 import os
 from time import sleep
 
+from util import path, shell
 from util.backup import Backup
 from util.date import Date
 from configuration import config
@@ -62,10 +63,10 @@ def parse(args):
     maintenance_action = args.maintenance
     debug = args.debug
     update_config = args.update_config
-    if config_file.temperature.exists():
+    if config_file.is_raspberry_pi():
         critical_events = args.critical_events
 
-    if config_file.temperature.exists():
+    if config_file.is_raspberry_pi():
         critical_events = args.critical_events
 
     running_log = []
@@ -258,20 +259,17 @@ def run():
     if config_file.exists:
         log("Found config.yml")
         setupCrontab()
-        Installer.install()
         start_server()
     else:
         log("Did not find config.yml")
         __project_preinstalls()
         generateConfig("manual")
         setupCrontab()
-        Installer.install(override_settings = True)
 
         # This is presumably the first run so the EULA has not yet been
         # accepted, meaning that starting the server WILL fail
         start_server()
 
-        config_file.build_rcon()
         root_dir = os.path.dirname(__file__)
         eula = os.path.join(root_dir, 'server/eula.txt')
         if config_file.minecraft.accept_eula():
@@ -296,6 +294,8 @@ def run_debug():
     # Shut off calling server commands for debugging purposes
     cmd.DEBUG = True
 
+    # DO NOT DELETE EITHER OF THE DEBUGGING LINES
+    # These are here to give you and testers clear start and stop lines for debugging.
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
     from configuration.modded import Modded
@@ -333,8 +333,24 @@ def stopMonitors():
     CronScheduler().removeJob('detect_critical_events')
 
 def start_server():
+    """
+    Starts the server... I mean, the name of the method kinda says it all, no?
+    NOTE: This method will start the modded server if configured OR will start the
+    Vanilla server otherwise.
+    """
+
+    config_file = config.File()
+
     startMonitorsIfNeeded()
-    scripting.start(c.Minecraft.allocated_ram)
+    log("Starting server...")
+    server = path.project_path('server')
+    bootlog = path.project_path('logs', 'bootlog.txt')
+
+    if config_file.is_modded():
+        shell.run(f'cd {server} && ./run.sh > {bootlog}')
+    else:
+        Installer.install()
+        scripting.start(config_file.minecraft.allocated_ram)
 
 def stop_server():
     stopMonitors()
@@ -443,6 +459,9 @@ def updateServer(override):
         log("Cancelling... You haven't setup a config.yml file yet. You can " \
             "generate a config file by running the command 'python3 main.py -" \
             "gc'")
+    elif config_file.is_modded():
+        log('Cancelling... You have chosen to set up a modded server and this functionality ' \
+            'doesn\'t exist yet.')
     else:
         update, version = Versioner.hasUpdate()
 
@@ -552,7 +571,7 @@ def main():
     __add_helper_methods(parser)
     
     config_file = config.File()
-    if config_file.temperature.exists():
+    if config_file.is_raspberry_pi():
         parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
             'events that may be occuring on your Raspberry Pi.', dest='critical_events', action='store_true', required=False)
 

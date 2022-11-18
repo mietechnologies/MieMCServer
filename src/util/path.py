@@ -127,6 +127,10 @@ def remove(project_directory: str = None, system_directory: str = None, file: st
         system_directory_path = system_path(system_directory)
         shutil.rmtree(system_directory_path)
         return True
+    # If only file is given, assume it is an absolute path
+    if file is not None:
+        os.remove(file)
+        return True
     return False
 
 # def move(from_dir: str, to_dir: str) -> bool:

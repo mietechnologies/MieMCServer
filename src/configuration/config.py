@@ -1,19 +1,19 @@
 import os
 import yaml
-from .email import Email
-from .maintenance import Maintenance
-from .messaging import Messaging
-from .minecraft import Minecraft
-from .modded import Modded
-from .rcon import RCON
-from .server import Server
-from .temperature import Temperature
+from configuration.email import Email
+from configuration.maintenance import Maintenance
+from configuration.messaging import Messaging
+from configuration.minecraft import Minecraft
+from configuration.modded import Modded
+from configuration.rcon import RCON
+from configuration.server import Server
+from configuration.temperature import Temperature
+from util import data
+from util import path
 from util.mielib import custominput as ci
 
 class File:
-    __util_dir = os.path.dirname(__file__)
-    __root_dir = os.path.join(__util_dir, "..")
-    __file_dir = os.path.join(__root_dir, "config.yml")
+    __file_dir = path.project_path(filename='config.yml')
 
     data = {}
     exists = False
@@ -28,12 +28,9 @@ class File:
     rcon = RCON()
 
     def __init__(self):
-        if os.path.exists(self.__file_dir):
-            self.exists = True
-            with open(self.__file_dir, "r", encoding='utf8') as file:
-                self.data = yaml.load(file, yaml.Loader)
-        else:
-            self.data = {}
+        parsed = data.parse_yaml(self.__file_dir)
+        self.data = {} if parsed is None else parsed
+        self.exists = parsed is not None
 
         self.minecraft = Minecraft(self.data.get('Minecraft', {}))
         self.email = Email(self.data.get('Email', {}))
@@ -45,8 +42,7 @@ class File:
         self.rcon = RCON()
 
     def update(self):
-        with open(self.__file_dir, "w", encoding='utf8') as file:
-            yaml.dump(self.data, file, default_flow_style=False)
+        data.write_yaml(self.data, self.__file_dir)
 
     def generate(self):
         self.minecraft.reset()
@@ -61,13 +57,14 @@ class File:
         self.email.update()
         self.messaging.update()
         self.maintenance.update()
+        self.update()
 
     def build(self):
-        if os.path.exists(self.__file_dir):
+        if path.isfile(self.__file_dir):
             user_response = ci.bool_input("This will override your current " \
                 "config.yml, are you sure you want to do that?", default=False)
             if user_response:
-                os.remove(self.__file_dir)
+                path.remove(file=self.__file_dir)
             else:
                 return False
 
@@ -83,6 +80,8 @@ class File:
         self.data['Email'] = self.email.build()
         self.data['Messaging'] = self.messaging.build()
         self.data['Server'] = self.server.build()
+        self.data['Maintenance'] = self.maintenance.build()
+        self.data['RCON'] = self.rcon.build()
 
         # Should not be able to install a modded server on a Raspberry Pi. The
         # system requirements would just be too much for the little guy.
@@ -92,10 +91,12 @@ class File:
         else:
             self.data['Minecraft'] = self.minecraft.build_object()
 
-        self.data['Maintenance'] = self.maintenance.build()
+        self.update()
 
         return True
 
-    def build_rcon(self):
-        self.data['RCON'] = self.rcon.build()
-        self.update()
+    def is_modded(self) -> bool:
+        return self.modded.data != {}
+
+    def is_raspberry_pi(self) -> bool:
+        return self.temperature.data != {}
