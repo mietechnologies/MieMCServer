@@ -282,7 +282,8 @@ def run_debug():
     
     from configuration import config
     modded = config.File().modded
-    modded.build()
+    # modded.build()
+    modded.debug()
 
     print('\n***** DEBUGGING FINISHED ******\n')
 
@@ -319,7 +320,7 @@ def start_server():
     bootlog = path.project_path('logs', 'bootlog.txt')
 
     if config_file.is_modded():
-        shell.run(f'cd {server} && ./run.sh > {bootlog}')
+        shell.run(f'{config_file.modded.run_command()} > {bootlog}')
     else:
         Installer.install()
         ram = f'{config_file.minecraft.allocated_ram}M'

@@ -11,15 +11,23 @@ def add(lines: list, to_file_at_path: str) -> bool:
     existing = lines_from_file(to_file_at_path)
 
     new_lines = []
-    for _, line in enumerate(lines):
-        if "\n" not in line and line not in existing:
-            new_lines.append(f'{line}\n')
-        else:
-            new_lines.append(line)
+    for line in lines:
+        new_line = line
+        if '\n' not in new_line:
+            new_line = f'{new_line}\n'
+        if new_line not in existing:
+            new_lines.append(new_line)
 
     with open(to_file_at_path, 'w', encoding='utf8') as file_out:
+        for line in existing:
+            if '\n' not in line:
+                file_out.write(f'{line}\n')
+            else:
+                file_out.write(line)
         for line in new_lines:
             file_out.write(line)
+        file_out.close()
+    return True
 
 def update(file_at_path: str, replacing_line: str, with_line: str) -> bool:
     """
@@ -28,7 +36,7 @@ def update(file_at_path: str, replacing_line: str, with_line: str) -> bool:
     lines = lines_from_file(file_at_path)
     with open(file_at_path, 'w', encoding='utf8') as file_out:
         for line in lines:
-            if line == replacing_line:
+            if line is replacing_line:
                 file_out.write(with_line)
             else:
                 file_out.write(line)
@@ -61,3 +69,16 @@ def lines_from_file(file: str, delete_fetched: bool = False):
                     log('Line from {} not recognized [{}]'.format(file, line))
                     file_out.write(line)
     return lines
+
+def write(lines: list, file: str):
+    new_lines = []
+    for line in lines:
+        if "\n" not in line:
+            new_lines.append(f'{line}\n')
+        else:
+            new_lines.append(line)
+
+    with open(file, 'w', encoding='utf8') as file_out:
+        for line in new_lines:
+            file_out.write(line)
+        file_out.close()

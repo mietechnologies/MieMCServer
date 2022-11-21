@@ -143,11 +143,11 @@ def move(from_dir: str, to_dir: str, file: str = None):
     if file:
         source = project_path(from_dir, file)
         destination = project_path(to_dir, file)
-        shutil.move(source, destination)
+        os.rename(source, destination)
     else:
         source = project_path(from_dir)
         destination = project_path(to_dir)
-        shutil.move(source, destination)
+        os.rename(source, destination)
 
 def list_dir(directory: str) -> list:
     '''
@@ -166,6 +166,15 @@ def list_dir(directory: str) -> list:
 
     contents = []
     for filename in os.listdir(directory):
-        file = f'{directory}{filename}'
+        file = f'{directory}/{filename}'
         contents.append(file)
     return contents
+
+def file_name(from_dir: str) -> str:
+    '''
+    '''
+
+    if isfile(from_dir):
+        parts = from_dir.split('/')
+        return parts[len(parts) - 1]
+    return None
