@@ -81,7 +81,6 @@ class File:
         self.data['Messaging'] = self.messaging.build()
         self.data['Server'] = self.server.build()
         self.data['Maintenance'] = self.maintenance.build()
-        self.data['RCON'] = self.rcon.build()
 
         # Should not be able to install a modded server on a Raspberry Pi. The
         # system requirements would just be too much for the little guy.
@@ -90,6 +89,8 @@ class File:
             self.data['Modded'] = self.modded.build()
         else:
             self.data['Minecraft'] = self.minecraft.build_object()
+
+        self.data['RCON'] = self.rcon.build()
 
         self.update()
 

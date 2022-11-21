@@ -10,6 +10,7 @@ Methods
     Constructs the direct download url for the Forge Installer using the data provided.
 """
 
+import re
 from git.repo import Repo
 from util import data, path
 
@@ -59,12 +60,21 @@ def construct_forge_installer_url(mc_version: str, forge_version: str) -> str:
     download = f'{mc_version}-{forge_version}/forge-{mc_version}-{forge_version}-installer.jar'
     return root + download
 
-def extract_mods(from_file: str) -> str:
+def extract_and_confirm_mods(from_file: str) -> str:
     '''
     '''
 
+    # Extract mod files to tmp directory
     temp = path.project_path('tmp/mods')
-    return data.extract_zip(from_file, temp)
+    extracted = data.extract_zip(from_file, temp)
+
+    # Confirm that the needed files are there
+    files = path.list_dir(temp)
+    installer_regex = r'forge-.+-installer.jar$'
+    for file in files:
+        if len(re.findall(installer_regex, file)) == 1:
+            return extracted
+    return None
 
 def cleanup(uses_args_file: bool):
     """
@@ -72,8 +82,8 @@ def cleanup(uses_args_file: bool):
     """
 
     path.remove(path.project_path('tmp'))
-    path.remove(path.project_path('server'), file='installer.jar')
-    path.remove(path.project_path(), file='installer.jar.log')
+    # path.remove(path.project_path('server'), file='installer.jar')
+    # path.remove(path.project_path(), file='installer.jar.log')
 
-    if uses_args_file:
-        path.remove(path.project_path('server'), file='run.bat')
+    # if uses_args_file:
+    #     path.remove(path.project_path('server'), file='run.bat')
