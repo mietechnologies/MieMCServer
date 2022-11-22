@@ -51,7 +51,7 @@ def project_path(to_dir: str = None, filename: str = None, create: bool = True) 
     # Add the filename if given.
     if filename:
         return os.path.join(directory, filename)
-    return directory
+    return directory.replace(' ', '\\ ')
 
 def system_path(to_dir: str, filename: str = None) -> str:
     """
