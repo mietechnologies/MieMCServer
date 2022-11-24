@@ -115,7 +115,7 @@ def __email_error(email):
 def bool_input(output, default=None, abrv=True):
     '''A function to get a user's response to a question that has a yes or no
     (True or False) answer.
-    
+
     Keyword arguments:
         default -- This is the default response if the user does not input
     anything. This parameter can be either True, False, or None. If set to None,
@@ -124,36 +124,23 @@ def bool_input(output, default=None, abrv=True):
         abrv -- Uses the abbreviated response. (Defaults to True)'''
     true_answers = ["y", "yes"]
     false_answers = ["n", "no"]
-    used_index = 0 if abrv else 1
-    ammendment = ""
-    valid_answers = []
-    if default is None:
-        ammendment = "[{}/{}]".format(true_answers[used_index],
-                                      false_answers[used_index])
-        valid_answers = true_answers + false_answers
-    elif default:
-        ammendment = "[{}/{}]".format(true_answers[used_index].upper(),
-                                      false_answers[used_index])
-        valid_answers = true_answers + false_answers + [""]
-    else:
-        ammendment = "[{}/{}]".format(true_answers[used_index],
-                                      false_answers[used_index].upper())
-        valid_answers = true_answers + false_answers + [""]
+    ammendment = 'y/n' if default is None else 'Y/n' if default else 'y/N'
+    accepted_answers = true_answers + false_answers + ['']
 
-    message = "{} {} ".format(output, ammendment)
+    message = f'{output} [{ammendment}] '
     valid_input = False
 
-    while (not valid_input):
-        user_response = input(message)
+    while not valid_input:
+        user_response = input(message).lower()
 
-        if user_response.lower() in true_answers:
+        if user_response in true_answers:
             return True
-        elif user_response.lower() in false_answers:
+        if user_response in false_answers:
             return False
-        elif user_response.lower() in valid_answers:
+        if user_response in accepted_answers:
             return default
 
-        print("I'm sorry, I didn't understand that input.")
+        message = f'I\'m sorry, I didn\'t understand that input. {output} [{ammendment}] '
 
 def choice_input(output, options, default=None, abrv=True):
     '''
@@ -433,6 +420,6 @@ def path_input(output: str) -> str:
     '''
 
     text = input(f'{output} ')
-    if re.fullmatch(r'^(\/.+)+', text):
+    if re.fullmatch(r'^\/.+', text):
         return text
     return path_input('I\'m sorry, that\'s an invalid input, please try again.')

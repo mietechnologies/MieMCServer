@@ -1,5 +1,4 @@
 import os
-import yaml
 from configuration.email import Email
 from configuration.maintenance import Maintenance
 from configuration.messaging import Messaging

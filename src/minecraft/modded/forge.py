@@ -67,14 +67,7 @@ def extract_and_confirm_mods(from_file: str) -> str:
     # Extract mod files to tmp directory
     temp = path.project_path('tmp/mods')
     extracted = data.extract_zip(from_file, temp)
-
-    # Confirm that the needed files are there
-    files = path.list_dir(temp)
-    installer_regex = r'forge-.+-installer.jar$'
-    for file in files:
-        if len(re.findall(installer_regex, file)) == 1:
-            return extracted
-    return None
+    return extracted
 
 def cleanup(uses_args_file: bool):
     """

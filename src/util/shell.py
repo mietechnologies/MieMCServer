@@ -13,7 +13,7 @@ from subprocess import check_output, Popen, PIPE
 import psutil
 from util.logger import log
 
-def run(command: str, execute_in: str, stop_on_stdout_regex: str = None) -> str:
+def run(command: str, execute_in: str = None, stop_on_stdout_regex: str = None) -> str:
     """
     Executes a given command in the shell.
 
