@@ -3,7 +3,10 @@ import os
 import yaml
 import psutil
 from .mielib import custominput as ci
-from .extension import cleanString
+from .extension import clean_string
+import base64
+import yaml
+import os
 
 class File:
     __util_dir = os.path.dirname(__file__)
@@ -356,11 +359,11 @@ class RCON:
             lines = open(properties, 'r').readlines()
             for line in lines:
                 if 'rcon.port' in line: 
-                    cls.port = int(cleanString(line, ['rcon.port=', '\n']))
+                    cls.port = int(clean_string(line, ['rcon.port=', '\n']))
                 elif 'enable-rcon' in line: 
-                    cls.enabled = bool(cleanString(line, ['enable-rcon=', '\n']))
+                    cls.enabled = bool(clean_string(line, ['enable-rcon=', '\n']))
                 elif 'rcon.password' in line: 
-                    cls.password = cleanString(line, ['rcon.password=', '\n'])
+                    cls.password = clean_string(line, ['rcon.password=', '\n'])
         else:
             from .syslog import log
             log('ERR: No server.properties file found!')
