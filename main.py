@@ -17,6 +17,8 @@
 # *****************************************************************************
 
 from re import sub
+from typing import List
+from minecraft.interactions import install_datapack
 from util.backup import Backup
 from util.date import Date
 from util import configuration as c
@@ -141,8 +143,19 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
+    running_log = __parse_interaction_methods(args, running_log)
+
     if not running_log and not c.Maintenance.is_running():
         run()
+
+def __parse_interaction_methods(args, running_log: List[str]) -> List[str]:
+    datapack_path = args.install_datapack
+
+    if datapack_path:
+        running_log.append(f'-dp {datapack_path}')
+        install_datapack(datapack_path)
+
+    return running_log
 
 def maintenance():
     executeCleanCommands()
@@ -276,14 +289,6 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    from util.mielib import system as sys
-    print(f'SYSTEM USERNAME: {sys.username()}')
-
-    maintenance()
-
-    print('WARNING: If this crashes, please confirm that your machine is ' \
-        'using python3 as it\'s default or update this call to use python3!!')
-    os.system('python main.py -m')
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
@@ -503,6 +508,8 @@ def main():
         'will ignore any and all other commands!', dest='debug', 
         action='store_true', required=False)
 
+    __add_helper_methods(parser)
+
     if c.Temperature.exists():
         parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
             'events that may be occuring on your Raspberry Pi.', dest='critical_events', action='store_true', required=False)
@@ -510,6 +517,12 @@ def main():
     parser.set_defaults(func=parse)
     args = parser.parse_args()
     args.func(args)
+
+def __add_helper_methods(parser: argparse.ArgumentParser):
+    parser.add_argument('-dp', '--install-datapack', help='This command ' \
+        'installs a datapack (or collection of datapacks contained in one ' \
+        'directory) when supplied with a file path.', nargs='?',
+        dest='install_datapack', type=str, required=False)
 
 if __name__ == "__main__":
     main()
