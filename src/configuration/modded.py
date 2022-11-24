@@ -34,32 +34,31 @@ class Modded:
     def debug(self):
         self.minecraft_version = '1.18.2'
         self.forge_version = '40.1.84'
-        self.allocated_ram = 8
+        modpack_location = '/Users/michaelcraun/Downloads/server-1.1-2.6/atm7-tothesky-server.zip '
+        mod_files = forge.extract_and_confirm_mods(modpack_location)
 
+
+        log('Downloading Forge Installer...')
+        forge_installer_url = forge.construct_forge_installer_url(
+            self.minecraft_version,
+            self.forge_version
+        )
+        forge_installer = path.project_path('tmp/forge', 'installer.jar')
+        forge_installer = get(forge_installer_url, forge_installer)
+        log('Download of Forge Installer complete!')
+
+        log('Modpack verified...')
+
+        log('Installing moded server...')
+        # Install the Forge Server
+        # java -jar {path/to/installer} --installServer={path/to/server/dir}
         server = path.project_path('server')
+        command = f'java -jar {forge_installer} --installServer={server}'
+        shell.run(command)
 
-        # eula_file = path.project_path('server', 'eula.txt')
-        # files.write(['eula=true'], eula_file )
-
-        log('Running initial setup...')
-        # print('*** WARNING *** Please issue the `stop` command when finished.')
-        # time.sleep(5)
-        shell.run(self.run_command(), server, r'Done \(\d+\.\d+s\)!')
-        shell.kill_process('java')
-
-        eula_link = 'https://account.mojang.com/documents/minecraft_eula'
-        eula_file = path.project_path('server', 'eula.txt')
-        time.sleep(30)
-        print('Now time for the boring stuff. To use your server, you must agree to Mojang\'s ' \
-            'EULA. If you\'d like, I can sign it for you now automatically. You can find more ' \
-            f'information about Mojang\'s EULA at {eula_link}.')
-        if ci.bool_input('Would you like me to sign the EULA for you?', default=True):
-            files.update(eula_file, 'eula=false', 'eula=true')
-            log('Mojang EULA signed')
-        else:
-            print('Okay, before you can run your server, you will have to agree to the ' \
-                f'EULA located at {eula_file}.')
-
+        # Copy the mod files for the modpack to be installed to the server directory.
+        log('Installing modpack files...')
+        path.move(mod_files, server)
 
     @classmethod
     def query(cls) -> bool:
@@ -79,24 +78,34 @@ class Modded:
         """
         """
 
-        # Use the CurseForge API to fetch a list of modpacks that the user can
-        # install, display these to them, and allow them to select one. This
-        # will also give us the correct version of Minecraft to later download
-        # the correct version of the Forge Installer.
-
         # Because the Eternals API team is being SO SLOW in getting back to us, we're going
         # to take a slightly different path for install... For now, we're going to ask the user
         # to designate the Minecraft version and supply a zip for the modpack files to install
         # on the server.
         print('The Eternals API team has not allowed me access to their API yet, so I have to ' \
             'take a slightly different approach to installing the modpack on your server.')
-        print('*** WARNING *** Because of this, I can only support modpacks from Minecraft ' \
-            'version 1.17.1 and greater!')
+        print('*** WARNING *** Because of this, I might not be able to support your modpack. If ' \
+            'you run into any errors or issues when attempting to install, please open an issue ' \
+            'on https://github.com/mietechnologies/MieMCServer/issues')
         time.sleep(2)
-        # supported_versions = ['1.16.5', '1.17.1', '1.18.2', '1.19.2']
-        # modpack_version = ci.version_input('We currently only support these versions: ' \
-            # f'{supported_versions}. What version of Minecraft will your server target?')
 
+        # Get Minecraft and Forge versions from user then download the correct Forge Installer
+        self.minecraft_version = ci.version_input('First, I need to know what Minecraft version ' \
+            'the modpack you want to install uses. You can find this information on the modpacks ' \
+            'profile page.')
+        self.forge_version = ci.version_input('Next, I need to know what Forge version your ' \
+            'modpack uses. You can find this infomration on the modpacks profile page.')
+
+        log('Downloading Forge Installer...')
+        forge_installer_url = forge.construct_forge_installer_url(
+            self.minecraft_version,
+            self.forge_version
+        )
+        forge_installer = path.project_path('tmp/forge', 'installer.jar')
+        forge_installer = get(forge_installer_url, forge_installer)
+        log('Download of Forge Installer complete!')
+
+        # Get path to modpack files from user
         mod_files = None
         message = 'Alright, I need to know where I can find the zip file containing the ' \
             'modpack files you want to install. Please ensure that you downloaded the server ' \
@@ -116,27 +125,15 @@ class Modded:
 
         log('Modpack verified...')
 
-        # This is where this method is going to get complicated. Since Forge doesn't have an
-        # API, we're going to host a JSON file on a separate GitHub repo and use it to figure
-        # out what version of the Forge Installer to download and install. This will allow us
-        # the flexibility of updating this JSON file whenever is necessary so that we can keep
-        # versions of the launcher up-to-date.
-        #
-        # The process will be as follows:
-        # 1. Clone the miemcserver-forge project at
-        # https://github.com/mietechnologies/miemcserver-forge.git
-        # 2. Parse the JSON file and use the Minecraft version we got from the modpack selection
-        # earlier to get the Minecraft and Forge Installer versions.
-        # 3. Store this info in configuration
-        # server = self.__download_and_install_forge(modpack_version)
+        log('Installing moded server and modpack files...')
+        # Install the Forge Server
+        # java -jar {path/to/installer} --installServer={path/to/server/dir}
+        server = path.project_path('server')
+        command = f'java -jar {forge_installer} --installServer={server}'
+        shell.run(command)
 
         # Copy the mod files for the modpack to be installed to the server directory.
-        log('Installing mod server and modpack files...')
-        server = path.project_path('server')
         path.move(mod_files, server)
-
-        # Run the initial setup so we can generate the needed files.
-        self.__install_forge_server()
 
         # Now that we have installed the Forge server files, we need to ask the user to
         # designate an amount of RAM to dedicate to the running the server.
@@ -156,7 +153,6 @@ class Modded:
         # still run...
         log('Running initial setup...')
         shell.run(self.run_command(), server, r'Done \(\d+\.\d+s\)!')
-        shell.kill_process('java')
 
         eula_link = 'https://account.mojang.com/documents/minecraft_eula'
         eula_file = path.project_path('server', 'eula.txt')
@@ -178,7 +174,6 @@ class Modded:
         forge.cleanup(self.uses_args_file)
 
         log('Installation complete!')
-        print('Please start the server using the command `python3 main.py`')
 
         return self.update()
 
@@ -193,6 +188,10 @@ class Modded:
         for file in path.list_dir(server):
             if 'run.sh' in file:
                 return './run.sh'
+
+        for file in path.list_dir(server):
+            if 'start.sh' in file:
+                return './start.sh'
 
         return command
 
@@ -219,31 +218,6 @@ class Modded:
         command = f'java -jar {installer} --installServer={server}'
         shell.run(command)
         return server
-
-    def __install_forge_server(self):
-        '''
-        '''
-
-        log('Running initial setup...')
-        server = path.project_path('server')
-        command = None
-
-        file_regex = r'forge-.+-installer.jar$'
-        version_regex = r'\d+.\d+.\d+'
-        for file in path.list_dir(server):
-            if len(re.findall(file_regex, file)) == 1:
-                # Since we've located the installer file, we might as well grab the MC
-                # and Forge versions here so we can store them for later.
-                versions = re.findall(version_regex, file)
-                self.minecraft_version = versions[0]
-                self.forge_version = versions[1]
-
-                install_file = path.file_name(file)
-                if install_file is not None:
-                    command = f'java -jar {file} --installServer'
-                    shell.run(command, server)
-                    return command
-        return command
     
     def __update_files(self):
         server = path.project_path('server')
@@ -262,6 +236,9 @@ class Modded:
                 command += 'nogui "$@"'
                 files.write(['#!/bin/sh', command], file)
                 shell.run(f'chmod +x {file}', server)
+
+            if 'start.sh' in file:
+                shell.run('chmod +x start.sh', server)
 
     def update(self) -> dict:
         """

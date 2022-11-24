@@ -1,3 +1,5 @@
+#!/usr/bin/crontab
+
 from __future__ import annotations
 
 from util.date import Date

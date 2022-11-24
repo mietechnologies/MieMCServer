@@ -248,24 +248,27 @@ def run():
         generateConfig("manual")
         setupCrontab()
 
-        # This is presumably the first run so the EULA has not yet been
-        # accepted, meaning that starting the server WILL fail
-        start_server()
-
-        root_dir = os.path.dirname(__file__)
-        eula = os.path.join(root_dir, 'server/eula.txt')
-        if config_file.minecraft.accept_eula():
-            lines = linesFromFile(eula, False)
-            with open(eula, 'w') as eula_out:
-                for line in lines:
-                    eula_out.write(line.replace('eula=false', 'eula=true'))
-            log('User has accepted Minecraft\'s EULA!')
-            start_server()
-            log("Server started!")
+        if config_file.is_modded():
+            print('Please restart your system to complete installation.')
         else:
-            log('User has declined Minecraft\'s EULA!')
-            log('Gefore running the Minecraft server, you MUST accept ' \
-                f'Minecraft\'s EULA by updating the { eula } file!')
+            # This is presumably the first run so the EULA has not yet been
+            # accepted, meaning that starting the server WILL fail
+            start_server()
+
+            root_dir = os.path.dirname(__file__)
+            eula = os.path.join(root_dir, 'server/eula.txt')
+            if config_file.minecraft.accept_eula():
+                lines = linesFromFile(eula, False)
+                with open(eula, 'w') as eula_out:
+                    for line in lines:
+                        eula_out.write(line.replace('eula=false', 'eula=true'))
+                log('User has accepted Minecraft\'s EULA!')
+                start_server()
+                log("Server started!")
+            else:
+                log('User has declined Minecraft\'s EULA!')
+                log('Gefore running the Minecraft server, you MUST accept ' \
+                    f'Minecraft\'s EULA by updating the { eula } file!')
 
 def run_debug():
     '''
@@ -280,7 +283,6 @@ def run_debug():
     # These are here to give you and testers clear start and stop lines for debugging.
     print('\n****** DEBUGGING STARTED ******\n')
     
-    from configuration import config
     modded = config.File().modded
     # modded.build()
     modded.debug()
@@ -320,7 +322,7 @@ def start_server():
     bootlog = path.project_path('logs', 'bootlog.txt')
 
     if config_file.is_modded():
-        shell.run(f'{config_file.modded.run_command()} > {bootlog}')
+        shell.run(f'{config_file.modded.run_command()} > {bootlog}', server)
     else:
         Installer.install()
         ram = f'{config_file.minecraft.allocated_ram}M'

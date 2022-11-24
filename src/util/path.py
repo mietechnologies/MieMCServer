@@ -18,6 +18,8 @@ import shutil
 import sys
 sys.path.append('..')
 
+from util.shell import run
+
 def project_path(to_dir: str = None, filename: str = None, create: bool = True) -> str:
     """
     Creates a path to the designated directory in the project's root. By default, if the
@@ -147,7 +149,9 @@ def move(from_dir: str, to_dir: str, file: str = None):
     else:
         source = project_path(from_dir)
         destination = project_path(to_dir)
-        os.rename(source, destination)
+        print(f'rsync -avh {source}/ {destination}')
+        command = f'rsync -avh {source}/ {destination}'
+        run(command)
 
 def list_dir(directory: str) -> list:
     '''
