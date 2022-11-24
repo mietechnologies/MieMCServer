@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The user can now install a datapack using the '-dp {path}' command where path is the absolute path to a zip or directory. 
   - This functionality handles singular compressed (zip) datapacks, a directory with an uncompressed datapack, and a directory that contains multiple compressed datapacks.
 - Automatic installation of pip3 and required pip packages to run project when running the project for the first time.
+- The user can now designate custom scripts to be ran at start, stop, or clean via `./scripts/custom-command.sh`.
 
 ### Changed
 - During configuration, the project now fetches the system's total available RAM to intelligently decide what warnings it should display to the user and suggest an appropriate amount of allocated RAM.
