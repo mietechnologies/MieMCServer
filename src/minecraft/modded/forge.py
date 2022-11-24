@@ -62,6 +62,17 @@ def construct_forge_installer_url(mc_version: str, forge_version: str) -> str:
 
 def extract_and_confirm_mods(from_file: str) -> str:
     '''
+    Extracts the files from the zip the user designated as containing thier mods.
+
+    Parameters
+    ----------
+    from_file: str
+        The zip file the user designated as containing the mod files.
+
+    Returns
+    -------
+    str
+        The absolute path where the zip file was extracted to.
     '''
 
     # Extract mod files to tmp directory
@@ -70,9 +81,9 @@ def extract_and_confirm_mods(from_file: str) -> str:
     return extracted
 
 def cleanup(uses_args_file: bool):
-    """
+    '''
     Cleans up any temporary files created by the process of installing Forge.
-    """
+    '''
 
     path.remove(path.project_path('tmp'))
     # path.remove(path.project_path('server'), file='installer.jar')

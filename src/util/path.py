@@ -139,8 +139,22 @@ def remove(project_directory: str = None, system_directory: str = None, file: st
     return False
     
 def move(from_dir: str, to_dir: str, file: str = None):
-    """
-    """
+    '''
+    Moves files from one directory to another. Can move one file from a directory to
+    another directory or move an entire directory to a new location. If moving an
+    entire directory, this method will merge the two directories.
+
+    Parameters
+    ----------
+    from_dir: str
+        The absolute path of the directory to move.
+
+    to_dir: str
+        The absolute path to move the directory to.
+
+    file: str = None
+        The file to move. If no file is given, the entire from_dir is moved.
+    '''
 
     if file:
         source = project_path(from_dir, file)
@@ -176,6 +190,18 @@ def list_dir(directory: str) -> list:
 
 def file_name(from_dir: str) -> str:
     '''
+    Extracts the name of the file from an absolute path. i.e., given the absolute path
+    of `foo/bar.txt` this method will return `bar.txt`.
+
+    Parameters
+    ----------
+    from_dir: str
+        The absolute path to extract the file name from.
+
+    Returns
+    -------
+    str
+        The name of the file at the given path.
     '''
 
     if isfile(from_dir):

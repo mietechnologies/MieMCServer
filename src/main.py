@@ -284,8 +284,7 @@ def run_debug():
     print('\n****** DEBUGGING STARTED ******\n')
     
     modded = config.File().modded
-    # modded.build()
-    modded.debug()
+    modded.build()
 
     print('\n***** DEBUGGING FINISHED ******\n')
 
