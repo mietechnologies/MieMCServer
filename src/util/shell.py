@@ -54,6 +54,12 @@ def run(command: str, execute_in: str = None, stop_on_stdout_regex: str = None) 
 
 def kill_process(name: str):
     '''
+    Terminates all processes and children proceses currently running with a given name.
+
+    Parameters
+    ----------
+    name: str
+        The name of the process to terminate.
     '''
 
     # Get the PIDs of any currently running processes

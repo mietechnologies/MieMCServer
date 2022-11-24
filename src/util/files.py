@@ -11,8 +11,17 @@ def bootlog() -> str:
     return project_path('logs', 'bootlog.txt')
 
 def add(lines: list, to_file_at_path: str) -> bool:
-    """
-    """
+    '''
+    Adds a list of lines as new lines to a specific file.
+
+    Parameters
+    ----------
+    lines: list
+        The lines to add to the file.
+
+    to_file_at_path: str
+        The absolute path to the file.
+    '''
 
     existing = lines_from_file(to_file_at_path)
 
@@ -36,8 +45,25 @@ def add(lines: list, to_file_at_path: str) -> bool:
     return True
 
 def update(file_at_path: str, replacing_line: str, with_line: str) -> bool:
-    """
-    """
+    '''
+    Replaces a single line contained within a specific file with a different line.
+
+    Paramters
+    ---------
+    file_at_path: str
+        The absolute path to the file to update.
+
+    replacing_line: str
+        The line in the file to update.
+
+    with_line: str
+        The line to replace.
+
+    Returns
+    -------
+    bool
+        A bool value indicating success.
+    '''
 
     lines = lines_from_file(file_at_path)
     with open(file_at_path, 'w', encoding='utf8') as file_out:
@@ -49,8 +75,17 @@ def update(file_at_path: str, replacing_line: str, with_line: str) -> bool:
     return True
 
 def lines_from_file(file: str, delete_fetched: bool = False):
-    """
-    """
+    '''
+    Extracts the text from a file as a list of lines.
+
+    Parameters
+    ----------
+    file: str
+        The absolute path to the file to extract.
+
+    delete_fetched: bool = False
+        If True, removes all lines currently in the file.
+    '''
 
     lines = []
     with open(file, 'r', encoding='utf8') as file_in:
@@ -77,6 +112,23 @@ def lines_from_file(file: str, delete_fetched: bool = False):
     return lines
 
 def write(lines: list, file: str):
+    '''
+    Writes a list of lines to a specific file. 
+
+    Note
+    ----
+    This method overwrites the specified file. Only call this method if you are sure that
+    the contents of the file are not needed.
+
+    Parameters
+    ----------
+    lines: str
+        The lines to write to the file.
+
+    file: str
+        The file to write to.
+    '''
+
     new_lines = []
     for line in lines:
         if "\n" not in line:
