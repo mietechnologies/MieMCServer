@@ -3,8 +3,9 @@ Handy custom functions for executing specific tasks.
 '''
 
 import re
+from typing import List
 
-def cleanString(haystack: str, needles: list[str]) -> str:
+def cleanString(haystack: str, needles: List[str]) -> str:
     '''Finds and removes the needles from the haystack string if they exist'''
     cleaned = haystack
     for needle in needles:
@@ -15,7 +16,7 @@ def string_contains(haystack: str, needle_pattern: str) -> bool:
     '''Searches the given str for any instance of the given regex pattern'''
     return len(re.findall(needle_pattern, haystack)) >= 1
 
-def stringContainsAnyCase(haystack: str, needles: list[str]) -> bool:
+def stringContainsAnyCase(haystack: str, needles: List[str]) -> bool:
     '''Searches a given str for a match from a list of str'''
     lower = haystack.lower()
     for needle in needles:
@@ -27,12 +28,10 @@ def lines_from_file(file: str, delete_fetched: bool = False) -> list[str]:
     '''
     Fetches all lines from a specific file, ignoring any lines that are comments
     (begins with '#') and any new lines.
-
     Parameters:
         file (str): The file to fetch lines from.
         delete_fetched (bool): Determines if the lines fetched from the file
         should be deleted as they are fetched from the file. Defaults to False.
-
     Returns:
         list[str]: A list of lines from the given file.
     '''

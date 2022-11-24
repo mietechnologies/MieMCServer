@@ -33,6 +33,7 @@ from minecraft.install import Installer
 from util.cron import CronScheduler
 from util import configuration as c
 from util.backup import Backup
+from util.monitor import Monitor
 from util.temp import PiTemp
 from util.syslog import log
 from util.date import Date
@@ -298,8 +299,26 @@ def run_debug():
 
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
+    monitor = Monitor()
+    monitor.DEBUG = True
+    # For the availability of testing, you can set the DEBUG_BOOTLOG to a file
+    # in another location than ./logs/. Provide this file to confirm that other
+    # cases of this functionality are working correctly.
+    monitor.DEBUG_BOOTLOG = None
+    monitor.start_server_start_monitor(log=log)
 
-    run()
+    print('This print exists solely to showcase the background threading of ' \
+        'the Monitor class. The following prints should show up somewhere ' \
+        'in-between the prints of the Monitor.')
+
+    sleep(2)
+    print('One more print')
+
+    sleep(2)
+    print('And another')
+
+    sleep(8)
+    print('And one after 11 seconds since the timeout is 10 seconds')
 
     print('Waiting 2 minutes before continuing so server can start up properly')
     sleep(120)
@@ -315,6 +334,12 @@ def startMonitorsIfNeeded():
     dir = os.path.dirname(__file__)
     prog = os.path.join(dir, 'main.py')
     scheduler = CronScheduler()
+
+    # Start general system monitors
+    monitors = Monitor()
+    monitors.start_server_start_monitor(
+        timeout=c.Maintenance.startup_timeout, 
+        log=log)
 
     # Temp if on RasPi
     if c.Temperature.exists():
