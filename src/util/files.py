@@ -3,8 +3,6 @@ A simple module for working with files. This module also acts as a file url
 provider to all other project files.
 """
 
-from util.logger import log
-
 def add(lines: list, to_file_at_path: str) -> bool:
     '''
     Adds a list of lines as new lines to a specific file.
@@ -60,9 +58,9 @@ def update(file_at_path: str, replacing_line: str, with_line: str) -> bool:
         A bool value indicating success.
     '''
 
-    lines = lines_from_file(file_at_path)
+    existing = lines_from_file(file_at_path)
     with open(file_at_path, 'w', encoding='utf8') as file_out:
-        for line in lines:
+        for line in existing:
             if line is replacing_line:
                 file_out.write(with_line)
             else:
@@ -102,7 +100,7 @@ def lines_from_file(file: str, delete_fetched: bool = False):
                 # Otherwise, the line is unhandled; log the line that was encountered and keep
                 # it in the file
                 else:
-                    log('Line from {} not recognized [{}]'.format(file, line))
+                    print(f'Line from {file} not recognized [{line}]')
                     file_out.write(line)
     return lines
 

@@ -1,7 +1,7 @@
-from util.logger import log
+# from util.logger import log
 from util.mielib import custominput as ci
 from util.path import isfile, project_path
-from util.extension import cleanString
+from util.extension import clean_string
 
 class RCON:
     enabled = False
@@ -28,14 +28,14 @@ class RCON:
             with open(properties, 'r', encoding='utf8').readlines() as lines:
                 for line in lines:
                     if 'rcon.port' in line:
-                        self.port = int(cleanString(line, ['rcon.port=', '\n']))
+                        self.port = int(clean_string(line, ['rcon.port=', '\n']))
                     elif 'enable-rcon' in line:
-                        self.enabled = bool(cleanString(line, ['enable-rcon=', '\n']))
+                        self.enabled = bool(clean_string(line, ['enable-rcon=', '\n']))
                     elif 'rcon.password' in line:
-                        self.password = cleanString(line, ['rcon.password=', '\n'])
+                        self.password = clean_string(line, ['rcon.password=', '\n'])
         else:
             from ..util.logger import log
-            log('ERR: No server.properties file found!')
+            print('ERR: No server.properties file found!')
 
     def update(self):
         properties = project_path('server', 'server.properties')
@@ -53,5 +53,5 @@ class RCON:
                         
                         file_out.write(line)
         else:
-            log('ERR: No server.properties file found!')
+            print('ERR: No server.properties file found!')
 

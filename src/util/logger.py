@@ -1,10 +1,10 @@
-from util import monitor
-from .emailer import Mailer
 import os, sys, traceback
 import textwrap
-from .date import Date
-from configuration import config
 from discord import SyncWebhook
+from util import monitor
+from util.emailer import Mailer
+from util.date import Date
+from configuration import config
 
 sys.excepthook = lambda type, value, tb: __handleUncaughtException(type, value, tb)
 

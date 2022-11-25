@@ -6,7 +6,7 @@ import os
 
 import command as cmd
 from util.extension import lines_from_file
-from util.syslog import log
+from util.logger import log
 
 __THIS_DIR = os.path.dirname(__file__)
 __SCRIPTS_DIR = os.path.join(__THIS_DIR, '../scripts')

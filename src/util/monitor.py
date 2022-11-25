@@ -135,7 +135,7 @@ class Monitor:
         # If we're in DEBUG and a debuggable bootlog file has been provided, use
         # that one. Otherwise, use the default bootlog file created and used by
         # the server code.
-        file = project_path('log', 'bootlog.txt')
+        file = project_path('logs', 'bootlog.txt')
 
         for line in lines_from_file(file):
             if string_contains(line, r'Done \(\d.\d+s\)!'):

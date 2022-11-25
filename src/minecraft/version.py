@@ -1,16 +1,11 @@
 import os
 import sys
-from datetime import MINYEAR
-
 import requests
 
 sys.path.append("..")
 from enum import Enum
 
 from util.date import Date
-from util.logger import log
-from configuration import config
-
 
 class UpdateType(Enum):
     NONE = 0
@@ -33,15 +28,21 @@ class Versioner:
     VERSION_MANIFEST_URL = "https://papermc.io/api/v2/projects/paper/{}"
     BUILDS_MANIFEST_URL = "https://papermc.io/api/v2/projects/paper/version_group/{}/builds"
 
-    config_file = config.File()
+    __configuration = None
+    __log = None
 
     dir = os.path.dirname(__file__)
     server_root = os.path.join(dir, 'server')
     changelog = os.path.join(server_root, 'changelog.txt')
     version_log = os.path.join(server_root, 'versionlog.txt')
 
+    @classmethod
+    def __init__(cls, configuration, logger):
+        cls.__configuration = configuration
+        cls.__log = logger
+
     @staticmethod
-    def versionString(version):
+    def version_string(version):
         '''Converts a version dictionary into a string.'''
         version_str = ""
         if version["patch"] is None:
@@ -53,104 +54,100 @@ class Versioner:
         return version_str
 
     @classmethod
-    def __checkForErrors(cls, json):
+    def __check_for_errors(cls, json):
         '''Check JSON returned from the Paper API for errors'''
         if 'error' in json.keys():
             return {"error" : json["error"]}
-        else:
-            return None
+        return None
 
     @classmethod
-    def __extractAbsoluteVersion(cls, json):
+    def __extract_absolute_version(cls, json):
         '''Check for the latest version and group when no version group is
         passed to the Paper API'''
-        error_check = cls.__checkForErrors(json)
+        error_check = cls.__check_for_errors(json)
         if error_check is not None:
             return error_check
-        else:
-            latest_version_group = json["version_groups"][-1]
-            latest_version = json["versions"][-1]
-            return {
-                "version_group" : latest_version_group,
-                "version" : latest_version
-            }
+        latest_version_group = json["version_groups"][-1]
+        latest_version = json["versions"][-1]
+        return {
+            "version_group" : latest_version_group,
+            "version" : latest_version
+        }
 
     @classmethod
-    def __extractVersionGroup(cls, json):
+    def __extract_version_group(cls, json):
         '''Gets the latest version and group from the returned JSON from the
         Paper API'''
-        error_check = cls.__checkForErrors(json)
+        error_check = cls.__check_for_errors(json)
         if error_check is not None:
             return error_check
-        else:
-            version_group = json["version_group"]
-            latest_version = json["versions"][-1]
-            return {
-                "version_group" : version_group,
-                "version" : latest_version
-            }
+        version_group = json["version_group"]
+        latest_version = json["versions"][-1]
+        return {
+            "version_group" : version_group,
+            "version" : latest_version
+        }
 
     @classmethod
-    def __extractLatestBuild(cls, json):
+    def __extract_latest_build(cls, json):
         '''Check for the latest build from the returned JSON from the Paper
         API'''
-        error_check = cls.__checkForErrors(json)
+        error_check = cls.__check_for_errors(json)
         if error_check is not None:
             return error_check
-        else:
-            latest_build = json["builds"][-1]
-            downloads = latest_build["downloads"]
-            application = downloads["application"]
+        latest_build = json["builds"][-1]
+        downloads = latest_build["downloads"]
+        application = downloads["application"]
 
-            version = latest_build["version"]
-            build = int(latest_build["build"])
-            filename = application["name"]
-            return {
-                "version" : version,
-                "build" : build,
-                "filename" : filename
-            }
+        version = latest_build["version"]
+        build = int(latest_build["build"])
+        filename = application["name"]
+        return {
+            "version" : version,
+            "build" : build,
+            "filename" : filename
+        }
 
     @classmethod
-    def getCurrentVersion(cls):
+    def get_current_version(cls):
         '''Checks to see if a version has been set in the configuration. If it 
         has it will return the version information, otherwise it will return
         None'''
-        if cls.config_file.minecraft.minor is None:
+        if cls.__configuration.minecraft.minor is None:
             return None
-        else:
-            return {
-                "major" : cls.config_file.minecraft.major,
-                "minor" : cls.config_file.minecraft.minor,
-                "patch" : cls.config_file.minecraft.patch,
-                "build" : cls.config_file.minecraft.build,
-                "version_group" : cls.config_file.minecraft.version_group
-            }
+        return {
+            "major" : cls.__configuration.minecraft.major,
+            "minor" : cls.__configuration.minecraft.minor,
+            "patch" : cls.__configuration.minecraft.patch,
+            "build" : cls.__configuration.minecraft.build,
+            "version_group" : cls.__configuration.minecraft.version_group
+        }
 
     @classmethod
-    def __getLatestVersion(cls):
+    def __get_latest_version(cls):
         '''Hits the Paper API to receive what the latest build is. If the user
-        has specified whether they want to update minor builds will determine 
+        has specified whether they want to update minor builds will determine
         how far this function will look'''
 
-        if cls.config_file.minecraft.version_group is None or cls.config_file.maintenance.allows_major_udpates():
+        version_group = cls.__configuration.minecraft.version_group
+        allows_major_updates = cls.__configuration.maintenance.allows_major_udpates()
+        if version_group is None or allows_major_updates:
             version_request = requests.get(cls.VERSION_MANIFEST_URL.format(""))
-            data = cls.__extractAbsoluteVersion(version_request.json())
-            build_data = cls.__getLatestBuild(data["version_group"])
+            data = cls.__extract_absolute_version(version_request.json())
+            build_data = cls.__get_latest_build(data["version_group"])
             return cls.__version(data, build_data)
-        else:
-            version_request = requests.get(cls.VERSION_MANIFEST_URL
-                .format("version_group/" + cls.config_file.minecraft.version_group))
-            data = cls.__extractVersionGroup(version_request.json())
-            build_data = cls.__getLatestBuild(data["version_group"])
-            return cls.__version(data, build_data)
+        version_request = requests.get(cls.VERSION_MANIFEST_URL
+            .format("version_group/" + cls.__configuration.minecraft.version_group))
+        data = cls.__extract_version_group(version_request.json())
+        build_data = cls.__get_latest_build(data["version_group"])
+        return cls.__version(data, build_data)
 
     @classmethod
-    def __getLatestBuild(cls, version_group):
+    def __get_latest_build(cls, version_group):
         '''Gets the latest build number for a given version group'''
         build_request = requests.get(cls.BUILDS_MANIFEST_URL
             .format(version_group))
-        build_data = cls.__extractLatestBuild(build_request.json())
+        build_data = cls.__extract_latest_build(build_request.json())
         return build_data
 
     @classmethod
@@ -172,63 +169,64 @@ class Versioner:
         }
 
     @classmethod
-    def hasUpdate(cls):
+    def has_update(cls):
         '''Determines the type of update there is for the currently installed
         server. If there is an update, this function will return the type and
         the new version. If no update is found, it will return the NONE type
         and a NoneType object.'''
-        current_version = cls.getCurrentVersion()
-        latest_version = cls.__getLatestVersion()
+        current_version = cls.get_current_version()
+        latest_version = cls.__get_latest_version()
 
-        log("Checking for an update...")
+        cls.__log("Checking for an update...")
         if current_version is None:
             return (UpdateType.MAJOR, latest_version)
-        else:
-            # Version Group
-            if current_version["version_group"] is None:
-                return (UpdateType.MAJOR, latest_version)
-            # Major
-            major_check = current_version["major"] is not None
-            if major_check and int(current_version["major"]) < int(latest_version["major"]):
-                return (UpdateType.MAJOR, latest_version)
-            # Minor
-            minor_check = current_version["minor"] is not None
-            if minor_check and int(current_version["minor"]) < int(latest_version["minor"]):
-                return (UpdateType.MAJOR, latest_version)
-            # Patch
-            patch_check = current_version["patch"] is None
-            if patch_check or int(current_version["patch"]) < int(latest_version["patch"]):
-                return (UpdateType.MINOR, latest_version)
-            # Build
-            build_check = current_version["build"] is None
-            if build_check or int(current_version["build"]) < int(latest_version["build"]):
-                return (UpdateType.BUILD, latest_version)
+        # Version Group
+        if current_version["version_group"] is None:
+            return (UpdateType.MAJOR, latest_version)
+        # Major
+        major_check = current_version["major"] is not None
+        if major_check and int(current_version["major"]) < int(latest_version["major"]):
+            return (UpdateType.MAJOR, latest_version)
+        # Minor
+        minor_check = current_version["minor"] is not None
+        if minor_check and int(current_version["minor"]) < int(latest_version["minor"]):
+            return (UpdateType.MAJOR, latest_version)
+        # Patch
+        patch_check = current_version["patch"] is None
+        if patch_check or int(current_version["patch"]) < int(latest_version["patch"]):
+            return (UpdateType.MINOR, latest_version)
+        # Build
+        build_check = current_version["build"] is None
+        if build_check or int(current_version["build"]) < int(latest_version["build"]):
+            return (UpdateType.BUILD, latest_version)
 
-        log("No update found.")
+        cls.__log("No update found.")
         return (UpdateType.NONE, None)
 
     @classmethod
-    def serverExists(cls):
+    def server_exists(cls):
         '''Checks if there is a server directory. If there is, a server has been
         isntalled. If not, then no server has been installed'''
-        if os.path.exists(cls.server_root) == False:
-            return False
-        else:
-            return True
+        return os.path.exists(cls.server_root)
 
     @classmethod
-    def updateInstalledVersion(cls, version) -> dict:
+    def update_installed_version(cls, version: dict) -> dict:
         """Update all appropriate files of a new server install
-        
+
         Parameters:
-            version -- A dictionary containing the keys: major, minor, patch, build, and version_group.
+            version -- A dictionary containing the keys: major, minor, patch, build, and 
+            version_group.
         """
-        cls.config_file.minecraft.install_date = Date.timestamp()
-        cls.config_file.minecraft.major = int(version.get("major", cls.config_file.minecraft.major))
-        cls.config_file.minecraft.minor = int(version.get("minor", cls.config_file.minecraft.minor))
-        cls.config_file.minecraft.patch = int(version.get("patch", cls.config_file.minecraft.patch))
-        cls.config_file.minecraft.build = int(version.get("build", cls.config_file.minecraft.build))
-        cls.config_file.minecraft.version_group = version.get("version_group",
-                                              cls.config_file.minecraft.version_group)
-        return cls.config_file.minecraft.update()
+
+        minecraft_congig = cls.__configuration.minecraft
+        minecraft_congig.install_date = Date.timestamp()
+        minecraft_congig.major = int(version.get("major", minecraft_congig.major))
+        minecraft_congig.minor = int(version.get("minor", minecraft_congig.minor))
+        minecraft_congig.patch = int(version.get("patch", minecraft_congig.patch))
+        minecraft_congig.build = int(version.get("build", minecraft_congig.build))
+        minecraft_congig.version_group = version.get(
+            "version_group",
+            minecraft_congig.version_group
+        )
+        return minecraft_congig.update()
         

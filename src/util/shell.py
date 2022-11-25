@@ -11,7 +11,6 @@ import re
 import shlex
 from subprocess import Popen, PIPE
 import psutil
-from util.logger import log
 
 def run(command: str, execute_in: str = None, stop_on_stdout_regex: str = None) -> str:
     """
@@ -37,7 +36,7 @@ def run(command: str, execute_in: str = None, stop_on_stdout_regex: str = None) 
 
                 if stdout_line != '':
                     lines.append(stdout_line)
-                    log(stdout_line)
+                    print(stdout_line)
                 if stop_on_stdout_regex and len(re.findall(stop_on_stdout_regex, stdout_line)) == 1:
                     break
                 if popen.poll() == 0:

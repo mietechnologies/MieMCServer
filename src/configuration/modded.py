@@ -8,7 +8,6 @@ from util import files
 from util import path
 from util import shell
 from util.download import get
-from util.logger import log
 from util.mielib import custominput as ci
 
 class Modded:
@@ -27,6 +26,7 @@ class Modded:
     '''
 
     __FORGE_INSTALLER = path.project_path('server', 'installer.jar')
+    __LOG = None
 
     data = {}
     allocated_ram = 1024
@@ -36,7 +36,9 @@ class Modded:
     uses_args_file: bool = False
     jre_version_required: str = None
 
-    def __init__(self, data: dict) -> None:
+    def __init__(self, data: dict, logger = None) -> None:
+        self.__LOG = logger
+
         self.data = data
         self.allocated_ram = int(self.data.get('allocated_ram', 1024))
         self.modpack_id = self.data.get('modpack_id', None)
@@ -92,8 +94,8 @@ class Modded:
         # Now that we have installed the Forge server files, we need to ask the user to
         # designate an amount of RAM to dedicate to the running the server.
         print('Great! The Forge server has installed successfully. Now I need to know ' \
-            'how much RAM you plan to dedicate to this server. A good suggestion is 4GB ' \
-            'plus 1GB for every 5 players you plan on having active on the server at ' \
+            'how much RAM do you plan to dedicate to this server. A good suggestion is 4GB ' \
+            'plus 1GB for every 2 players you plan on having active on the server at ' \
             'any given time (to a maximum of 16GB). Fyi, we will set your minimum to ' \
             '4GB automatically.')
         self.allocated_ram = ci.int_input('So, how much RAM would you like to dedicate?')
@@ -108,10 +110,10 @@ class Modded:
         self.__initial_setup()
 
         # Clean up all temporary files
-        log('Cleaning up temporary files from installing Forge server...')
+        self.__LOG('Cleaning up temporary files from installing Forge server...')
         forge.cleanup(self.uses_args_file)
 
-        log('Installation complete!')
+        self.__LOG('Installation complete!')
 
         return self.update()
 
@@ -144,18 +146,18 @@ class Modded:
         return command
 
     def __download_forge(self) -> str:
-        log('Downloading Forge Installer...')
+        self.__LOG('Downloading Forge Installer...')
         forge_installer_url = forge.construct_forge_installer_url(
             self.minecraft_version,
             self.forge_version
         )
         forge_installer = path.project_path('tmp/forge', 'installer.jar')
         forge_installer = get(forge_installer_url, forge_installer)
-        log('Download of Forge Installer complete!')
+        self.__LOG('Download of Forge Installer complete!')
         return forge_installer
 
     def __initial_setup(self):
-        log('Running initial setup...')
+        self.__LOG('Running initial setup...')
         server = path.project_path('server')
         shell.run(self.run_command(), server, r'Done \(\d+\.\d+s\)!')
 
@@ -166,8 +168,9 @@ class Modded:
             f'information about Mojang\'s EULA at {eula_link}.')
         if ci.bool_input('Would you like me to sign the EULA for you?', default=True):
             files.update(eula_file, 'eula=false', 'eula=true')
-            log('Mojang EULA signed')
+            self.__LOG('Mojang EULA signed')
         else:
+            self.__LOG('Mojang EULA declined')
             print('Okay, before you can run your server, you will have to agree to the ' \
                 f'EULA located at {eula_file}.')
 
@@ -175,7 +178,7 @@ class Modded:
         # TODO: Whitelist setup
 
     def __install_forge_and_modpacks(self, installer: str, mods: str):
-        log('Installing moded server and modpack files...')
+        self.__LOG('Installing moded server and modpack files...')
         # Install the Forge Server
         # java -jar {path/to/installer} --installServer={path/to/server/dir}
         server = path.project_path('server')
@@ -184,7 +187,7 @@ class Modded:
 
         # Copy the mod files for the modpack to be installed to the server directory.
         path.move(mods, server)
-        log('Installation complete!')
+        self.__LOG('Installation complete!')
 
     def __request_modpack(self) -> str:
         mod_files = None
@@ -204,11 +207,11 @@ class Modded:
                 mod_files = mods
                 break
 
-        log('Modpack verified...')
+        self.__LOG('Modpack verified...')
         return mod_files
 
     def __download_and_install_forge(self, modpack_version: str) -> str:
-        log('Downloading Forge Installer...')
+        self.__LOG('Downloading Forge Installer...')
         forge_versions = forge.get_forge_versions()
         forge_version: dict = forge_versions[modpack_version]
         self.minecraft_version: str = forge_version.get('minecraftVersion', None)
@@ -225,7 +228,7 @@ class Modded:
         # Now that the installer has been downloaded, we need to execute it to install
         # the needed files for running the forge server. The command to execute this
         # is `java -jar forge-installer.jar --installServer`
-        log('Installing Forge server...')
+        self.__LOG('Installing Forge server...')
         server = path.project_path('server')
         command = f'java -jar {installer} --installServer={server}'
         shell.run(command)

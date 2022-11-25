@@ -1,16 +1,22 @@
 import os
 
-from configuration import config
 from util.cron import CronDate, CronScheduler
 from util.date import Date
 from util.mielib import custominput as ci
-from util.logger import messageDiscord, log
+from util.logger import messageDiscord
 
 class Maintenance:
     dir = os.path.dirname(__file__)
     root_dir = os.path.join(dir, '..')
     scheduler = CronScheduler()
-    config_file = config.File()
+
+    __configuration = None
+    __log = None
+
+    @classmethod
+    def __init__(cls, configuration, logger):
+        cls.__configuration = configuration
+        cls.__log = logger
 
     @classmethod
     def end(cls):
@@ -19,14 +25,14 @@ class Maintenance:
         cycles. As part of ending, also messages the Discord server (if
         enabled).
         '''
-        log(f'Ending maintenance at { Date.timestamp() }')
+        cls.__log(f'Ending maintenance at { Date.timestamp() }')
         messageDiscord('Server maintenance has ended! The server should be ' \
             'up and running in a few minutes!')
 
         cls.scheduler.removeJob('maintenance.end')
         cls.scheduler.removeJob('maintenance.start')
-        cls.config_file.maintenance.maintenance_running = False
-        cls.config_file.maintenance.update()
+        cls.__configuration.maintenance.maintenance_running = False
+        cls.__configuration.maintenance.update()
 
         os.system(f'python {cls.root_dir}/main.py')
 
@@ -120,7 +126,7 @@ class Maintenance:
         Starts 'scheduled' maintenance immediately. As part of starting, also
         messages the Discord server (if enabled).
         '''
-        log(f'Starting maintenance at {Date.timestamp()}')
+        cls.__log(f'Starting maintenance at {Date.timestamp()}')
         messageDiscord('Server maintenance has started and will be completed ' \
             'as quickly as possible. Until then, **the server will be shut ' \
             'down.**')
@@ -129,7 +135,7 @@ class Maintenance:
         cls.scheduler.removeJob('maintenance.backup')
         cls.scheduler.removeJob('maintenance.scripts')
         cls.scheduler.removeJob('maintenance.update')
-        cls.config_file.maintenance.maintenance_running = True
-        cls.config_file.maintenance.update()
+        cls.__configuration.maintenance.maintenance_running = True
+        cls.__configuration.maintenance.update()
 
         os.system(f'python {cls.root_dir}/main.py -q')

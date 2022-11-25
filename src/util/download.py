@@ -8,7 +8,6 @@ get(url,saveTo)
 """
 
 import requests
-from util.logger import log
 
 def get(url: str, save_to: str) -> str:
     """
@@ -36,7 +35,7 @@ def get(url: str, save_to: str) -> str:
                 if chunk:
                     file.write(chunk)
                 else:
-                    log('Error: Unable to download file!')
+                    print('Error: Unable to download file!')
                     return None
         
         return save_to

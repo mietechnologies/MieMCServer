@@ -7,6 +7,7 @@ class Maintenance:
     complete_shutdown = ''
     schedule = ''
     maintenance_running = False
+    startup_timeout = 30
 
     def __init__(self, data: dict) -> None:
         self.data = data
