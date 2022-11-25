@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [1.3.0] - 2022.11.24
+
+### Added
 - The user can now install a datapack using the '-dp {path}' command where path is the absolute path to a zip or directory. 
   - This functionality handles singular compressed (zip) datapacks, a directory with an uncompressed datapack, and a directory that contains multiple compressed datapacks.
 - Automatic installation of pip3 and required pip packages to run project when running the project for the first time.
@@ -16,14 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - During configuration, the project now fetches the system's total available RAM to intelligently decide what warnings it should display to the user and suggest an appropriate amount of allocated RAM.
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 - Fixed an issue that was preventing automatic startup scripts from running.
 
-### Security
 ## [1.2.1] - 2022.2.18
 
 ### Fixed
