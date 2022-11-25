@@ -158,6 +158,8 @@ class Modded:
 
     def __initial_setup(self):
         self.__LOG('Running initial setup...')
+
+        # Run the server to generate the EULA,
         server = path.project_path('server')
         shell.run(self.run_command(), server, r'Done \(\d+\.\d+s\)!')
 
@@ -166,16 +168,32 @@ class Modded:
         print('Now time for the boring stuff. To use your server, you must agree to Mojang\'s ' \
             'EULA. If you\'d like, I can sign it for you now automatically. You can find more ' \
             f'information about Mojang\'s EULA at {eula_link}.')
+        print('Please note that if you do not sign the EULA now, there are features I won\'t ' \
+            'be able to set up for you!')
+        time.sleep(2)
+
         if ci.bool_input('Would you like me to sign the EULA for you?', default=True):
             files.update(eula_file, 'eula=false', 'eula=true')
             self.__LOG('Mojang EULA signed')
+            self.__first_run()
+
+            # TODO: Set level-seed in server.properties
+            # TODO: Whitelist setup
         else:
             self.__LOG('Mojang EULA declined')
             print('Okay, before you can run your server, you will have to agree to the ' \
                 f'EULA located at {eula_file}.')
 
-        # TODO: Set level-seed in server.properties
-        # TODO: Whitelist setup
+    def __first_run(self):
+        # We need to run the server once and stop it early so we can generate the needed files
+        # such as the server.properties file.
+        self.__LOG('Starting server for the first time to generate setup files...')
+        input('Once finished, please input the `stop` command so I can continue setup (press '\
+            'any key to continue)')
+
+        server = path.project_path('server')
+        shell.run(self.run_command(), server)
+        self.__LOG('Initial setup complete!')
 
     def __install_forge_and_modpacks(self, installer: str, mods: str):
         self.__LOG('Installing moded server and modpack files...')

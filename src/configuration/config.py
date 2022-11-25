@@ -12,7 +12,7 @@ from util import path
 from util.mielib import custominput as ci
 
 class File:
-    __LOG = None
+    __log = None
     __file_dir = path.project_path(filename='config.yml')
 
     data = {}
@@ -25,10 +25,10 @@ class File:
     modded = Modded(data.get('Modded', {}))
     temperature = Temperature(data.get('Temperature', {}))
     server = Server(data.get('Server', {}))
-    rcon = RCON()
+    rcon = RCON(data.get('RCON', {}))
 
     def __init__(self, logger):
-        self.__LOG = logger
+        self.__log = logger
 
         parsed = data.parse_yaml(self.__file_dir)
         self.data = {} if parsed is None else parsed
@@ -38,10 +38,10 @@ class File:
         self.email = Email(self.data.get('Email', {}))
         self.messaging = Messaging(self.data.get('Messaging', {}))
         self.maintenance = Maintenance(self.data.get('Maintenance', {}))
-        self.modded = Modded(self.data.get('Modded', {}), self.__LOG)
+        self.modded = Modded(self.data.get('Modded', {}), self.__log)
         self.temperature = Temperature(self.data.get('Temperature', {}))
         self.server = Server(self.data.get('Server', {}))
-        self.rcon = RCON()
+        self.rcon = RCON(self.data.get('RCON', {}), self.__log)
 
     def update(self):
         data.write_yaml(self.data, self.__file_dir)

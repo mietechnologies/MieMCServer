@@ -89,9 +89,9 @@ def parse(args):
     if command is not None:
         running_log.append(f'-c {command}')
         if command == "":
-            cmd.runTerminal()
+            cmd.run_terminal(configuration)
         else:
-            cmd.runCommand(command)
+            cmd.run_command(command, configuration)
 
     if update is not None:
         running_log.append('-u')
@@ -99,7 +99,7 @@ def parse(args):
 
     if backup:
         running_log.append(f'-bu {configuration.maintenance.path()}')
-        cmd.runCommand("say System is backing up Minecraft world.")
+        cmd.run_command("say System is backing up Minecraft world.", configuration)
         filename = f'world.{Date.strippedTimestamp()}.zip'
         backup_manager = Backup(configuration, log)
         backup_manager.put(Installer.server_dir, configuration.maintenance.path(), filename)
@@ -110,7 +110,7 @@ def parse(args):
 
     if clean:
         running_log.append('-k')
-        scripting.maintenance()
+        scripting.maintenance(configuration)
 
     if commands:
         running_log.append('-rc')
@@ -118,17 +118,17 @@ def parse(args):
 
     if stop:
         running_log.append('-q')
-        cmd.runCommand("say The server is being saved, and then stopped " \
-            "in 60 seconds.")
+        cmd.run_command("say The server is being saved, and then stopped " \
+            "in 60 seconds.", configuration)
         sleep(60)
-        stop_server()
+        stop_server(configuration)
 
     if restart:
         running_log.append('-q')
-        cmd.runCommand("say Saving and stopping server in 30 seconds for system " \
-            "restart.")
+        cmd.run_command("say Saving and stopping server in 30 seconds for system " \
+            "restart.", configuration)
         sleep(30)
-        stop_server()
+        stop_server(configuration)
         sleep(60)
         reboot.run()
 
@@ -163,20 +163,20 @@ def __parse_interaction_methods(args, running_log: List[str]) -> List[str]:
 
     return running_log
 
-def maintenance():
-    execute_clean_commands()
+def maintenance(configuration):
+    execute_clean_commands(configuration)
     trim_end_regions()
     execute_custom_shell_script()
 
-def execute_clean_commands():
+def execute_clean_commands(configuration):
     log('Running clean up commands...')
     file = project_path('scripts', 'clean-commands.txt')
-    cmd.runTerminal(files.lines_from_file(file))
+    cmd.run_terminal(configuration, files.lines_from_file(file))
 
-def execute_command_list():
+def execute_command_list(configuration):
     log('Running custom commands...')
     custom_command_file = project_path('scripts', 'commands.txt')
-    cmd.runTerminal(files.lines_from_file(custom_command_file, deleteFetched=True))
+    cmd.run_terminal(configuration, files.lines_from_file(custom_command_file, deleteFetched=True))
 
 def execute_custom_shell_script():
     log('Running custom shell script...')
@@ -210,13 +210,13 @@ def trim_end_regions():
     # Iterate through all subdirectories of the end region root directory
     # and the files contained within each
     for directory in os.listdir(end_dir):
-        path = os.path.join(end_dir, directory)
-        if os.path.isdir(path):
+        end_regions = os.path.join(end_dir, directory)
+        if os.path.isdir(end_regions):
             dir_count = 0
-            for file in os.listdir(path):
+            for file in os.listdir(end_regions):
                 # If the file is not listed in the regions to keep, delete it
                 if file not in regions_to_keep:
-                    region = os.path.join(path, file)
+                    region = os.path.join(end_regions, file)
                     os.remove(region)
                     dir_count += 1
                     filecount += 1
@@ -240,7 +240,11 @@ def run(configuration: config.File):
         setup_crontab(configuration)
 
         if configuration.is_modded():
-            print('Please restart your system to complete installation.')
+            if bool_input('Would you like to restart the system to start the server ' \
+                'automatically?'):
+                reboot.run()
+            else:
+                log('Please restart the system to start the server.')
         else:
             # This is presumably the first run so the EULA has not yet been
             # accepted, meaning that starting the server WILL fail
@@ -270,11 +274,9 @@ def run_debug():
     # These are here to give you and testers clear start and stop lines for debugging.
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
-    from configuration.modded import Modded
-    modded = Modded({})
-    if modded.query():
-        data = modded.build()
-        print(data)
+
+    eula = project_path('server', 'eula.txt')
+    files.update(eula, 'eula=false', 'eula=true')
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
@@ -321,10 +323,10 @@ def start_server(configuration: config.File):
         Installer.install()
         scripting.start(configuration.minecraft.allocated_ram)
 
-def stop_server():
+def stop_server(configuration):
     stopMonitors()
     scripting.stop()
-    cmd.runCommand('stop')
+    cmd.run_command('stop', configuration)
 
 def __project_preinstalls():
     print('Pre-installing needed dependencies to run this command; your ' \
@@ -543,8 +545,14 @@ def main():
 
     config_file = config.File(log)
     if config_file.is_raspberry_pi():
-        parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
-            'events that may be occuring on your Raspberry Pi.', dest='critical_events', action='store_true', required=False)
+        parser.add_argument(
+            '-ce',
+            '--critical-events',
+            help='Checks for any critical events that may be occuring on your Raspberry Pi.',
+            dest='critical_events',
+            action='store_true',
+            required=False
+        )
 
     parser.set_defaults(func=parse)
     args = parser.parse_args()

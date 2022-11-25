@@ -61,10 +61,12 @@ def update(file_at_path: str, replacing_line: str, with_line: str) -> bool:
     existing = lines_from_file(file_at_path)
     with open(file_at_path, 'w', encoding='utf8') as file_out:
         for line in existing:
-            if line is replacing_line:
+            if line in replacing_line:
+                with_line = with_line if '\n' in with_line else f'{with_line}\n'
                 file_out.write(with_line)
             else:
-                file_out.write(line)
+                out_line = line if '\n' in line else f'{line}\n'
+                file_out.write(out_line)
     return True
 
 def lines_from_file(file: str, delete_fetched: bool = False):
@@ -86,15 +88,12 @@ def lines_from_file(file: str, delete_fetched: bool = False):
         with open(file, 'w', encoding='utf8') as file_out:
             for line in temp_lines:
                 # Always preserve all comments and empty lines when fetching commands from a file:
-                if '#' in line:
+                if '#' in line or line == '\n':
                     file_out.write(line)
-                elif line == '\n':
-                    file_out.write(line)
-                # If line is command and fetched commands should be kept:
+                    lines.append(line.replace('\n', ''))
                 elif not delete_fetched:
                     lines.append(line.replace('\n', ''))
                     file_out.write(line)
-                # If line is command and fetched commands should be removed:
                 elif delete_fetched:
                     lines.append(line.replace('\n', ''))
                 # Otherwise, the line is unhandled; log the line that was encountered and keep

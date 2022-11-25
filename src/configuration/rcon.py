@@ -4,11 +4,23 @@ from util.path import isfile, project_path
 from util.extension import clean_string
 
 class RCON:
+    __log = None
+    __data: dict = None
+
     enabled = False
     password = None
     port = None
 
-    def build(self):
+
+    def __init__(self, data: dict, logger = None) -> None:
+        self.__log = logger
+
+        self.__data = data
+        self.enabled = self.__data.get('enabled', False)
+        self.password = self.__data.get('password', None)
+        self.port = self.__data.get('port', None)
+
+    def build(self) -> dict:
         print('RCON is a protocol that allows server administrators to ' \
             'remotely execute Minecraft commands.')
         print('Mie-MCServer uses RCON to run clean up commands to ' \
@@ -20,7 +32,7 @@ class RCON:
         self.password = ci.password_input('What password would you like to ' \
             'use for issuing commands via RCON?', pattern=r'^[a-zA-Z0-9_]+$')
         self.enabled = True
-        self.update()
+        return self.update()
 
     def read(self):
         properties = project_path('server/server.properties')
@@ -34,8 +46,7 @@ class RCON:
                     elif 'rcon.password' in line:
                         self.password = clean_string(line, ['rcon.password=', '\n'])
         else:
-            from ..util.logger import log
-            print('ERR: No server.properties file found!')
+            self.__log('ERR: No server.properties file found!')
 
     def update(self):
         properties = project_path('server', 'server.properties')
@@ -53,5 +64,9 @@ class RCON:
                         
                         file_out.write(line)
         else:
-            print('ERR: No server.properties file found!')
+            self.__log('ERR: No server.properties file found!')
 
+        self.__data['enabled'] = self.enabled
+        self.__data['password'] = self.password
+        self.__data['port'] = self.port
+        return self.__data
