@@ -16,17 +16,20 @@
 #    - '-bu', '--backup': This will backup the Minecraft Server
 # *****************************************************************************
 
-from re import sub
+from typing import List
+from minecraft.interactions import install_datapack
 from util.backup import Backup
 from util.date import Date
-from util import configuration as c
-from requests.api import delete
+from util import configuration as c, scripting
 from minecraft.version import Versioner, UpdateType
+from util.extension import lines_from_file
 from util.maintenance import Maintenance
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer
 from util.cron import CronScheduler
 from util import configuration as c
+from util.backup import Backup
+from util.monitor import Monitor
 from util.temp import PiTemp
 from util.syslog import log
 from util.date import Date
@@ -36,7 +39,7 @@ import command as cmd
 import argparse
 import os
 
-VERSION = "1.2.1"
+VERSION = "1.3.0"
 
 def parse(args):
     mc_version = args.minecraft_version
@@ -89,10 +92,9 @@ def parse(args):
         updateServer(update)
 
     if backup:
-        running_log.append(f'-bu {c.Maintenance.backup_path}')
+        running_log.append('-bu {}'.format(c.Maintenance.backup_path))
         cmd.runCommand("say System is backing up Minecraft world.")
-        log('Backing up the current world...')
-        filename = f'world.{Date.strippedTimestamp()}.zip'
+        filename = 'world.{}.zip'.format(Date.strippedTimestamp())
         Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
 
     if method is not None:
@@ -101,26 +103,25 @@ def parse(args):
 
     if clean:
         running_log.append('-k')
-        cmd.runCommand("say System maintenance scripts are being ran.")
-        maintenance()
+        scripting.maintenance()
 
     if commands:
         running_log.append('-rc')
-        executeCommandList()
+        scripting.run_user_commands()
 
     if stop:
         running_log.append('-q')
         cmd.runCommand("say The server is being saved, and then stopped " \
             "in 60 seconds.")
         sleep(60)
-        stopServer()
+        stop_server()
 
     if restart:
         running_log.append('-q')
         cmd.runCommand("say Saving and stopping server in 30 seconds for system " \
             "restart.")
         sleep(30)
-        stopServer()
+        stop_server()
         sleep(60)
         reboot.run()
 
@@ -141,8 +142,19 @@ def parse(args):
         running_log.append('-uc')
         updateConfig(update_config)
 
-    if not running_log and not c.Maintenance.is_running():
+    running_log = __parse_interaction_methods(args, running_log)
+    
+    if not running_log:
         run()
+
+def __parse_interaction_methods(args, running_log: List[str]) -> List[str]:
+    datapack_path = args.install_datapack
+
+    if datapack_path:
+        running_log.append(f'-dp {datapack_path}')
+        install_datapack(datapack_path)
+
+    return running_log
 
 def maintenance():
     executeCleanCommands()
@@ -238,27 +250,28 @@ def run():
         log("Found config.yml")
         setupCrontab()
         Installer.install()
-        startServer()
+        start_server()
     else:
         log("Did not find config.yml")
+        __project_preinstalls()
         generateConfig("manual")
         setupCrontab()
         Installer.install(override_settings = True)
 
         # This is presumably the first run so the EULA has not yet been
         # accepted, meaning that starting the server WILL fail
-        startServer()
+        start_server()
 
         c.RCON.build()
         root_dir = os.path.dirname(__file__)
         eula = os.path.join(root_dir, 'server/eula.txt')
         if c.Minecraft.accept_eula():
-            lines = linesFromFile(eula, False)
+            lines = lines_from_file(eula, False)
             with open(eula, 'w') as eula_out:
                 for line in lines:
                     eula_out.write(line.replace('eula=false', 'eula=true'))
             log('User has accepted Minecraft\'s EULA!')
-            startServer()
+            start_server()
             log("Server started!")
         else:
             log('User has declined Minecraft\'s EULA!')
@@ -274,24 +287,22 @@ def run_debug():
     # Shut off calling server commands for debugging purposes
     cmd.DEBUG = True
 
-    # Do NOT delete either of the DEBUGGING print statements!
     print('\n****** DEBUGGING STARTED ******\n')
-
     # Implement any debug functionality below:
-    print('Configuring Maintenance... When asked to setup storage on a file ' \
-        'server, please answer yes and enter incorrect information to test.')
-    c.Maintenance.build()
-
-    print('Backing up the current world...')
-    filename = f'world.{Date.strippedTimestamp()}.zip'
-    Backup.put(Installer.server_dir, c.Maintenance.backup_path, filename)
-
+    # DO NOT DELETE THE BELOW LINE
+    # Deleting this line WILL cause build errors!!
     print('\n***** DEBUGGING FINISHED ******\n')
 
 def startMonitorsIfNeeded():
     dir = os.path.dirname(__file__)
     prog = os.path.join(dir, 'main.py')
     scheduler = CronScheduler()
+
+    # Start general system monitors
+    monitors = Monitor()
+    monitors.start_server_start_monitor(
+        timeout=c.Maintenance.startup_timeout, 
+        log=log)
 
     # Temp if on RasPi
     if c.Temperature.exists():
@@ -305,23 +316,28 @@ def startMonitorsIfNeeded():
 def stopMonitors():
     CronScheduler().removeJob('detect_critical_events')
 
-def startServer():
+def start_server():
     startMonitorsIfNeeded()
-    log("Starting server...")
-    ram = "{}M".format(c.Minecraft.allocated_ram)
-    current_dir = os.path.dirname(__file__)
-    script_path = os.path.join(current_dir, "scripts/start-server.sh")
-    log("Setting up bootlog file...")
-    bootlog_path = os.path.join(current_dir, "logs/bootlog.txt")
-    server_dir = os.path.join(current_dir, "server")
-    os.popen("{} {} {} > {}".format(script_path,
-                                    ram,
-                                    server_dir,
-                                    bootlog_path))
+    scripting.start(c.Minecraft.allocated_ram)
 
-def stopServer():
+def stop_server():
     stopMonitors()
+    scripting.stop()
     cmd.runCommand('stop')
+
+def __project_preinstalls():
+    print('Pre-installing needed dependencies to run this command; your ' \
+        'input may be required!')
+
+    this_dir = os.path.dirname(__file__)
+    logs_dir = os.path.join(this_dir, 'logs')
+    requirements = os.path.join(logs_dir, 'requirements.txt')
+
+    os.system('apt-get install python3-pip')
+    os.system('pip install pipreqs')
+    os.system(f'pipreqs {logs_dir}')
+    os.system(f'pip install -r {requirements}')
+    os.remove(requirements)
 
 def setupCrontab():
     dir = os.path.dirname(__file__)
@@ -502,6 +518,8 @@ def main():
         'will ignore any and all other commands!', dest='debug', 
         action='store_true', required=False)
 
+    __add_helper_methods(parser)
+
     if c.Temperature.exists():
         parser.add_argument('-ce', '--critical-events', help='Checks for any critical ' \
             'events that may be occuring on your Raspberry Pi.', dest='critical_events', action='store_true', required=False)
@@ -509,6 +527,12 @@ def main():
     parser.set_defaults(func=parse)
     args = parser.parse_args()
     args.func(args)
+
+def __add_helper_methods(parser: argparse.ArgumentParser):
+    parser.add_argument('-dp', '--install-datapack', help='This command ' \
+        'installs a datapack (or collection of datapacks contained in one ' \
+        'directory) when supplied with a file path.', nargs='?',
+        dest='install_datapack', type=str, required=False)
 
 if __name__ == "__main__":
     main()

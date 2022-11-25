@@ -1,8 +1,12 @@
+import base64
 import os
 import yaml
-
+import psutil
 from .mielib import custominput as ci
-from .extension import cleanString, decode, encode
+from .extension import clean_string
+import base64
+import yaml
+import os
 
 class File:
     __util_dir = os.path.dirname(__file__)
@@ -57,12 +61,16 @@ class File:
         Email.build()
         Messaging.build()
         Server.build()
-        Minecraft.build_object()
+        Minecraft.configure()
         Maintenance.build()
 
         return True
 
 class Minecraft:
+    '''
+    The section of the config that stores and handles all properties relating to
+    actually running the Minecraft server.
+    '''
     SECTION_NAME = "Minecraft"
     __data = File.data.get("Minecraft", {})
     __version = __data.get("version", {})
@@ -78,7 +86,7 @@ class Minecraft:
     def accept_eula(cls) -> bool:
         '''
         Prompts the user to accept or decline Minecraft's EULA.
-        
+
         Returns:
             A boolean indicating whether or not the user accepted the EULA.
         '''
@@ -91,17 +99,22 @@ class Minecraft:
             for you now. Would you like me to do that?', default=True)
 
     @classmethod
-    def version_str(cls):
+    def version_str(cls) -> str:
+        '''
+        Assembles the long version string of the currently installed Minecraft
+        server.
+        '''
         if cls.patch is None:
-            return "{}.{}:{}".format(cls.major, cls.minor, cls.build)
-        else:
-            return "{}.{}.{}:{}".format(cls.major, cls.minor, cls.patch, cls.build)
+            return f'{cls.major}.{cls.minor}:{cls.build}'
+        return f'{cls.major}.{cls.minor}.{cls.patch}:{cls.build}'
 
     @classmethod
-    def build_object(cls):
+    def configure(cls):
+        '''
+        Guides the user through setup of this section of their config.
+        '''
         cls.reset()
-        ram = ci.int_input("How much RAM would you like to dedicate to your " \
-            "Minecraft Server? (your input will be Mbs)", default=1024)
+        cls.allocated_ram = cls.__configure_ram()
         version = ci.version_input("What version of Minecraft would you like " \
             "to install?")
         if version != "":
@@ -113,12 +126,38 @@ class Minecraft:
                 cls.major = version_split[0]
                 cls.minor = version_split[1]
                 cls.patch = version_split[2]
-            cls.version_group = "{}.{}".format(version_split[0], version_split[1])
+            cls.version_group = f'{cls.major}.{cls.minor}'
 
         cls.update()
 
     @classmethod
+    def __configure_ram(cls) -> int:
+        total_system_ram = int(psutil.virtual_memory().total / 1024 / 1024)
+        if total_system_ram <= 4096:
+            sixty_percent = int(total_system_ram * 0.6)
+            print(f'WARNING: Your system currently has {total_system_ram}MB ' \
+                'of RAM. It is recommended that you use no more than ~60% ' \
+                'of your total system RAM to run your Minecraft server ' \
+                f'(which is roughly {sixty_percent}MB).')
+            use_sixty = ci.bool_input('Would you like to use 60% of your RAM' \
+                'to use your Minecraft server?', default=True)
+            if use_sixty:
+                return sixty_percent
+        print(f'WARNING: Your system has {total_system_ram}MB of RAM. It is ' \
+            'recommended that you use no more than 4096MB of RAM to run your ' \
+            'server, regardless of your total system RAM.')
+
+        desired_ram = ci.int_input('How much RAM would you like to use?', default=4096)
+        while desired_ram == 0 or desired_ram > total_system_ram:
+            desired_ram = ci.int_input(f'{desired_ram}MB is an invalid amount ' \
+                'of RAM, please try again.', default=4096)
+        return desired_ram
+
+    @classmethod
     def update(cls):
+        '''
+        Updates this section of the config with the stored values.
+        '''
         cls.__version["major"] = cls.major
         cls.__version["minor"] = cls.minor
         cls.__version["patch"] = cls.patch
@@ -131,6 +170,9 @@ class Minecraft:
 
     @classmethod
     def reset(cls):
+        '''
+        Resets this section of the config with default values.
+        '''
         cls.allocated_ram = 1024
         cls.major = None
         cls.minor = None
@@ -145,7 +187,7 @@ class Email:
     address = __data.get("address", "<your.email@gmail.com>")
     password = ""
     try:
-        password = decode(__data.get("password"))
+        password = base64.b64decode(__data.get("password")).decode('utf-8')
     except:
         password = "<your password>"
     server = __data.get("server", "smtp.gmail.com")
@@ -157,11 +199,11 @@ class Email:
         email_address = ci.email_input("What is the gmail address you would " \
             "like me to use to send you reports?", provider="gmail")
         password = ci.password_input("What is the password to the account you" \
-            " just entered?")
+            " just entered?").encode('utf-8')
         recipients = ci.email_input("What email address(es) would you like " \
             "to recieve the logs and reports?", multiples=True)
         cls.address = email_address
-        cls.password = password
+        cls.password = base64.b64encode(password)
         cls.recipients = recipients
         cls.update()
 
@@ -192,95 +234,57 @@ class Maintenance:
     backup_schedule = __backup.get("schedule", "0 3 * * *")
     backup_path = __backup.get("path", "~/MC_Backups")
     backup_number = __backup.get("number", 1)
-    backup_file_server = __backup.get("file_server", {})
     maintenance_running = __data.get('scheduled_running', False)
     update_schedule = __update.get("schedule", "0 3 * * 0")
     update_allow_major_update = __update.get("allow_major_update", False)
+    startup_timeout = __data.get('startup_timeout', 10)
 
     @classmethod
     def build(cls):
-        # print("Warning: A system restart is good practice to clear out any " \
-        #     "residual problems that might still be in RAM. Also, in order to " \
-        #     "run the commands file a server restart is required.")
-        # restart_cron = ci.cron_date_input("restart")
+        print("Warning: A system restart is good practice to clear out any " \
+            "residual problems that might still be in RAM. Also, in order to " \
+            "run the commands file a server restart is required.")
+        restart_cron = ci.cron_date_input("restart")
 
-        # print("Warning: It is good practice to backup your server so if any" \
-        #     "thing were to happen, you would be able to revert back to your " \
-        #     "previous backup.")
-        # backup_cron = ci.cron_date_input("backup Minecraft")
-        # backup_path = input("Where would you like your backups to be stored? ")
-        # backup_limit = ci.int_input("How many backups would you like to be " \
-        #     "stored before removing old backups?")
-        file_server = cls.__build_external_storage()
-        print(file_server)
+        print("Warning: It is good practice to backup your server so if any" \
+            "thing were to happen, you would be able to revert back to your " \
+            "previous backup.")
+        backup_cron = ci.cron_date_input("backup Minecraft")
+        backup_path = input("Where would you like your backups to be stored? ")
+        backup_limit = ci.int_input("How many backups would you like to be " \
+            "stored before removing old backups?")
 
-        # print("Warning: It is wise to check for updates on a regular basis so " \
-        #     "any bugs the developers might find and fix will be applied to " \
-        #     "your server. We can understand your concern for larger updates, " \
-        #     "so we will ask your permission on if you want us to do bigger " \
-        #     "updates automatically. If not, we will email you and alert you " \
-        #     "of any major updates.")
-        # update_cron = ci.cron_date_input("check for updates")
-        # major_updates = ci.bool_input("Would you like me to update to " \
-        #     "major releases?", default=False)
+        print("Warning: It is wise to check for updates on a regular basis so " \
+            "any bugs the developers might find and fix will be applied to " \
+            "your server. We can understand your concern for larger updates, " \
+            "so we will ask your permission on if you want us to do bigger " \
+            "updates automatically. If not, we will email you and alert you " \
+            "of any major updates.")
+        update_cron = ci.cron_date_input("check for updates")
+        major_updates = ci.bool_input("Would you like me to update to " \
+            "major releases?", default=False)
             
-        # print("Warning: I have ben preprogrammed with some useful maintenance " \
-        #     "scripts to help keep your server up and running smoothly. It is " \
-        #     "always good to run these scripts so your players experience as " \
-        #     "little server lag as possible.")
-        # maintenance_cron = ci.cron_date_input("run maintenance scripts")
+        print("Warning: I have ben preprogrammed with some useful maintenance " \
+            "scripts to help keep your server up and running smoothly. It is " \
+            "always good to run these scripts so your players experience as " \
+            "little server lag as possible.")
+        maintenance_cron = ci.cron_date_input("run maintenance scripts")
 
-        # cls.complete_shutdown = restart_cron
-        # cls.schedule = maintenance_cron
-        cls.backup_file_server = file_server
-        # cls.backup_schedule = backup_cron
-        # cls.backup_path = backup_path
-        # cls.backup_number = backup_limit
-        # cls.update_schedule = update_cron
-        # cls.update_allow_major_update = major_updates
+        cls.complete_shutdown = restart_cron
+        cls.schedule = maintenance_cron
+        cls.backup_schedule = backup_cron
+        cls.backup_path = backup_path
+        cls.backup_number = backup_limit
+        cls.update_schedule = update_cron
+        cls.update_allow_major_update = major_updates
+        cls.startup_timeout = 10
         cls.update()
 
     @classmethod
-    def __build_external_storage(cls) -> object:
-        '''
-        Requests user input regarding their external file server where backups
-        will be stored.
-
-        Returns: An object containing all of the needed values for configuration.
-        '''
-        should_setup = ci.bool_input('For extra data security, I can also ' \
-            'store your backups on an external file security. Would you like ' \
-            'to set that up now? (Please ensure that this machine has ' \
-            'connected to your file server before!)')
-        if should_setup:
-            host = ci.server_address_input('What is the host address of your ' \
-                'file server?')
-            print(f'Collecting ssh key for {host}...')
-            key = os.popen(f'ssh-keyscan {host} | grep "ssh-rsa"').read()
-            key = key.replace(f'{host} ssh-rsa ', '')
-            encoded_key = encode(key)
-            username = ci.string_input('What is the username for your file ' \
-                'server?')
-            password = ci.password_input('What is the password used to ' \
-                'connect to your file server?')
-            path = ci.string_input('Where would you like to store backups on ' \
-                'your file server?', r'^~?(?:\/.+){1,}', '~/backups')
-            return {
-                'domain' : host,
-                'key' : encoded_key,
-                'username' : username,
-                'password' : password,
-                'path' : path
-            }
-        return {}
-
-    @classmethod
     def update(cls):
-        cls.__backup['file_server'] = cls.backup_file_server
         cls.__backup["schedule"] = cls.backup_schedule
         cls.__backup["path"] = cls.backup_path
         cls.__backup["number"] = cls.backup_number
-        cls.__backup["file_server"] = cls.backup_file_server
         cls.__update["schedule"] = cls.update_schedule
         cls.__update["allow_major_update"] = cls.update_allow_major_update
         cls.__data["complete_shutdown"] = cls.complete_shutdown
@@ -288,6 +292,7 @@ class Maintenance:
         cls.__data["backup"] = cls.__backup
         cls.__data["update"] = cls.__update
         cls.__data['scheduled_running'] = cls.maintenance_running
+        cls.__data['startup_timeout'] = cls.startup_timeout
         File.update(cls.SECTION_NAME, cls.__data)
 
     @classmethod
@@ -299,7 +304,7 @@ class Maintenance:
         cls.backup_number = 1
         cls.update_schedule = "0 3 * * 0"
         cls.update_allow_major_update = False
-        cls.update()
+        cls.startup_timeout = 10
 
 class Messaging:
     __data = File.data.get('Messaging', {})
@@ -354,11 +359,11 @@ class RCON:
             lines = open(properties, 'r').readlines()
             for line in lines:
                 if 'rcon.port' in line: 
-                    cls.port = int(cleanString(line, ['rcon.port=', '\n']))
+                    cls.port = int(clean_string(line, ['rcon.port=', '\n']))
                 elif 'enable-rcon' in line: 
-                    cls.enabled = bool(cleanString(line, ['enable-rcon=', '\n']))
+                    cls.enabled = bool(clean_string(line, ['enable-rcon=', '\n']))
                 elif 'rcon.password' in line: 
-                    cls.password = cleanString(line, ['rcon.password=', '\n'])
+                    cls.password = clean_string(line, ['rcon.password=', '\n'])
         else:
             from .syslog import log
             log('ERR: No server.properties file found!')

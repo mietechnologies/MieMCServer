@@ -1,3 +1,8 @@
+---
+name: Pull Request
+about: Please use this template when creating a feature pull request.
+---
+
 ## GitHub Ticket
 <!-- Please provide link(s) for the ticket(s) your PR fixes (ex: https://github.com/mietechnologies/MIE-MCServer/projects/6#card-75093958) -->
 https://github.com/mietechnologies/MIE-MCServer/projects/6#card-75093958
@@ -22,6 +27,7 @@ Please check the type of change your PR introduces:
 
 ## Other information
 <!-- Any other information that is important to this PR such as screenshots of how the component looks before and after the change. -->
+
 
 ## Checklist
 Please ensure the following items are taken care of as part of your PR. If they are not, your PR will NOT be approved!

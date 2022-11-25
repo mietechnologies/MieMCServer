@@ -12,6 +12,7 @@ def runCommand(command: str):
         command -- The command string you wish to issue to Minecraft.
     '''
     if DEBUG:
+        print(f'Not running {command}; project in DEBUG')
         return
 
     RCON.read()
@@ -35,6 +36,7 @@ def runTerminal(commands: list[str] = None):
         value. But you can pass a list of strings.
     '''
     if DEBUG:
+        print(f'Not running {commands}; project in DEBUG')
         return
 
     RCON.read()

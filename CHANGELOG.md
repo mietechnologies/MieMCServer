@@ -7,9 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- The user can now add configuration for uploading server backups to an external file server.
-  - This configuration exists under the Maintenance section of the config and can be updated by calling `python main.py -uc maintenance`.
-  - If the user has configured these settings and the project fails to upload a backup to the server for any reason, the project generates an email to send to the server admins.
 
 ### Changed
 
@@ -20,6 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## [1.3.0] - 2022.11.24
+
+### Added
+- The user can now install a datapack using the '-dp {path}' command where path is the absolute path to a zip or directory. 
+  - This functionality handles singular compressed (zip) datapacks, a directory with an uncompressed datapack, and a directory that contains multiple compressed datapacks.
+- Automatic installation of pip3 and required pip packages to run project when running the project for the first time.
+- The user can now designate custom scripts to be ran at start, stop, or clean via `./scripts/custom-command.sh`.
+- Server startup monitor to determine if the server was started successfully.
+
+### Changed
+- During configuration, the project now fetches the system's total available RAM to intelligently decide what warnings it should display to the user and suggest an appropriate amount of allocated RAM.
+
+### Fixed
+- Fixed an issue that was preventing automatic startup scripts from running.
+
 ## [1.2.1] - 2022.2.18
 
 ### Fixed

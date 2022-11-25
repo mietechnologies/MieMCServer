@@ -1,3 +1,4 @@
+from util import monitor
 from .emailer import Emailer
 import os, sys, traceback
 import textwrap
@@ -33,9 +34,13 @@ def __handleUncaughtException(type, exception, tb):
         "https://github.com/mietechnologies/MIE-MCServer/issues"
             .format(error, trace))
 
-    messageDiscord('It looks like I just encountered an unhandled error. The ' \
-        'server might be down for a little while, but someone will get to it ' \
-        'as soon as they can. Please be patient.')
+    # To eliminate user-confusion, we will send a message to the configured
+    # Discord server ONLY if the server HASN'T started successfully when it
+    # encounters an error.
+    if not monitor.startup_completed_successfully():
+        messageDiscord('It looks like I just encountered an unhandled error. The ' \
+            'server might be down for a little while, but someone will get to it ' \
+            'as soon as they can. Please be patient.')
     email_log(subject, body)
 
 def log(message, silently=False, display_date=False):
