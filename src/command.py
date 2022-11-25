@@ -1,11 +1,10 @@
-from util.configuration import RCON
-from util.configuration import Server
-from util.syslog import log
+from configuration import config
+from util.logger import log
 from rcon import Client
 
 DEBUG = False
 
-def runCommand(command: str):
+def run_command(command: str, configuration):
     '''Runs a single command string on the Minecraft server via RCON.
 
     Parameters:
@@ -15,18 +14,18 @@ def runCommand(command: str):
         print(f'Not running {command}; project in DEBUG')
         return
 
-    RCON.read()
-    if RCON.enabled and RCON.password != "":
-        with Client(Server.url,
-                    RCON.port,
-                    passwd=RCON.password) as client:
+    configuration.rcon.read()
+    if configuration.rcon.enabled and configuration.rcon.password != "":
+        with Client(configuration.server.url,
+                    configuration.rcon.port,
+                    passwd=configuration.rcon.password) as client:
 
             response = client.run(command)
             __handleResponse(response, command)
     else:
         log("ERR: RCON has not been correctly initialized.")
 
-def runTerminal(commands: list[str] = None):
+def run_terminal(configuration, commands: list[str] = None):
     '''Starts a RCON session that either takes in a list of commands and runs
     them one after another until complete, or will ask for input, run the 
     command, and output the response until the exit keyword is input.
@@ -39,11 +38,11 @@ def runTerminal(commands: list[str] = None):
         print(f'Not running {commands}; project in DEBUG')
         return
 
-    RCON.read()
-    if RCON.enabled and RCON.password != "":
-        with Client(Server.url,
-                    RCON.port,
-                    passwd=RCON.password) as client:
+    configuration.rcon.read()
+    if configuration.rcon.enabled and configuration.rcon.password != "":
+        with Client(configuration.server.url,
+                    configuration.rcon.port,
+                    passwd=configuration.rcon.password) as client:
             
             if commands:
                 for command in commands:

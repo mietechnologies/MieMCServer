@@ -6,7 +6,7 @@ import os
 
 import command as cmd
 from util.extension import lines_from_file
-from util.syslog import log
+from util.logger import log
 
 __THIS_DIR = os.path.dirname(__file__)
 __SCRIPTS_DIR = os.path.join(__THIS_DIR, '../scripts')
@@ -32,30 +32,30 @@ def stop():
     '''
     __run_user_bash_script('stop')
 
-def maintenance():
+def maintenance(configuration):
     '''
     A public-facing function for running all maintenance scripts
     '''
-    cmd.runCommand('say System maintenance scripts are being ran...')
-    __run_clean_commands()
+    cmd.run_command('say System maintenance scripts are being ran...', configuration)
+    __run_clean_commands(configuration)
     __trim_end_regions()
-    run_user_commands()
+    run_user_commands(configuration)
     __run_user_bash_script('clean')
 
-def __run_clean_commands():
+def __run_clean_commands(configuration):
     log('Running clean commands...')
     clean_commands = os.path.join(__SCRIPTS_DIR, 'clean-commands.txt')
     commands = lines_from_file(clean_commands)
-    cmd.runTerminal(commands)
+    cmd.run_terminal(configuration, commands)
 
-def run_user_commands():
+def run_user_commands(configuration):
     '''
     Handles running user-entered commands from the `commands.txt` file.
     '''
     log('Running custom commands...')
     command_file = os.path.join(__SCRIPTS_DIR, 'commands.txt')
     commands = lines_from_file(command_file)
-    cmd.runTerminal(commands)
+    cmd.run_terminal(configuration, commands)
 
 def __run_user_bash_script(during_process: str):
     log(f'Running custom shell script during {during_process}...')

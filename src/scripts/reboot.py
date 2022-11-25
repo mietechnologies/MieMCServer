@@ -1,6 +1,6 @@
 import sys, os
 sys.path.append("..")
-from util.syslog import log, clear_log, email_log
+from util.logger import log, clear_log, email_log
 
 def run():
     subject = "Friendly Reminder; Maintenance Reboot"

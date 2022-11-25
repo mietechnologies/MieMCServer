@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "miemcserver_mietechnologies"
+version = "0.0.1"
+authors = [
+  { name="Michael Craun", email="contact@mietechnologies.com" },
+  { name="Brett Chapin", email="contact@mietechnologies.com" },
+]
+description = "A one-stop shop for installing and maintaining a Minecraft server."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/mietechnologies/MieMCServer"
+"Bug Tracker" = "https://github.com/mietechnologies/MieMCServer/issues"

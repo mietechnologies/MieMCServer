@@ -1,13 +1,12 @@
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from .configuration import Email
+from configuration import config
 from os.path import basename, normpath
 import smtplib
-import base64
 
 
-class Emailer:
+class Mailer:
     '''A simple object to send text emails with or without attachment files.'''
 
     attachments = []
@@ -15,6 +14,7 @@ class Emailer:
     def __init__(self, subject, body):
         self.subject = subject
         self.body = body
+        self.config_file = config.File()
 
     def attach(self, file):
         '''Attaches a file to the email. This can be called multiple times to
@@ -25,8 +25,8 @@ class Emailer:
         '''Compiles the optional attachments and creates an email then uses
         the user's configuration to send the email along with its attachments'''
         msg = MIMEMultipart()
-        msg["From"] = Email.address
-        msg["To"] = ", ".join(Email.recipients)
+        msg["From"] = self.config_file.email.address
+        msg["To"] = ", ".join(self.config_file.email.recipients)
         msg["Subject"] = self.subject
         msg.attach(MIMEText(self.body, "plain"))
 
@@ -39,9 +39,9 @@ class Emailer:
                                            filename=name)
                 msg.attach(attachment_file)
 
-        server = smtplib.SMTP(Email.server, Email.port)
+        server = smtplib.SMTP(self.config_file.email.server, self.config_file.email.port)
         server.starttls()
-        server.login(Email.address, Email.password)
-        server.sendmail(Email.address, Email.recipients, msg.as_string())
+        server.login(self.config_file.email.address, self.config_file.email.password)
+        server.sendmail(self.config_file.email.address, self.config_file.email.recipients, msg.as_string())
 
         server.quit()
