@@ -9,7 +9,7 @@ run(command: str)
 
 import re
 import shlex
-from subprocess import check_output, Popen, PIPE
+from subprocess import Popen, PIPE
 import psutil
 from util.logger import log
 

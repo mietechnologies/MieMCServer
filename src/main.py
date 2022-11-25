@@ -20,7 +20,7 @@ from typing import List
 from minecraft.interactions import install_datapack
 from util.backup import Backup
 from util.date import Date
-from util import configuration as c, scripting
+from util import scripting
 import argparse
 import command as cmd
 import subprocess
@@ -32,7 +32,6 @@ from util.backup import Backup
 from util.date import Date
 from configuration import config
 from minecraft.version import Versioner, UpdateType
-from util.extension import lines_from_file
 from util.maintenance import Maintenance
 from util.mielib.custominput import bool_input
 from minecraft.install import Installer

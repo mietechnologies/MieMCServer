@@ -8,11 +8,8 @@ A module for monitoring the data stream from the project.
 import os
 from threading import Event, Thread
 from time import sleep
-
-from pendulum import time
-
 from util.extension import lines_from_file, string_contains
-from util.files import bootlog
+from util.path import project_path
 
 class RepeatingTimer(Thread):
     '''
@@ -97,7 +94,6 @@ class Monitor:
     related to the project and the current run.
     '''
     DEBUG = False
-    DEBUG_BOOTLOG = None
     STARTUP_SUCCESSFUL = False
 
     __LOG = None
@@ -139,9 +135,7 @@ class Monitor:
         # If we're in DEBUG and a debuggable bootlog file has been provided, use
         # that one. Otherwise, use the default bootlog file created and used by
         # the server code.
-        file = bootlog()
-        if cls.DEBUG and cls.DEBUG_BOOTLOG:
-            file = cls.DEBUG_BOOTLOG
+        file = project_path('log', 'bootlog.txt')
 
         for line in lines_from_file(file):
             if string_contains(line, r'Done \(\d.\d+s\)!'):

@@ -5,7 +5,7 @@ Handles any and all interaction with the server data and/or files.
 import shutil
 from zipfile import ZipFile
 import os
-from util.syslog import log
+from util.logger import log
 from util.mielib import custominput as ci
 
 __DATAPACKS_TO_INSTALL = []

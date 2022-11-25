@@ -3,12 +3,7 @@ A simple module for working with files. This module also acts as a file url
 provider to all other project files.
 """
 
-import os
 from util.logger import log
-from util.path import project_path
-
-def bootlog() -> str:
-    return project_path('logs', 'bootlog.txt')
 
 def add(lines: list, to_file_at_path: str) -> bool:
     '''
