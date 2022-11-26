@@ -275,8 +275,7 @@ def run_debug():
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
 
-    eula = project_path('server', 'eula.txt')
-    files.update(eula, 'eula=false', 'eula=true')
+
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
@@ -533,7 +532,7 @@ def main():
     parser.add_argument('-uc', '--update-config', help="This command enables " \
         "the user to update a configuration collection by passing the " \
         "desired collection's name in as a parameter. (i.e. Email, Minecraft, " \
-        "etconfig_file. [not case sensitive])", nargs='?', dest="update_config", 
+        "etc. [not case sensitive])", nargs='?', dest="update_config",
         type=str, required=False)
 
     parser.add_argument('-D', '--debug', help='This will run any processes ' \

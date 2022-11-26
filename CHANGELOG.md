@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2022.11.25
 
 ### Added
-- During installation, the user can now declare that they want to install a modded server using Forge. **Please note** that the Eternals API team will not allow us to access their API, so the user will have to designate the targeted version of Minecraft and Forge client as well as supply a compressed archive of the server pack's files (the user can find this information and a link to download the server pack on the desired modpack's profile page). **It should also be noted** that there is currently no way to install updates to the server files (this will be added in v1.4.1). The user can update quasi-automatically by removing the `/src/server` directory and generating a new `config.yml` file by issuing the `python3 main.py -gc` command, then copying the `world` directory from an archived backup to restore the user's world.
+- During installation, the user can now declare that they want to install a modded server using Forge.
 
 ## [1.3.0] - 2022.11.24
 
