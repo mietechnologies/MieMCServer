@@ -3,10 +3,10 @@ from util.mielib import custominput as ci
 
 class Email:
     data = {}
-    address = ''
+    address = '<your.email@gmail.com>'
     password = '<your password>'
-    server = ''
-    port = ''
+    server = 'smtp.gmail.com'
+    port = 587
     recipients = []
 
     def __init__(self, data: dict):
@@ -27,17 +27,17 @@ class Email:
         email_address = ci.email_input("What is the gmail address you would " \
             "like me to use to send you reports?", provider="gmail")
         password = ci.password_input("What is the password to the account you" \
-            " just entered?").encode('utf-8')
+            " just entered?")
         recipients = ci.email_input("What email address(es) would you like " \
             "to recieve the logs and reports?", multiples=True)
         self.address = email_address
-        self.password = base64.b64encode(password)
+        self.password = password
         self.recipients = recipients
         return self.update()
 
     def update(self) -> dict:
         self.data["address"] = self.address
-        self.data["password"] = self.password
+        self.data["password"] = base64.b64encode(self.password.encode('utf-8'))
         self.data["server"] = self.server
         self.data["port"] = self.port
         self.data["recipients"] = self.recipients
@@ -49,4 +49,3 @@ class Email:
         self.server = "smtp.gmail.com"
         self.port = 587
         self.recipients = []
-

@@ -43,7 +43,7 @@ from util.temp import PiTemp
 from util.logger import log
 from util.date import Date
 
-VERSION = "1.4.0"
+VERSION = "1.4.1"
 
 def parse(args):
     configuration = config.File(log)
@@ -95,7 +95,7 @@ def parse(args):
 
     if update is not None:
         running_log.append('-u')
-        updateServer(update, configuration)
+        update_server(update, configuration)
 
     if backup:
         running_log.append(f'-bu {configuration.maintenance.path()}')
@@ -275,8 +275,7 @@ def run_debug():
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
 
-    eula = project_path('server', 'eula.txt')
-    files.update(eula, 'eula=false', 'eula=true')
+
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
@@ -431,14 +430,14 @@ def updateConfig(collection: str, configuration: config.File):
     elif collection.lower() == "temperature":
         configuration.temperature.build()
 
-def updateServer(override, configuration: config.File):
+def update_server(override: bool, configuration: config.File):
     if not configuration.exists:
         log("Cancelling... You haven't setup a config.yml file yet. You can " \
             "generate a config file by running the command 'python3 main.py -" \
             "gc'")
     elif configuration.is_modded():
-        log('Cancelling... You have chosen to set up a modded server and this functionality ' \
-            'doesn\'t exist yet.')
+        new_config = configuration.modded.update_modpack()
+        configuration.update_section('Modded', new_config)
     else:
         update, version = Versioner.has_update()
 
@@ -533,7 +532,7 @@ def main():
     parser.add_argument('-uc', '--update-config', help="This command enables " \
         "the user to update a configuration collection by passing the " \
         "desired collection's name in as a parameter. (i.e. Email, Minecraft, " \
-        "etconfig_file. [not case sensitive])", nargs='?', dest="update_config", 
+        "etc. [not case sensitive])", nargs='?', dest="update_config",
         type=str, required=False)
 
     parser.add_argument('-D', '--debug', help='This will run any processes ' \

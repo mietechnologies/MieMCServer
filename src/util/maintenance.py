@@ -3,7 +3,7 @@ import os
 from util.cron import CronDate, CronScheduler
 from util.date import Date
 from util.mielib import custominput as ci
-from util.logger import messageDiscord
+from util.logger import message_discord
 
 class Maintenance:
     dir = os.path.dirname(__file__)
@@ -26,8 +26,8 @@ class Maintenance:
         enabled).
         '''
         cls.__log(f'Ending maintenance at { Date.timestamp() }')
-        messageDiscord('Server maintenance has ended! The server should be ' \
-            'up and running in a few minutes!')
+        message_discord('Server maintenance has ended! The server should be ' \
+            'up and running in a few minutes!', cls.__configuration)
 
         cls.scheduler.removeJob('maintenance.end')
         cls.scheduler.removeJob('maintenance.start')
@@ -116,9 +116,9 @@ class Maintenance:
         # Inform users that maintenance has been scheduled via Discord
         discord_end = Date.format(end, '%m/%d/%Y %I:%M %p')
         discord_start = Date.format(start, '%m/%d/%Y %I:%M %p')
-        messageDiscord('Server maintenance has been scheduled. **The server ' \
+        message_discord('Server maintenance has been scheduled. **The server ' \
             f'will be down** starting on {discord_start} and ending on ' \
-            f'{discord_end}.')
+            f'{discord_end}.', cls.__configuration)
 
     @classmethod
     def start(cls):
@@ -127,9 +127,9 @@ class Maintenance:
         messages the Discord server (if enabled).
         '''
         cls.__log(f'Starting maintenance at {Date.timestamp()}')
-        messageDiscord('Server maintenance has started and will be completed ' \
+        message_discord('Server maintenance has started and will be completed ' \
             'as quickly as possible. Until then, **the server will be shut ' \
-            'down.**')
+            'down.**', cls.__configuration)
 
         cls.scheduler.removeJob('maintenance.restart')
         cls.scheduler.removeJob('maintenance.backup')

@@ -1,7 +1,6 @@
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from configuration import config
 from os.path import basename, normpath
 import smtplib
 
@@ -9,12 +8,14 @@ import smtplib
 class Mailer:
     '''A simple object to send text emails with or without attachment files.'''
 
+    __configuration = None
+
     attachments = []
 
-    def __init__(self, subject, body):
+    def __init__(self, subject, body, configuration):
         self.subject = subject
         self.body = body
-        self.config_file = config.File()
+        self.__configuration = configuration
 
     def attach(self, file):
         '''Attaches a file to the email. This can be called multiple times to
@@ -25,8 +26,8 @@ class Mailer:
         '''Compiles the optional attachments and creates an email then uses
         the user's configuration to send the email along with its attachments'''
         msg = MIMEMultipart()
-        msg["From"] = self.config_file.email.address
-        msg["To"] = ", ".join(self.config_file.email.recipients)
+        msg["From"] = self.__configuration.email.address
+        msg["To"] = ", ".join(self.__configuration.email.recipients)
         msg["Subject"] = self.subject
         msg.attach(MIMEText(self.body, "plain"))
 
@@ -39,9 +40,10 @@ class Mailer:
                                            filename=name)
                 msg.attach(attachment_file)
 
-        server = smtplib.SMTP(self.config_file.email.server, self.config_file.email.port)
+        email_config = self.__configuration.email
+        server = smtplib.SMTP(email_config.server, email_config.port)
         server.starttls()
-        server.login(self.config_file.email.address, self.config_file.email.password)
-        server.sendmail(self.config_file.email.address, self.config_file.email.recipients, msg.as_string())
+        server.login(email_config.address, email_config.password)
+        server.sendmail(email_config.address, email_config.recipients, msg.as_string())
 
         server.quit()
