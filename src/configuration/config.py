@@ -46,6 +46,15 @@ class File:
     def update(self):
         data.write_yaml(self.data, self.__file_dir)
 
+    def update_section(self, name: str, child_data: dict):
+        '''
+        Replaces a specific section of the data dictionary and updates the config.yml
+        file.
+        '''
+
+        self.data[name] = child_data
+        self.update()
+
     def generate(self):
         self.minecraft.reset()
         self.email.reset()
