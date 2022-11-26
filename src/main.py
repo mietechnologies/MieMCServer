@@ -43,7 +43,7 @@ from util.temp import PiTemp
 from util.logger import log
 from util.date import Date
 
-VERSION = "1.4.0"
+VERSION = "1.4.1"
 
 def parse(args):
     configuration = config.File(log)
