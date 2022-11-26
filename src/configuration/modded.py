@@ -145,6 +145,42 @@ class Modded:
 
         return command
 
+    def update_modpack(self) -> dict:
+        '''
+        Installs a new modpack version from an absolute path desifnated by the user.
+
+        Returns
+        -------
+        dict
+            Returns the updated dict representing the Modded class to be saved to the
+            config.yml file.
+        '''
+
+        new_mc_version = ci.version_input('What version of Minecraft does this update target?')
+        new_forge_version = ci.version_input('And what version of Forge?')
+
+        # If this new modpack uses a different version of forge, we need to get a new installer
+        # and install.
+        forge_installer = None
+
+        if new_mc_version != self.minecraft_version or new_forge_version != self.forge_version:
+            self.minecraft_version = new_mc_version
+            self.forge_version = new_forge_version
+            forge_installer = self.__download_forge()
+
+        mod_files = self.__request_modpack()
+
+        if forge_installer is not None:
+            self.__install_forge_and_modpacks(forge_installer, mod_files)
+
+        self.__update_files()
+        self.__initial_setup()
+
+        self.__LOG('Cleaning up temporary files from installing Forge server...')
+        forge.cleanup(self.uses_args_file)
+
+        return self.update()
+
     def __download_forge(self) -> str:
         self.__LOG('Downloading Forge Installer...')
         forge_installer_url = forge.construct_forge_installer_url(
