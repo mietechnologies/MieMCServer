@@ -20,7 +20,7 @@ def start(ram: int):
 
     server_dir = path.project_path('server')
     logfile = path.project_path('logs', 'bootlog.txt')
-    shell.run(f'sh start-server.sh {ram}M {server_dir} > {logfile}', server_dir)
+    shell.run(f'java -Xmx{ram}M -Xms512M -jar paper.jar nogui > {logfile}', server_dir)
 
 def stop():
     '''
