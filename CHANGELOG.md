@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- The user can now update the modpack installed on the server by issuing the `python3 main.py -u` command.
 
 ### Changed
 
@@ -16,9 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
-- Corrected several spelling errors and other mistakes surrounding messaging.
 
 ### Security
+
+## [v1.4.1] - 2022.11.25
+
+### Added
+- The user can now update the modpack installed on the server by issuing the `python3 main.py -u` command.
+
+### Fixed
+- Corrected several spelling errors and other mistakes surrounding messaging.
 
 ## [1.4.0] - 2022.11.25
 
