@@ -16,15 +16,17 @@ class Installer:
 
     __configuration = None
     __log = None
+    __versioner: Versioner = None
 
     @classmethod
     def __init__(cls, configuration, logger):
         cls.__configuration = configuration
         cls.__log = logger
+        cls.__versioner = Versioner(cls.__configuration, cls.__log)
 
     @classmethod
     def __should_install(cls, override):
-        install_type, version = Versioner.has_update()
+        install_type, version = cls.__versioner.has_update()
 
         if install_type is not UpdateType.NONE and override:
             return (True, version)
@@ -33,7 +35,7 @@ class Installer:
             return (True, version)
 
         if install_type is UpdateType.MAJOR:
-            if not Versioner.server_exists():
+            if not cls.__versioner.server_exists():
                 return (True, version)
 
             if cls.__configuration.maintenance.allows_major_udpates():
@@ -45,7 +47,7 @@ class Installer:
 
     @classmethod
     def __admin_update_alert(cls, version):
-        version_str = Versioner.version_string(version)
+        version_str = cls.__versioner.version_string(version)
 
         subject = "Minecraft Server has an update!"
         body = "Hello there,\n\nIt would seem as if your server has an " \
@@ -70,7 +72,7 @@ class Installer:
         '''
         should_install, version = cls.__should_install(override_settings)
         if should_install:
-            version_str = Versioner.version_string(version)
+            version_str = cls.__versioner.version_string(version)
             cls.__log(f"Downloading {version_str}...")
             download = cls.__download(version)
 
@@ -80,7 +82,7 @@ class Installer:
             os.replace(download, cls.server_jar)
 
             cls.__log("Server installed!")
-            Versioner.update_installed_version(version)
+            cls.__versioner.update_installed_version(version)
 
     @classmethod
     def __download(cls, version):

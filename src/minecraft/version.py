@@ -131,16 +131,24 @@ class Versioner:
 
         version_group = cls.__configuration.minecraft.version_group
         allows_major_updates = cls.__configuration.maintenance.allows_major_udpates()
+
+        url_format = ''
         if version_group is None or allows_major_updates:
-            version_request = requests.get(cls.VERSION_MANIFEST_URL.format(""))
-            data = cls.__extract_absolute_version(version_request.json())
+            url_format = ''
+        else:
+            url_format = f'version_group/{cls.__configuration.minecraft.version_group}'
+
+        try:
+            version_request = requests.get(cls.VERSION_MANIFEST_URL.format(url_format))
+            if version_group is None or allows_major_updates:
+                data = cls.__extract_absolute_version(version_request.json())
+                build_data = cls.__get_latest_build(data["version_group"])
+                return cls.__version(data, build_data)
+            data = cls.__extract_version_group(version_request.json())
             build_data = cls.__get_latest_build(data["version_group"])
             return cls.__version(data, build_data)
-        version_request = requests.get(cls.VERSION_MANIFEST_URL
-            .format("version_group/" + cls.__configuration.minecraft.version_group))
-        data = cls.__extract_version_group(version_request.json())
-        build_data = cls.__get_latest_build(data["version_group"])
-        return cls.__version(data, build_data)
+        except:
+            return None
 
     @classmethod
     def __get_latest_build(cls, version_group):
@@ -176,6 +184,9 @@ class Versioner:
         and a NoneType object.'''
         current_version = cls.get_current_version()
         latest_version = cls.__get_latest_version()
+
+        if latest_version is None:
+            return (UpdateType.NONE, None)
 
         cls.__log("Checking for an update...")
         if current_version is None:

@@ -5,6 +5,7 @@ Handles any and all scripting done in conjunction with the server files.
 import os
 
 import command as cmd
+from util import path, shell
 from util.extension import lines_from_file
 from util.logger import log
 
@@ -17,14 +18,9 @@ def start(ram: int):
     '''
     __run_user_bash_script('start')
 
-    log('Starting server...')
-    script_path = os.path.join(__SCRIPTS_DIR, 'start-server.sh')
-    server_dir = os.path.join(__THIS_DIR, '../server')
-    logfile = os.path.join(__THIS_DIR, '../logs/bootlog.txt')
-    # Fyi, this HAS TO BE a popen call so that it starts in the background.
-    # If we use system, the server starts in the main thread and nothing else 
-    # can execute.
-    os.popen(f'{script_path} {ram}M {server_dir} > {logfile}')
+    server_dir = path.project_path('server')
+    logfile = path.project_path('logs', 'bootlog.txt')
+    shell.run(f'sh start-server.sh {ram}M {server_dir} > {logfile}', server_dir)
 
 def stop():
     '''
