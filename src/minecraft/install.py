@@ -55,7 +55,7 @@ class Installer:
             "to do this manually you can run the command: 'python3 " \
             "main.py -u'\nThen follow the prompt and it will install the " \
             "latest version.\n\nThanks,\nMinePi".format(version_str)
-        email = Mailer(subject, body)
+        email = Mailer(subject, body, cls.__configuration)
         email.send()
 
     @classmethod

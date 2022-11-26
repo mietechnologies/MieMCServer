@@ -9,7 +9,7 @@ about: Please use this pull request template when preparing for a version releas
 
 ## Checklist
 Please ensure the following tasks have been completed before submitting your pull request:
-- [ ] Version stiring (in main.py of project) has been updated
+- [ ] Version string (in main.py of project) has been updated
 - [ ] CHANGELOG has been updated to indicate a new version release
 
 ## Further Steps
