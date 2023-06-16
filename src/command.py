@@ -25,7 +25,7 @@ def run_command(command: str, configuration):
     else:
         log("ERR: RCON has not been correctly initialized.")
 
-def run_terminal(configuration, commands: list[str] = None):
+def run_terminal(configuration, commands: list = None):
     '''Starts a RCON session that either takes in a list of commands and runs
     them one after another until complete, or will ask for input, run the 
     command, and output the response until the exit keyword is input.

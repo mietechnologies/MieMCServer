@@ -1,4 +1,4 @@
-# from util.logger import log
+from util.files import lines_from_file, write
 from util.mielib import custominput as ci
 from util.path import isfile, project_path
 from util.extension import clean_string
@@ -11,6 +11,8 @@ class RCON:
     password = None
     port = None
 
+    def __enter__(self):
+        return self
 
     def __init__(self, data: dict, logger = None) -> None:
         self.__log = logger
@@ -35,34 +37,33 @@ class RCON:
         return self.update()
 
     def read(self):
-        properties = project_path('server/server.properties')
+        properties = project_path('server', 'server.properties')
         if isfile(properties):
-            with open(properties, 'r', encoding='utf8').readlines() as lines:
-                for line in lines:
-                    if 'rcon.port' in line:
-                        self.port = int(clean_string(line, ['rcon.port=', '\n']))
-                    elif 'enable-rcon' in line:
-                        self.enabled = bool(clean_string(line, ['enable-rcon=', '\n']))
-                    elif 'rcon.password' in line:
-                        self.password = clean_string(line, ['rcon.password=', '\n'])
+            lines = lines_from_file(properties)
+            for line in lines:
+                if 'rcon.port' in line:
+                    self.port = int(clean_string(line, ['rcon.port=', '\n']))
+                elif 'enable-rcon' in line:
+                    self.enabled = bool(clean_string(line, ['enable-rcon=', '\n']))
+                elif 'rcon.password' in line:
+                    self.password = clean_string(line, ['rcon.password=', '\n'])
         else:
             self.__log('ERR: No server.properties file found!')
 
     def update(self):
         properties = project_path('server', 'server.properties')
         if isfile(properties):
-            with open(properties, 'r', encoding='utf8') as file_in:
-                lines = file_in.readlines()
-                with open(properties, 'w', encoding='utf8') as file_out:
-                    for line in lines:
-                        if 'rcon.port' in line:
-                            line = f'rcon.port={self.port}\n'
-                        elif 'enable-rcon' in line:
-                            line = f'enable-rcon={self.enabled}\n'.lower()
-                        elif 'rcon.password' in line:
-                            line = f'rcon.password={self.password}\n'
-                        
-                        file_out.write(line)
+            existing = lines_from_file(properties)
+            new_lines = []
+            for line in existing:
+                if 'rcon.port' in line:
+                    line = f'rcon.port={self.port}\n'
+                elif 'enable-rcon' in line:
+                    line = f'enable-rcon={self.enabled}\n'.lower()
+                elif 'rcon.password' in line:
+                    line = f'rcon.password={self.password}\n'
+                new_lines.append(line)
+            write(new_lines, properties)
         else:
             self.__log('ERR: No server.properties file found!')
 

@@ -37,7 +37,7 @@ class MonitorItem:
     Examples are system startup, player logs, etc.
     '''
     elapsed = 0
-    timeout = 10
+    timeout = 60
     finished = False
     timer: RepeatingTimer
     on_finish = None
@@ -117,6 +117,7 @@ class Monitor:
           - log (void): A reference to the method for logging information.
         '''
         cls.__LOG = log
+        cls.__LOG('Starting system monitor')
         cls.startup = MonitorItem(RepeatingTimer(1, cls.__check_startup), timeout)
         cls.startup.start()
 

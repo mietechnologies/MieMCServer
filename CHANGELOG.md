@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- Squashed several bugs related to running the project on Raspberry Pi that were created in part by reworking the configuration object, lack of knowledge, and lack of testing.
 
 ### Security
 

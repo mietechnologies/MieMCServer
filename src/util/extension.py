@@ -24,7 +24,7 @@ def string_contains_any_case(haystack: str, needles: List[str]) -> bool:
             return True
     return False
 
-def lines_from_file(file: str, delete_fetched: bool = False) -> list[str]:
+def lines_from_file(file: str, delete_fetched: bool = False) -> list:
     '''
     Fetches all lines from a specific file, ignoring any lines that are comments
     (begins with '#') and any new lines.

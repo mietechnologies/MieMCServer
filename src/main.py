@@ -61,6 +61,8 @@ def parse(args):
     maintenance_action = args.maintenance
     debug = args.debug
     update_config = args.update_config
+    critical_events = None
+
     if configuration.is_raspberry_pi():
         critical_events = args.critical_events
 
@@ -143,7 +145,7 @@ def parse(args):
 
     if configuration.temperature.exists() and critical_events:
         running_log.append('-ce')
-        PiTemp.execute()
+        PiTemp(configuration, log).execute()
 
     if update_config:
         running_log.append('-uc')
@@ -239,13 +241,7 @@ def run(configuration: config.File):
         generate_config("manual", configuration)
         setup_crontab(configuration)
 
-        if configuration.is_modded():
-            if bool_input('Would you like to restart the system to start the server ' \
-                'automatically?'):
-                reboot.run()
-            else:
-                log('Please restart the system to start the server.')
-        else:
+        if not configuration.is_modded():
             # This is presumably the first run so the EULA has not yet been
             # accepted, meaning that starting the server WILL fail
             start_server(configuration)
@@ -254,12 +250,17 @@ def run(configuration: config.File):
             if configuration.minecraft.accept_eula():
                 files.update(eula, 'eula=false', 'eula=true')
                 log('User has accepted Minecraft\'s EULA!')
-                start_server(configuration)
                 log("Server started!")
             else:
                 log('User has declined Minecraft\'s EULA!')
                 log('Gefore running the Minecraft server, you MUST accept ' \
                     f'Minecraft\'s EULA by updating the { eula } file!')
+
+        if bool_input('Would you like to restart the system to start the server ' \
+            'automatically?'):
+            reboot.run()
+        else:
+            log('Please restart the system to start the server.')
 
 def run_debug():
     '''
@@ -275,7 +276,8 @@ def run_debug():
     print('\n****** DEBUGGING STARTED ******\n')
     # Implement any debug functionality below:
 
-
+    eula = project_path('server', 'eula.txt')
+    files.update(eula, 'eula=false', 'eula=true')
 
     # DO NOT DELETE THE BELOW LINE
     # Deleting this line WILL cause build errors!!
@@ -312,14 +314,14 @@ def start_server(configuration: config.File):
     """
 
     startMonitorsIfNeeded(configuration)
-    log("Starting server...")
     server = path.project_path('server')
     bootlog = path.project_path('logs', 'bootlog.txt')
 
+    log("Starting server...")
     if configuration.is_modded():
         shell.run(f'{configuration.modded.run_command()} > {bootlog}', server)
     else:
-        Installer.install()
+        Installer(configuration, log).install()
         scripting.start(configuration.minecraft.allocated_ram)
 
 def stop_server(configuration):
@@ -331,15 +333,11 @@ def __project_preinstalls():
     print('Pre-installing needed dependencies to run this command; your ' \
         'input may be required!')
 
-    this_dir = os.path.dirname(__file__)
-    logs_dir = os.path.join(this_dir, 'logs')
-    requirements = os.path.join(logs_dir, 'requirements.txt')
+    requirements = project_path('logs', 'requirements.txt')
 
-    os.system('apt-get install python3-pip')
-    os.system('pip install pipreqs')
-    os.system(f'pipreqs {logs_dir}')
-    os.system(f'pip install -r {requirements}')
-    os.remove(requirements)
+    os.system('sudo apt install python3-pip')
+    os.system('python3 -m pip install pipreqs')
+    os.system(f'python3 -m pip install -r {requirements}')
 
 def setup_crontab(configuration: config.File):
     prog = project_path(filename='main.py')
@@ -439,11 +437,12 @@ def update_server(override: bool, configuration: config.File):
         new_config = configuration.modded.update_modpack()
         configuration.update_section('Modded', new_config)
     else:
-        update, version = Versioner.has_update()
+        versioner = Versioner(configuration, log)
+        update, version = versioner.has_update()
 
         if update is not UpdateType.NONE:
             should_update = False
-            output = f"You have a {update} update. Version {Versioner.version_string(version)} ' \
+            output = f"You have a {update} update. Version {versioner.version_string(version)} ' \
                 'is available"
             log(output)
 
